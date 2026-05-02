@@ -1,0 +1,453 @@
+#!/usr/bin/env python3
+"""Build trade-event datamart for ST + DEMA + ADX + CCI strategy.
+
+This is the bridge between a simple backtest and setup/probability research:
+one output row per completed trade, with entry-time features and realized
+outcomes such as PnL, R multiple, MFE, and MAE.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sqlite3
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT))
+
+from pipeline.live.tv_strategy import (
+    ADX_LENGTH,
+    ADX_THRESHOLD,
+    ATR_PERIOD,
+    CCI_LENGTH,
+    CCI_LONG_MIN,
+    CCI_SHORT_MAX,
+    CCI_SOURCE,
+    DEMA_LENGTH,
+    ST_FACTOR,
+    _atr,
+    adx,
+    cci,
+    dema,
+    supertrend,
+)
+
+RAW_DB = ROOT / "data/Level_0_Raw/MGC_1m.db"
+OUT_PARQUET = ROOT / "data/Level_2_Datamart/st_dema_adx_cci_trade_events.parquet"
+OUT_CANDLES_JSON = ROOT / "ui/data/candles_5m.json"
+OUT_TRADES_JSON = ROOT / "ui/data/trade_events.json"
+
+SYMBOL = "MICRO_GOLD"
+TIMEFRAME = "1m"
+POINT_VALUE_USD = 10.0
+ROUND_TURN_COMMISSION_USD = 3.0
+WARMUP_DAYS = 120
+
+
+@dataclass
+class OpenTrade:
+    side: str
+    entry_ts: pd.Timestamp
+    entry_i: int
+    entry_price: float
+    initial_sl: float
+    sl_price: float
+    entry_adx: float
+    entry_cci: float
+    entry_dema: float
+    entry_supertrend: float
+    entry_direction: int
+    entry_atr: float
+    entry_bar_high: float
+    entry_bar_low: float
+    entry_bar_close: float
+    mfe_points: float = 0.0
+    mae_points: float = 0.0
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--start", default="2026-01-01", help="event start date UTC")
+    parser.add_argument("--end", default="2026-05-01", help="event end date UTC, exclusive")
+    parser.add_argument("--raw-db", type=Path, default=RAW_DB)
+    parser.add_argument("--out", type=Path, default=OUT_PARQUET)
+    parser.add_argument("--export-ui", action="store_true", help="write ui/data JSON files")
+    return parser.parse_args()
+
+
+def load_ohlcv_1m(db_path: Path, start: str, end: str) -> pd.DataFrame:
+    warmup_start = (pd.Timestamp(start, tz="UTC") - pd.Timedelta(days=WARMUP_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+    end_ts = pd.Timestamp(end, tz="UTC").strftime("%Y-%m-%d %H:%M:%S")
+    with sqlite3.connect(str(db_path)) as conn:
+        df = pd.read_sql(
+            """
+            SELECT timestamp_utc, open, high, low, close, volume
+            FROM investing_ohlcv_1m
+            WHERE symbol = ? AND timeframe = ?
+              AND timestamp_utc >= ? AND timestamp_utc < ?
+            ORDER BY epoch_ms
+            """,
+            conn,
+            params=[SYMBOL, TIMEFRAME, warmup_start, end_ts],
+        )
+    if df.empty:
+        raise RuntimeError(f"No OHLCV rows found in {db_path} for {warmup_start} -> {end_ts}")
+    df["timestamp_utc"] = pd.to_datetime(df["timestamp_utc"], utc=True)
+    return df
+
+
+def resample_ohlcv(df_1m: pd.DataFrame, rule: str) -> pd.DataFrame:
+    df = df_1m.set_index("timestamp_utc").sort_index()
+    out = df.resample(rule, label="left", closed="left").agg(
+        open=("open", "first"),
+        high=("high", "max"),
+        low=("low", "min"),
+        close=("close", "last"),
+        volume=("volume", "sum"),
+    ).dropna(subset=["open"])
+    return out
+
+
+def resample_5m(df_1m: pd.DataFrame) -> pd.DataFrame:
+    return resample_ohlcv(df_1m, "5min")
+
+
+def session_name(ts: pd.Timestamp) -> str:
+    hour = ts.hour + ts.minute / 60.0
+    if 0 <= hour < 3:
+        return "Tokyo"
+    if 7 <= hour < 10:
+        return "London"
+    if 13.5 <= hour < 16.5:
+        return "US"
+    return "Other"
+
+
+def update_excursions(trade: OpenTrade, high: float, low: float) -> None:
+    if trade.side == "Long":
+        fav = high - trade.entry_price
+        adv = low - trade.entry_price
+    else:
+        fav = trade.entry_price - low
+        adv = trade.entry_price - high
+    trade.mfe_points = max(trade.mfe_points, fav)
+    trade.mae_points = min(trade.mae_points, adv)
+
+
+def close_trade(
+    trade: OpenTrade,
+    exit_ts: pd.Timestamp,
+    exit_i: int,
+    exit_price: float,
+    exit_reason: str,
+    bars_held: int,
+    timeframe_min: int,
+) -> dict:
+    gross_points = exit_price - trade.entry_price if trade.side == "Long" else trade.entry_price - exit_price
+    gross_usd = gross_points * POINT_VALUE_USD
+    pnl_usd = gross_usd - ROUND_TURN_COMMISSION_USD
+    risk_points = abs(trade.entry_price - trade.initial_sl)
+    risk_usd = risk_points * POINT_VALUE_USD
+    r_multiple = gross_usd / risk_usd if risk_usd > 0 else np.nan
+
+    dema_distance = (
+        trade.entry_price - trade.entry_dema
+        if trade.side == "Long"
+        else trade.entry_dema - trade.entry_price
+    )
+    st_distance = abs(trade.entry_price - trade.entry_supertrend)
+
+    return {
+        "entry_ts": trade.entry_ts,
+        "exit_ts": exit_ts,
+        "side": trade.side,
+        "entry_price": trade.entry_price,
+        "exit_price": exit_price,
+        "exit_reason": exit_reason,
+        "bars_held": bars_held,
+        "duration_min": bars_held * timeframe_min,
+        "gross_points": gross_points,
+        "gross_usd": gross_usd,
+        "commission_usd": ROUND_TURN_COMMISSION_USD,
+        "pnl_usd": pnl_usd,
+        "risk_points": risk_points,
+        "risk_usd": risk_usd,
+        "r_multiple": r_multiple,
+        "mfe_points": trade.mfe_points,
+        "mae_points": trade.mae_points,
+        "mfe_usd": trade.mfe_points * POINT_VALUE_USD,
+        "mae_usd": trade.mae_points * POINT_VALUE_USD,
+        "entry_adx": trade.entry_adx,
+        "entry_cci": trade.entry_cci,
+        "entry_dema": trade.entry_dema,
+        "entry_supertrend": trade.entry_supertrend,
+        "entry_st_direction": trade.entry_direction,
+        "entry_atr": trade.entry_atr,
+        "dema_distance": dema_distance,
+        "dema_distance_atr": dema_distance / trade.entry_atr if trade.entry_atr > 0 else np.nan,
+        "st_distance": st_distance,
+        "st_distance_atr": st_distance / trade.entry_atr if trade.entry_atr > 0 else np.nan,
+        "entry_bar_high": trade.entry_bar_high,
+        "entry_bar_low": trade.entry_bar_low,
+        "entry_bar_close": trade.entry_bar_close,
+        "hour_utc": trade.entry_ts.hour,
+        "minute_utc": trade.entry_ts.minute,
+        "session": session_name(trade.entry_ts),
+        "is_win": pnl_usd > 0,
+        "hit_1r": trade.mfe_points >= risk_points if risk_points > 0 else False,
+        "hit_2r": trade.mfe_points >= 2 * risk_points if risk_points > 0 else False,
+        "entry_i": trade.entry_i,
+        "exit_i": exit_i,
+    }
+
+
+def build_events(df_bars: pd.DataFrame, event_start: str, timeframe_min: int) -> pd.DataFrame:
+    h = df_bars["high"].to_numpy(dtype=float)
+    l = df_bars["low"].to_numpy(dtype=float)
+    c = df_bars["close"].to_numpy(dtype=float)
+
+    st, direction = supertrend(h, l, c, ST_FACTOR, ATR_PERIOD)
+    d = dema(c, DEMA_LENGTH)
+    ax = adx(h, l, c, ADX_LENGTH)
+    cx = cci(h, l, c, CCI_LENGTH, CCI_SOURCE)
+    atr = _atr(h, l, c, ATR_PERIOD)
+
+    event_start_ts = pd.Timestamp(event_start, tz="UTC")
+    pos = 0
+    open_trade: OpenTrade | None = None
+    sl_price = 0.0
+    rows: list[dict] = []
+
+    for i in range(DEMA_LENGTH + 50, len(df_bars)):
+        ts = df_bars.index[i]
+        cur_close = float(c[i])
+        cur_high = float(h[i])
+        cur_low = float(l[i])
+        cur_dema = float(d[i])
+        cur_st = float(st[i]) if not np.isnan(st[i]) else np.nan
+        cur_dir = int(direction[i])
+        cur_adx = float(ax[i]) if not np.isnan(ax[i]) else 0.0
+        cur_cci = float(cx[i]) if not np.isnan(cx[i]) else 0.0
+        cur_atr = float(atr[i]) if not np.isnan(atr[i]) else np.nan
+
+        cross_up = float(c[i - 1]) < d[i - 1] and cur_close > cur_dema
+        cross_dn = float(c[i - 1]) > d[i - 1] and cur_close < cur_dema
+        long_signal = (
+            cur_adx > ADX_THRESHOLD
+            and cur_cci > CCI_LONG_MIN
+            and (cross_up or cur_close > cur_dema)
+            and cur_dir < 0
+        )
+        short_signal = (
+            cur_adx > ADX_THRESHOLD
+            and cur_cci < CCI_SHORT_MAX
+            and (cross_dn or cur_close < cur_dema)
+            and cur_dir > 0
+        )
+
+        if open_trade is not None:
+            update_excursions(open_trade, cur_high, cur_low)
+
+        if pos == 1 and open_trade is not None and cur_low <= sl_price:
+            if open_trade.entry_ts >= event_start_ts:
+                rows.append(close_trade(open_trade, ts, i, float(sl_price), "SL", i - open_trade.entry_i, timeframe_min))
+            pos = 0
+            open_trade = None
+        elif pos == -1 and open_trade is not None and cur_high >= sl_price:
+            if open_trade.entry_ts >= event_start_ts:
+                rows.append(close_trade(open_trade, ts, i, float(sl_price), "SL", i - open_trade.entry_i, timeframe_min))
+            pos = 0
+            open_trade = None
+
+        if pos == 1 and open_trade is not None and cur_dir > 0:
+            if open_trade.entry_ts >= event_start_ts:
+                rows.append(close_trade(open_trade, ts, i, cur_close, "TREND_FLIP", i - open_trade.entry_i, timeframe_min))
+            pos = 0
+            open_trade = None
+        elif pos == -1 and open_trade is not None and cur_dir < 0:
+            if open_trade.entry_ts >= event_start_ts:
+                rows.append(close_trade(open_trade, ts, i, cur_close, "TREND_FLIP", i - open_trade.entry_i, timeframe_min))
+            pos = 0
+            open_trade = None
+
+        if pos != 0:
+            sl_price = cur_st
+
+        if long_signal and pos == 0:
+            pos = 1
+            sl_price = cur_st
+            open_trade = OpenTrade(
+                side="Long",
+                entry_ts=ts,
+                entry_i=i,
+                entry_price=cur_close,
+                initial_sl=cur_st,
+                sl_price=cur_st,
+                entry_adx=cur_adx,
+                entry_cci=cur_cci,
+                entry_dema=cur_dema,
+                entry_supertrend=cur_st,
+                entry_direction=cur_dir,
+                entry_atr=cur_atr,
+                entry_bar_high=cur_high,
+                entry_bar_low=cur_low,
+                entry_bar_close=cur_close,
+            )
+        elif short_signal and pos == 0:
+            pos = -1
+            sl_price = cur_st
+            open_trade = OpenTrade(
+                side="Short",
+                entry_ts=ts,
+                entry_i=i,
+                entry_price=cur_close,
+                initial_sl=cur_st,
+                sl_price=cur_st,
+                entry_adx=cur_adx,
+                entry_cci=cur_cci,
+                entry_dema=cur_dema,
+                entry_supertrend=cur_st,
+                entry_direction=cur_dir,
+                entry_atr=cur_atr,
+                entry_bar_high=cur_high,
+                entry_bar_low=cur_low,
+                entry_bar_close=cur_close,
+            )
+
+    out = pd.DataFrame(rows)
+    if not out.empty:
+        out["entry_date"] = out["entry_ts"].dt.date.astype(str)
+        out["exit_date"] = out["exit_ts"].dt.date.astype(str)
+        out["trade_no"] = np.arange(1, len(out) + 1)
+    return out
+
+
+def candle_records(df: pd.DataFrame, start: str, end: str) -> list[dict]:
+    view = df.loc[(df.index >= pd.Timestamp(start, tz="UTC")) & (df.index < pd.Timestamp(end, tz="UTC"))].copy()
+    return [
+        {
+            "time": int(ts.timestamp()),
+            "timestamp": ts.strftime("%Y-%m-%d %H:%M"),
+            "open": round(float(row.open), 4),
+            "high": round(float(row.high), 4),
+            "low": round(float(row.low), 4),
+            "close": round(float(row.close), 4),
+            "volume": round(float(row.volume), 2),
+        }
+        for ts, row in view.iterrows()
+    ]
+
+
+def trade_records(events: pd.DataFrame) -> list[dict]:
+    records = []
+    for _, row in events.iterrows():
+        records.append({
+            "trade_no": int(row.trade_no),
+            "entry_time": int(row.entry_ts.timestamp()),
+            "exit_time": int(row.exit_ts.timestamp()),
+            "entry_ts": row.entry_ts.strftime("%Y-%m-%d %H:%M"),
+            "exit_ts": row.exit_ts.strftime("%Y-%m-%d %H:%M"),
+            "side": row.side,
+            "entry_price": round(float(row.entry_price), 4),
+            "exit_price": round(float(row.exit_price), 4),
+            "exit_reason": row.exit_reason,
+            "pnl_usd": round(float(row.pnl_usd), 2),
+            "r_multiple": round(float(row.r_multiple), 4) if pd.notna(row.r_multiple) else None,
+            "mfe_usd": round(float(row.mfe_usd), 2),
+            "mae_usd": round(float(row.mae_usd), 2),
+            "entry_adx": round(float(row.entry_adx), 2),
+            "entry_cci": round(float(row.entry_cci), 2),
+            "dema_distance_atr": round(float(row.dema_distance_atr), 4) if pd.notna(row.dema_distance_atr) else None,
+            "st_distance_atr": round(float(row.st_distance_atr), 4) if pd.notna(row.st_distance_atr) else None,
+            "session": row.session,
+            "is_win": bool(row.is_win),
+            "hit_1r": bool(row.hit_1r),
+            "hit_2r": bool(row.hit_2r),
+            "duration_min": int(row.duration_min),
+        })
+    return records
+
+
+def summary_record(events: pd.DataFrame, start: str, end: str, timeframe: str, candle_count: int) -> dict:
+    gross_profit = float(events.loc[events["pnl_usd"] > 0, "pnl_usd"].sum()) if not events.empty else 0.0
+    gross_loss = abs(float(events.loc[events["pnl_usd"] < 0, "pnl_usd"].sum())) if not events.empty else 0.0
+    return {
+        "start": start,
+        "end": end,
+        "timeframe": timeframe,
+        "candles": candle_count,
+        "trades": len(events),
+        "total_pnl_usd": round(float(events["pnl_usd"].sum()), 2) if not events.empty else 0.0,
+        "win_rate": round(float(events["is_win"].mean()), 4) if not events.empty else 0.0,
+        "avg_r": round(float(events["r_multiple"].mean()), 4) if not events.empty else 0.0,
+        "profit_factor": round(gross_profit / gross_loss, 4) if gross_loss > 0 else None,
+    }
+
+
+def export_ui(bars_by_tf: dict[str, pd.DataFrame], events_by_tf: dict[str, pd.DataFrame], start: str, end: str) -> None:
+    OUT_CANDLES_JSON.parent.mkdir(parents=True, exist_ok=True)
+    candle_sets = {
+        timeframe: candle_records(df_bars, start, end)
+        for timeframe, df_bars in bars_by_tf.items()
+    }
+
+    for timeframe, candles in candle_sets.items():
+        summary = summary_record(events_by_tf[timeframe], start, end, timeframe, len(candles))
+        out_path = ROOT / f"ui/data/candles_{timeframe}.json"
+        out_path.write_text(json.dumps({"summary": summary, "candles": candles}, separators=(",", ":")))
+
+        trades_path = ROOT / f"ui/data/trade_events_{timeframe}.json"
+        trades_path.write_text(json.dumps({"summary": summary, "trades": trade_records(events_by_tf[timeframe])}, separators=(",", ":")))
+
+    OUT_TRADES_JSON.write_text((ROOT / "ui/data/trade_events_5m.json").read_text())
+
+
+def main() -> None:
+    args = parse_args()
+    print(f"Loading 1m OHLCV from {args.raw_db}...")
+    df_1m = load_ohlcv_1m(args.raw_db, args.start, args.end)
+    bars_by_tf = {
+        "1m": df_1m.set_index("timestamp_utc").sort_index(),
+        "5m": resample_5m(df_1m),
+        "15m": resample_ohlcv(df_1m, "15min"),
+    }
+    print(
+        f"Loaded {len(df_1m):,} 1m rows -> "
+        f"{len(bars_by_tf['5m']):,} 5m candles / {len(bars_by_tf['15m']):,} 15m candles"
+    )
+
+    events_by_tf = {
+        "1m": build_events(bars_by_tf["1m"], args.start, 1),
+        "5m": build_events(bars_by_tf["5m"], args.start, 5),
+        "15m": build_events(bars_by_tf["15m"], args.start, 15),
+    }
+    events = events_by_tf["5m"].copy()
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    events.to_parquet(args.out, index=False)
+    print(f"Saved {len(events):,} trade events -> {args.out}")
+
+    for timeframe, tf_events in events_by_tf.items():
+        if tf_events.empty:
+            print(f"{timeframe}: no trades")
+            continue
+        print(
+            f"{timeframe}: trades={len(tf_events):,}, "
+            f"pnl=${tf_events['pnl_usd'].sum():.2f}, "
+            f"win_rate={tf_events['is_win'].mean() * 100:.1f}%, "
+            f"avg_R={tf_events['r_multiple'].mean():.3f}"
+        )
+
+    if args.export_ui:
+        export_ui(bars_by_tf, events_by_tf, args.start, args.end)
+        print(f"Saved UI candles -> {OUT_CANDLES_JSON.parent}/candles_{{1m,5m,15m}}.json")
+        print(f"Saved UI trades -> {OUT_TRADES_JSON.parent}/trade_events_{{1m,5m,15m}}.json")
+
+
+if __name__ == "__main__":
+    main()

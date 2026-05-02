@@ -1,0 +1,52 @@
+# Python/cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# JS dependencies/build output
+node_modules/
+ui/node_modules/
+dist/
+build/
+
+# Local agent/editor state
+.claude/
+.codex/
+
+# Runtime logs and generated images
+_LOG/
+*.log
+*.png
+
+# Secrets and live credentials
+*.env
+data/Live/*.env
+data/Live/*token*.json
+data/Live/*creds*.json
+data/Live/topstepx_screen.png
+data/Live/topstepx_dashboard.png
+
+# Databases and large generated data
+data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.parquet
+*.jsonl
+*.zst
+data/Level_0_Raw/
+data/Level_1_Features/
+data/Level_2_Datamart/
+data/Live/*.db
+data/Live/*.bak*
+data/Live/*.parquet
+
+# Model binaries / generated training outputs
+model/
+
+# Browser/test artifacts
+playwright-report/
+test-results/
