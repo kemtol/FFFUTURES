@@ -19,6 +19,12 @@ function setStatus(text) {
   $("#status").text(text);
 }
 
+function telegramApiUrl() {
+  const host = window.location.hostname || "127.0.0.1";
+  if (window.location.port === "8080") return "/api/telegram-signal";
+  return `${window.location.protocol}//${host}:8080/api/telegram-signal`;
+}
+
 function setLoading(isLoading, text = "Loading...") {
   $("#loadingText").text(text);
   $("#loadingOverlay").toggleClass("show", isLoading).attr("aria-hidden", isLoading ? "false" : "true");
@@ -274,6 +280,65 @@ function renderDetail(t) {
   `);
 }
 
+function getSignalTrade() {
+  if (selectedTradeNo !== null) {
+    const selected = allTrades.find((t) => t.trade_no === selectedTradeNo);
+    if (selected) return selected;
+  }
+  const rows = filteredTrades.length ? filteredTrades : allTrades;
+  return rows.slice().sort((a, b) => b.entry_time - a.entry_time)[0] || null;
+}
+
+function buildTelegramSignalPayload(t) {
+  return {
+    strategy: "ST + DEMA + ADX + CCI",
+    timeframe: currentTimeframe,
+    trade_no: t.trade_no,
+    side: t.side,
+    session: t.session,
+    entry_ts: t.entry_ts,
+    entry_time: t.entry_time,
+    entry_price: t.entry_price,
+    exit_ts: t.exit_ts,
+    exit_time: t.exit_time,
+    exit_price: t.exit_price,
+    exit_reason: t.exit_reason,
+    pnl_usd: t.pnl_usd,
+    r_multiple: t.r_multiple,
+    entry_adx: t.entry_adx,
+    entry_cci: t.entry_cci,
+  };
+}
+
+async function sendTelegramSignal() {
+  const trade = getSignalTrade();
+  const $btn = $("#telegramSignalBtn");
+  if (!trade) {
+    setStatus("Telegram signal failed: no trade is available");
+    return;
+  }
+
+  const originalText = $btn.text();
+  $btn.prop("disabled", true).addClass("active").text("Sending...");
+  try {
+    await $.ajax({
+      url: telegramApiUrl(),
+      method: "POST",
+      contentType: "application/json",
+      dataType: "json",
+      data: JSON.stringify(buildTelegramSignalPayload(trade)),
+      timeout: 10000,
+    });
+    setStatus(`Telegram signal sent for ${currentTimeframe} trade #${trade.trade_no}`);
+  } catch (err) {
+    const message = err?.responseJSON?.error || err?.statusText || "request failed";
+    setStatus(`Telegram signal failed: ${message}`);
+    console.error(err);
+  } finally {
+    $btn.prop("disabled", false).removeClass("active").text(originalText);
+  }
+}
+
 function selectTrade(tradeNo) {
   selectedTradeNo = tradeNo;
   const t = allTrades.find((x) => x.trade_no === tradeNo);
@@ -413,6 +478,9 @@ $(function () {
     });
   });
   $("#resetFilters").on("click", resetFilters);
+  $("#telegramSignalBtn").on("click", function () {
+    sendTelegramSignal();
+  });
   $(".strategy-tab").on("click", function () {
     const panel = $(this).data("strategy-panel");
     $(".strategy-tab").removeClass("active");

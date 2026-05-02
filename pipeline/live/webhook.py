@@ -17,10 +17,13 @@ Usage (embedded in daemon):
 from __future__ import annotations
 
 import json
+import os
 import threading
 from datetime import datetime, timezone
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
+import urllib.parse
+import urllib.request
 from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -36,6 +39,10 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        if path == "/api/telegram-signal":
+            self._handle_telegram_signal()
+            return
+
         if path != "/webhook":
             self.send_response(404)
             self.end_headers()
@@ -64,17 +71,52 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
+        self._send_cors_headers()
         self.end_headers()
         self.wfile.write(json.dumps({"status": "ok"}).encode())
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._send_cors_headers()
+        self.end_headers()
 
     def do_GET(self):
         if self.path == "/health":
             self.send_response(200)
+            self._send_cors_headers()
             self.end_headers()
             self.wfile.write(b"ok")
             return
         self.send_response(404)
+        self._send_cors_headers()
         self.end_headers()
+
+    def _send_cors_headers(self) -> None:
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+
+    def _send_json(self, status: int, payload: dict) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self._send_cors_headers()
+        self.end_headers()
+        self.wfile.write(json.dumps(payload).encode())
+
+    def _handle_telegram_signal(self) -> None:
+        content_len = int(self.headers.get("Content-Length", 0))
+        raw = self.rfile.read(content_len) if content_len > 0 else b"{}"
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            self._send_json(400, {"status": "error", "error": "invalid_json"})
+            return
+
+        ok, detail = send_telegram_strategy_signal(payload)
+        if ok:
+            self._send_json(200, {"status": "ok", "detail": detail})
+        else:
+            self._send_json(503, {"status": "error", "error": detail})
 
     def _append_log(self, entry: dict) -> None:
         """Thread-safe append to JSON log file."""
@@ -169,6 +211,80 @@ class WebhookHandler(BaseHTTPRequestHandler):
         print(f"[Webhook] ⚡ SIGNAL: {action} {symbol} @ {entry or price:.1f}"
               + (f" SL={sl:.1f}" if sl > 0 else "")
               + (f" ({reason})" if reason else ""), flush=True)
+
+
+def _telegram_config() -> tuple[str, str]:
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
+    env_file = ROOT / "data" / "Live" / "telegram.env"
+    if env_file.exists():
+        for line in env_file.read_text().strip().split("\n"):
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            if key == "TELEGRAM_BOT_TOKEN" and not token:
+                token = value.strip()
+            elif key == "TELEGRAM_CHAT_ID" and not chat_id:
+                chat_id = value.strip()
+    return token, chat_id
+
+
+def _format_strategy_signal(payload: dict) -> str:
+    strategy = payload.get("strategy", "ST + DEMA + ADX + CCI")
+    timeframe = payload.get("timeframe", "5m")
+    side = payload.get("side", "n/a")
+    session = payload.get("session", "n/a")
+    trade_no = payload.get("trade_no", "n/a")
+    entry_ts = payload.get("entry_ts", "n/a")
+    entry = payload.get("entry_price", "n/a")
+    exit_ts = payload.get("exit_ts", "")
+    exit_reason = payload.get("exit_reason", "")
+    adx = payload.get("entry_adx", "n/a")
+    cci = payload.get("entry_cci", "n/a")
+    pnl = payload.get("pnl_usd", "n/a")
+    r_multiple = payload.get("r_multiple", "n/a")
+
+    def num(value, digits=1):
+        try:
+            return f"{float(value):.{digits}f}"
+        except (TypeError, ValueError):
+            return str(value)
+
+    lines = [
+        "📡 *Strategy Signal*",
+        "",
+        f"Strategy: `{strategy}`",
+        f"Timeframe: `{timeframe}`",
+        f"Trade: `#{trade_no}`",
+        f"Side: *{side}* | Session: `{session}`",
+        f"Entry: `{entry_ts}` @ `${num(entry, 1)}`",
+        f"ADX: `{num(adx, 1)}` | CCI: `{num(cci, 0)}`",
+        f"Backtest PnL: `${num(pnl, 0)}` | R: `{num(r_multiple, 2)}`",
+    ]
+    if exit_ts:
+        lines.append(f"Exit: `{exit_ts}`" + (f" ({exit_reason})" if exit_reason else ""))
+    return "\n".join(lines)
+
+
+def send_telegram_strategy_signal(payload: dict) -> tuple[bool, str]:
+    token, chat_id = _telegram_config()
+    if not token or not chat_id:
+        return False, "telegram_not_configured"
+
+    text = _format_strategy_signal(payload)
+    try:
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        data = urllib.parse.urlencode({
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "Markdown",
+        }).encode()
+        urllib.request.urlopen(url, data, timeout=8)
+        print(f"[Webhook] Telegram strategy signal sent for trade #{payload.get('trade_no', 'n/a')}", flush=True)
+        return True, "sent"
+    except Exception as exc:
+        print(f"[Webhook] Telegram send failed: {exc}", flush=True)
+        return False, "telegram_send_failed"
 
 
 class WebhookServer:

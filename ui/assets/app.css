@@ -154,11 +154,52 @@ body {
   color: var(--app-text);
 }
 
-.topbar span {
+.chart-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.chart-actions span {
   color: var(--app-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.action-btn {
+  height: 28px;
+  border: 1px solid var(--app-line);
+  border-radius: 5px;
+  background: #171b20;
+  color: var(--app-muted);
+  padding: 0 10px;
+  white-space: nowrap;
+  font: inherit;
+  cursor: pointer;
+}
+
+.action-btn:hover:not(:disabled) {
+  border-color: var(--app-blue);
+  color: var(--app-text);
+}
+
+.action-btn:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.action-btn-signal {
+  border-color: rgba(46, 189, 133, .55);
+  color: var(--app-text);
+}
+
+.action-btn-signal.active {
+  background: rgba(46, 189, 133, .16);
+  border-color: var(--app-green);
+  color: var(--app-green);
 }
 
 .product-nav {
@@ -506,6 +547,19 @@ body {
   .main-pane {
     height: 760px;
     min-height: 760px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    display: grid;
+    height: auto;
+    min-height: 74px;
+    padding: 8px 14px;
+  }
+
+  .chart-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .flow-grid,
