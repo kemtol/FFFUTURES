@@ -104,7 +104,7 @@ def load_ohlcv_1m(db_path: Path, start: str, end: str) -> pd.DataFrame:
 
 def resample_ohlcv(df_1m: pd.DataFrame, rule: str) -> pd.DataFrame:
     df = df_1m.set_index("timestamp_utc").sort_index()
-    out = df.resample(rule, label="left", closed="left").agg(
+    out = df.resample(rule, label="right", closed="left").agg(
         open=("open", "first"),
         high=("high", "max"),
         low=("low", "min"),

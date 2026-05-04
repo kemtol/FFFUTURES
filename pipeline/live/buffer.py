@@ -201,6 +201,107 @@ class DataBuffer:
             "close": row[4], "volume": row[5],
         }
 
+    # ── gap detection & repair ──────────────────────────────────────────────
+
+    def detect_gaps(self, lookback_bars: int = 100,
+                    min_gap_minutes: int = 2) -> list[dict]:
+        """Find gaps > min_gap_minutes in the most recent lookback_bars."""
+        with sqlite3.connect(str(self.db_path)) as conn:
+            rows = conn.execute(
+                "SELECT epoch_ms, timestamp_utc FROM ohlcv_1m "
+                "WHERE symbol = ? AND timeframe = ? "
+                "ORDER BY epoch_ms DESC LIMIT ?",
+                [SYMBOL, TIMEFRAME, lookback_bars],
+            ).fetchall()
+        gaps = []
+        for i in range(len(rows) - 1):
+            curr_ms = int(rows[i][0])
+            next_ms = int(rows[i + 1][0])
+            gap_min = (curr_ms - next_ms) / 60_000
+            if gap_min > min_gap_minutes:
+                gaps.append({
+                    "from_ts": rows[i + 1][1],
+                    "to_ts": rows[i][1],
+                    "gap_minutes": round(gap_min, 1),
+                })
+        return gaps
+
+    def fill_range(self, from_ts: str, to_ts: str) -> int:
+        """Download yfinance data for a range and INSERT OR IGNORE missing bars."""
+        from_utc = pd.Timestamp(from_ts, tz="UTC")
+        to_utc = pd.Timestamp(to_ts, tz="UTC")
+        try:
+            ticker = yf.Ticker(TICKER)
+            df = ticker.history(start=from_utc - pd.Timedelta(days=1),
+                                end=to_utc + pd.Timedelta(days=1),
+                                interval="1m")
+        except Exception:
+            return 0
+        if df.empty:
+            return 0
+
+        df = df.reset_index()
+        df["ts_utc"] = df["Datetime"].dt.tz_convert("UTC")
+        df = df[(df["ts_utc"] >= from_utc) & (df["ts_utc"] <= to_utc)]
+        if df.empty:
+            return 0
+
+        ts_ns = df["ts_utc"].values.astype("datetime64[ns]").astype("int64")
+        df["epoch_ms"] = ts_ns // 1_000_000
+        df["symbol"] = SYMBOL
+        df["timeframe"] = TIMEFRAME
+        df["timestamp_utc"] = df["ts_utc"].dt.strftime("%Y-%m-%d %H:%M:%S")
+        df["open"] = df["Open"].astype(float)
+        df["high"] = df["High"].astype(float)
+        df["low"] = df["Low"].astype(float)
+        df["close"] = df["Close"].astype(float)
+        df["volume"] = df["Volume"].fillna(0).astype(float)
+        cols = ["symbol", "timeframe", "epoch_ms", "timestamp_utc",
+                 "open", "high", "low", "close", "volume"]
+        with sqlite3.connect(str(self.db_path)) as conn:
+            existing = conn.execute(
+                "SELECT epoch_ms FROM ohlcv_1m WHERE symbol = ? AND timeframe = ?",
+                [SYMBOL, TIMEFRAME],
+            ).fetchall()
+            existing_ids = {r[0] for r in existing}
+            new_rows = df[~df["epoch_ms"].isin(existing_ids)]
+            if new_rows.empty:
+                return 0
+            new_rows[cols].to_sql("ohlcv_1m", conn, if_exists="append", index=False)
+        return len(new_rows)
+
+    def repair(self, max_gap_hours: int = 72) -> dict:
+        """Fill gaps: yfinance first, fallback to MGC_1m.db for large gaps.
+
+        Returns dict with counts: {yfinance, backfill}.
+        """
+        result = {"yfinance": 0, "backfill": 0}
+        gaps = self.detect_gaps(lookback_bars=200, min_gap_minutes=2)
+        if not gaps:
+            return result
+
+        now = datetime.now(timezone.utc)
+        for gap in gaps:
+            gap_hours = gap["gap_minutes"] / 60
+            if gap_hours > max_gap_hours:
+                # Large gap → MGC_1m.db backfill
+                n = self.backfill(days=int(gap_hours / 24) + 1)
+                result["backfill"] += n
+                # Also fill recent end of gap from yfinance
+                n2 = self.fill_range(gap["from_ts"], gap["to_ts"])
+                result["yfinance"] += n2
+            else:
+                # Small gap → yfinance fill_range (INSERT OR IGNORE into gap)
+                n = self.fill_range(gap["from_ts"], gap["to_ts"])
+                if n > 0:
+                    result["yfinance"] += n
+                else:
+                    # yfinance might not have it yet
+                    n = self.update()
+                    result["yfinance"] += n
+
+        return result
+
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
 

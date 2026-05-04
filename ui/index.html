@@ -24,6 +24,16 @@
     <aside class="sidebar">
       <div class="sidebar-view active" data-sidebar="strategy">
       <section class="panel-section pt-0">
+        <div>
+          <label for="strategySelect" class="form-label">Strategy</label>
+          <select id="strategySelect" class="form-select form-select-sm">
+            <option value="st_dema_adx_cci" selected>Super Structure</option>
+            <option value="orb_v2" disabled>ORB v2.0 (coming soon)</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="panel-section">
         <div class="section-title">Summary</div>
         <div class="row g-2">
           <div class="col-6"><div class="stat-card"><span>Trades</span><strong id="statTrades">0</strong></div></div>
@@ -219,15 +229,13 @@
     <main class="main-pane">
       <header class="topbar">
         <div class="view-heading">
-          <h2 id="viewTitle">Test Strategy</h2>
           <div class="strategy-tabs" id="strategyTabs" role="tablist" aria-label="Strategy views">
             <button class="strategy-tab active" type="button" data-strategy-panel="chartPanel">Chart</button>
             <button class="strategy-tab" type="button" data-strategy-panel="pnlPanel">PnL Curve</button>
           </div>
         </div>
         <div class="chart-actions" aria-label="Strategy live actions">
-          <span id="viewSubtitle">ST + DEMA + ADX + CCI strategy explorer</span>
-          <button id="telegramSignalBtn" class="action-btn action-btn-signal" type="button">Telegram Signal</button>
+          <button id="telegramSignalBtn" class="action-btn action-btn-signal" type="button" style="background: #1f5ac5;font-weight: bold;border-color: #1c5ed4;">Telegram Signal</button>
           <button id="autoTradingBtn" class="action-btn" type="button" disabled>Auto Trading</button>
         </div>
       </header>
@@ -279,7 +287,7 @@
               <span>2</span>
               <h3>Test Strategy</h3>
               <p>Convert setup ideas into exact rules, backtest them by timeframe, and inspect every entry/exit on the chart.</p>
-              <b>Current engine: ST + DEMA + ADX + CCI</b>
+              <b>Current engine: Super Structure</b>
             </article>
             <article class="flow-card">
               <span>3</span>

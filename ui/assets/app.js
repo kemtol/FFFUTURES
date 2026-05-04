@@ -8,12 +8,14 @@ const money = new Intl.NumberFormat("en-US", {
 let chart;
 let candleSeries;
 let pnlChart;
-let pnlSeries;
+let pnlGreenSeries;
+let pnlRedSeries;
 let allCandles = [];
 let allTrades = [];
 let filteredTrades = [];
 let selectedTradeNo = null;
 let currentTimeframe = "5m";
+let currentStrategy = "st_dema_adx_cci";
 
 function setStatus(text) {
   $("#status").text(text);
@@ -77,10 +79,22 @@ function initPnlChart() {
     },
     crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
   });
-  pnlSeries = pnlChart.addAreaSeries({
-    lineColor: "#6aa1ff",
-    topColor: "rgba(106, 161, 255, .28)",
-    bottomColor: "rgba(106, 161, 255, .02)",
+  pnlGreenSeries = pnlChart.addAreaSeries({
+    lineColor: "#2ebd85",
+    topColor: "rgba(46, 189, 133, .28)",
+    bottomColor: "rgba(46, 189, 133, .02)",
+    lineWidth: 2,
+    priceFormat: { type: "price", precision: 0, minMove: 1 },
+  });
+  pnlGreenSeries.createPriceLine({
+    price: 0,
+    color: "#6b7078",
+    lineWidth: 1,
+    lineStyle: 1,
+    axisLabelVisible: false,
+  });
+  pnlRedSeries = pnlChart.addLineSeries({
+    color: "#f05d5e",
     lineWidth: 2,
     priceFormat: { type: "price", precision: 0, minMove: 1 },
   });
@@ -177,17 +191,20 @@ function renderStats(trades) {
 }
 
 function renderPnlCurve(trades) {
-  if (!pnlSeries) return;
+  if (!pnlGreenSeries || !pnlRedSeries) return;
   const rows = trades.slice().sort((a, b) => a.exit_time - b.exit_time);
   let cumulative = 0;
-  const data = rows.map((t) => {
+  const green = [];
+  const red = [];
+  rows.forEach((t) => {
     cumulative += t.pnl_usd;
-    return {
-      time: t.exit_time,
-      value: Math.round(cumulative),
-    };
+    const ts = t.exit_time;
+    const val = Math.round(cumulative);
+    green.push({ time: ts, value: Math.max(0, val) });
+    red.push({ time: ts, value: Math.min(0, val) });
   });
-  pnlSeries.setData(data);
+  pnlGreenSeries.setData(green);
+  pnlRedSeries.setData(red);
   pnlChart.timeScale().fitContent();
   pnlChart.timeScale().applyOptions({ rightOffset: 0 });
 }
@@ -291,7 +308,7 @@ function getSignalTrade() {
 
 function buildTelegramSignalPayload(t) {
   return {
-    strategy: "ST + DEMA + ADX + CCI",
+    strategy: "Super Structure",
     timeframe: currentTimeframe,
     trade_no: t.trade_no,
     side: t.side,
@@ -433,7 +450,7 @@ function showProductView(view) {
   $(".app-shell").toggleClass("full-main", view !== "strategy");
 
   if (view === "strategy") {
-    setViewCopy("Test Strategy", "ST + DEMA + ADX + CCI strategy explorer");
+    setStatus("Super Structure strategy explorer");
     setTimeout(function () {
       const el = $("#chart").get(0);
       chart.applyOptions({ width: el.clientWidth, height: el.clientHeight });
@@ -457,25 +474,25 @@ function showProductView(view) {
     live: ["Go Live", "Signal listener, risk gate, and execution layer"],
     data: ["Data", "Source health, continuity, and candle quality layer"],
   };
-  if (titles[view]) setViewCopy(titles[view][0], titles[view][1]);
+  if (titles[view]) setStatus(titles[view][1]);
   setStatus(labels[view] || "Preview");
-}
-
-function setViewCopy(title, subtitle) {
-  $("#viewTitle").text(title);
-  $("#viewSubtitle").text(subtitle);
 }
 
 $(function () {
   initChart();
   initPnlChart();
-  $("select,input").not("#timeframeSelect").on("input change", applyFilters);
+  $("select,input").not("#timeframeSelect,#strategySelect").on("input change", applyFilters);
   $("#timeframeSelect").on("change", function () {
     loadTimeframe($(this).val()).catch(function (err) {
       setLoading(false);
       setStatus(`Load failed: ${err.message}`);
       console.error(err);
     });
+  });
+  $("#strategySelect").on("change", function () {
+    currentStrategy = $(this).val();
+    setStatus(`Switched to ${$("#strategySelect option:selected").text()}`);
+    // future: reload data for new strategy
   });
   $("#resetFilters").on("click", resetFilters);
   $("#telegramSignalBtn").on("click", function () {

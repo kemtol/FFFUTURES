@@ -56,7 +56,7 @@ def run_backtest(buffer: DataBuffer, start: str, end: str) -> list[dict]:
         return []
 
     # Resample 1m → 5m (matches TradingView chart timeframe)
-    df = df.resample("5min").agg(
+    df = df.resample("5min", label="right", closed="left").agg(
         {"open": "first", "high": "max", "low": "min", "close": "last"}
     ).dropna()
 

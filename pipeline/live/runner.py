@@ -32,11 +32,12 @@ for p in [str(ROOT), str(ROOT / "pipeline")]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from pipeline.live.buffer import DataBuffer
+from pipeline.live.buffer import DataBuffer, CANARY_DB
 from pipeline.live.orb_detector import ORBDetector, BreakoutEvent
 from pipeline.live.feature_builder import FeatureBuilder, FEATURE_ORDER
 from analysis.topstep_sim import PolicyParams, apply_policy
 from pipeline.live.webhook import WebhookServer
+from pipeline.live.signal_bus import SignalBus
 
 # ── config ────────────────────────────────────────────────────────────────────
 
@@ -240,15 +241,19 @@ class TelegramBot:
 class PortfolioTracker:
     """Tracks open positions and trade history for paper trading."""
 
-    def __init__(self, risk_per_r: float = 100.0):
+    def __init__(self, risk_per_r: float = 100.0, state_dir: Path | None = None):
         self.risk_per_r = risk_per_r
         self.open_positions: list[dict] = []
         self.closed_trades: list[dict] = []
         self.balance = 0.0
         self.start_balance = 0.0
+        self._state_dir = state_dir
         self._load_state()
 
     def _state_file(self):
+        if self._state_dir:
+            self._state_dir.mkdir(parents=True, exist_ok=True)
+            return self._state_dir / "portfolio_state.json"
         return ROOT / "data" / "Live" / "portfolio_state.json"
 
     def _load_state(self):
@@ -385,38 +390,54 @@ class PortfolioTracker:
 class SignalRunner:
     """End-to-end signal pipeline: detect -> compute -> predict -> filter -> output."""
 
-    def __init__(self, telegram: "TelegramBot | None" = None):
+    def __init__(self, telegram: "TelegramBot | None" = None,
+                 buffer: "DataBuffer | None" = None,
+                 replay_dir: Path | None = None):
         # Models
         rev_path = MODEL_DIR / f"lgbm_rev_v2_{TARGET}.txt"
         cont_path = MODEL_DIR / f"lgbm_cont_v2_{TARGET}.txt"
         self.rev_model = lgb.Booster(model_file=str(rev_path))
         self.cont_model = lgb.Booster(model_file=str(cont_path))
 
-        # Live components
-        from pipeline.live.buffer import CANARY_DB
-        self.buffer = DataBuffer(db_path=CANARY_DB)  # use TopstepX buffer
+        self._replay_mode = replay_dir is not None
+
+        # Buffer
+        if buffer:
+            self.buffer = buffer
+        elif self._replay_mode:
+            db_path = replay_dir / "replay_buffer.db"
+            self.buffer = DataBuffer(db_path=db_path)
+        else:
+            self.buffer = DataBuffer(db_path=CANARY_DB)
+
         self.detector = ORBDetector(self.buffer)
         self.features = FeatureBuilder(self.buffer)
-        self.portfolio = PortfolioTracker(risk_per_r=POLICY.risk_per_r_usd)
+        self.portfolio = PortfolioTracker(risk_per_r=POLICY.risk_per_r_usd,
+                                          state_dir=replay_dir)
 
-        # Trade execution (optional)
+        # Trade execution (disabled in replay)
         self.execution = None
-        try:
-            from pipeline.live.execute.topstepx import TopstepXExecution
-            self.execution = TopstepXExecution()
-            print("[Runner] Trade execution enabled (TopstepX REST)", flush=True)
-        except Exception as e:
-            print(f"[Runner] Trade execution disabled: {e}", flush=True)
+        if not self._replay_mode:
+            try:
+                from pipeline.live.execute.topstepx import TopstepXExecution
+                self.execution = TopstepXExecution()
+                print("[Runner] Trade execution enabled (TopstepX REST)", flush=True)
+            except Exception as e:
+                print(f"[Runner] Trade execution disabled: {e}", flush=True)
 
         # State
         self.signals: list[dict] = []
         self._total_events = 0
         self._total_signals = 0
+        self._dedup_file = (replay_dir / "dedup_state.json") if replay_dir \
+                           else (ROOT / "data" / "Live" / "dedup_state.json")
         self._session_breakouts: set = self._load_dedup_state()
         self._last_date = None
         self.telegram = telegram
-        self._start_time = datetime.now(timezone.utc)  # skip events before this
-        self._dedup_file = ROOT / "data" / "Live" / "dedup_state.json"
+        self._start_time = datetime(2000, 1, 1, tzinfo=timezone.utc) if self._replay_mode \
+                           else datetime.now(timezone.utc)
+        self._dedup_file = (replay_dir / "dedup_state.json") if replay_dir \
+                           else (ROOT / "data" / "Live" / "dedup_state.json")
 
     def _load_dedup_state(self) -> set:
         f = ROOT / "data" / "Live" / "dedup_state.json"
@@ -446,6 +467,8 @@ class SignalRunner:
 
     def live_update(self) -> bool:
         """Fetch latest 1m data from yfinance. Returns True if new data."""
+        if self._replay_mode:
+            return True  # Replay engine handles inserts
         try:
             n = self.buffer.update()
             return n > 0
@@ -579,23 +602,11 @@ class SignalRunner:
         print(f"  SL:      ${sig['sl']:.1f} (1R)")
         print(f"{'='*60}")
 
-        # Send to Telegram
-        direction = "🔴 SHORT" if (sig["side"] == "BULL" and sig["decision"] == "REV") or (sig["side"] == "BEAR" and sig["decision"] == "CONT") else "🟢 LONG"
-        msg = (
-            f"*🚨 SIGNAL — {sig['session'].upper()} {sig['orb_tf']}*\n"
-            f"\n"
-            f"Breakout: `{sig['side']}`\n"
-            f"Decision: *{sig['decision']}*  {direction}\n"
-            f"\n"
-            f"Entry: `${sig['entry']:.1f}`\n"
-            f"TP:      `${sig['tp']:.1f}` ({4}R)\n"
-            f"SL:      `${sig['sl']:.1f}` (1R)\n"
-            f"\n"
-            f"P(Rev): `{sig['prob_rev']:.3f}`  P(Cont): `{sig['prob_cont']:.3f}`\n"
-            f"_Risk: $100/1R_"
-        )
-        if self.telegram:
-            self.telegram.send(msg)
+        # Publish to SignalBus → all subscribed users
+        try:
+            SignalBus().publish("orb_v2", sig)
+        except Exception:
+            pass
 
     def stats(self) -> str:
         return (
@@ -640,13 +651,121 @@ if __name__ == "__main__":
     parser.add_argument("--simulate", type=int, default=0, metavar="DAYS",
                         help="Run simulation through last N days of data")
     parser.add_argument("--live", action="store_true", help="Start live monitoring")
+    parser.add_argument("--replay", action="store_true", help="Replay historical data via ReplayEngine")
+    parser.add_argument("--duration", type=str, default="",
+                        help="Replay duration shortcut: 1d, 5d, 30d (offset from now)")
+    parser.add_argument("--replay-start", type=str, default="",
+                        help="Replay start datetime (UTC, YYYY-MM-DD or YYYY-MM-DD HH:MM)")
+    parser.add_argument("--replay-end", type=str, default="",
+                        help="Replay end datetime (UTC)")
+    parser.add_argument("--pause", type=float, default=0.0,
+                        help="Seconds per candle (0=instant, 60=realtime)")
+    parser.add_argument("--loop", action="store_true", help="Loop replay from beginning when done")
+    parser.add_argument("--keep-all", action="store_true", help="Keep buffer DB after replay")
+    parser.add_argument("--purge", action="store_true", help="Delete all artifacts after replay")
     args = parser.parse_args()
 
     bot = TelegramBot()
-    runner = SignalRunner(telegram=bot)
 
     if bot.enabled:
         print(f"[Telegram] Connected to chat {bot.chat_id}", flush=True)
+
+    # ── Replay mode ──────────────────────────────────────────────────────
+    if args.replay:
+        from pipeline.live.replay_engine import ReplayEngine
+
+        # Parse time range
+        if args.duration:
+            days = int(args.duration.replace("d", ""))
+            end_dt = datetime.now(timezone.utc)
+            start_dt = end_dt - timedelta(days=days)
+        elif args.replay_start:
+            start_dt = datetime.fromisoformat(args.replay_start).replace(tzinfo=timezone.utc)
+            end_dt = datetime.fromisoformat(args.replay_end).replace(tzinfo=timezone.utc) if args.replay_end \
+                     else datetime.now(timezone.utc)
+        else:
+            print("[Replay] Must specify --duration or --replay-start", flush=True)
+            sys.exit(1)
+
+        run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        replay_dir = ROOT / "data" / "Live" / "replay" / run_id
+
+        # Create isolated runner and TV strategy (share same buffer)
+        runner = SignalRunner(telegram=bot, replay_dir=replay_dir)
+        runner.portfolio.start_balance = 50000.0
+        runner.portfolio.balance = 50000.0
+
+        from pipeline.live.tv_strategy import TVStrategy
+        tv = TVStrategy(buffer_or_db_path=runner.buffer)
+
+        # Replay on_bar callback: check both ORB and TV per bar
+        def _on_replay_bar(bar: dict) -> None:
+            try:
+                now_ts = pd.Timestamp(bar["timestamp_utc"], tz="UTC").to_pydatetime()
+                # ORB v2.0 check
+                signals = runner.check(now=now_ts)
+                if signals:
+                    for s in signals:
+                        print(f"SIGNAL|{s['ts']}|{s['session']}|{s['side']}|{s['decision']}|"
+                              f"entry={s['entry']}|TP={s['tp']}|SL={s['sl']}", flush=True)
+                # TV Strategy check (only on 5m bar boundaries)
+                if bar["epoch_ms"] % 300_000 == 0:
+                    tv_signals = tv.check(now=now_ts)
+                    for tsig in tv_signals:
+                        pass  # _store_signal already prints + publishes
+                # Portfolio update
+                latest = runner.buffer.latest()
+                if latest:
+                    runner.portfolio.update(latest["close"])
+            except Exception as exc:
+                print(f"[Replay] on_bar error: {exc}", flush=True)
+
+        engine = ReplayEngine(
+            buffer=runner.buffer,
+            start_dt=start_dt,
+            end_dt=end_dt,
+            pause=args.pause,
+            loop=args.loop,
+            run_id=run_id,
+            keep_all=getattr(args, "keep_all", False),
+            purge=args.purge,
+            on_bar=_on_replay_bar,
+        )
+
+        import threading as _th
+        engine_thread = _th.Thread(target=engine.run, daemon=True)
+        engine_thread.start()
+        print(f"[Replay] Engine started | {start_dt} → {end_dt} | pause={args.pause}s | "
+              f"run={run_id}", flush=True)
+
+        # Start webhook
+        webhook = WebhookServer(port=8080)
+        webhook.start()
+
+        import time as _time
+        loop_count = 0
+        print("[Replay] Monitoring loop started (Ctrl+C to stop)...", flush=True)
+        try:
+            while engine_thread.is_alive():
+                if bot.enabled:
+                    try:
+                        bot.poll(runner)
+                    except Exception as e:
+                        print(f"[Replay] Poll error: {e}", flush=True)
+                _time.sleep(5)
+                loop_count += 1
+                if loop_count % 60 == 0 and loop_count > 0:
+                    print(f"[Replay] {engine.status_str()} | signals={len(runner.signals)}", flush=True)
+        except KeyboardInterrupt:
+            print(f"\n[Replay] Stopped. {runner.stats()}", flush=True)
+            engine.stop()
+            engine_thread.join(timeout=5)
+
+        print(f"[Replay] Session complete — {run_id}", flush=True)
+        sys.exit(0)
+
+    # ── Live / Simulate mode ─────────────────────────────────────────────
+    runner = SignalRunner(telegram=bot)
 
     if args.backfill:
         runner.backfill()
@@ -656,10 +775,17 @@ if __name__ == "__main__":
 
     if args.live:
         import time as _time
+        import threading
 
         print("[Live] Starting live monitoring...", flush=True)
         print(f"[Live] Strategy: {TARGET} ({RR:.0f}R), Risk: $100/1R", flush=True)
         print(f"[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC", flush=True)
+
+        # Start TV Strategy in daemon thread
+        from pipeline.live.tv_strategy import TVStrategy
+        tv = TVStrategy()
+        threading.Thread(target=tv.run_live, daemon=True).start()
+        print("[Live] TV Strategy thread started", flush=True)
 
         # Start webhook receiver for TradingView → Gmail → alerts
         webhook = WebhookServer(port=8080)

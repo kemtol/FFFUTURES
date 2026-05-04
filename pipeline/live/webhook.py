@@ -230,7 +230,7 @@ def _telegram_config() -> tuple[str, str]:
 
 
 def _format_strategy_signal(payload: dict) -> str:
-    strategy = payload.get("strategy", "ST + DEMA + ADX + CCI")
+    strategy = payload.get("strategy", "Super Structure")
     timeframe = payload.get("timeframe", "5m")
     side = payload.get("side", "n/a")
     session = payload.get("session", "n/a")
