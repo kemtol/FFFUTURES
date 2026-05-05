@@ -1,6 +1,6 @@
-# AGENTS.md — MGC ORB Futures Research
+# AGENTS.md — MGC Futures Research
 
-Python 3.12 research repo. Goal: find an ORB-based edge on MGC Micro Gold futures that passes a Topstep 50K evaluation in ~20 trading days. No formal build/test/lint/CI tooling. All scripts run with `python3` from project root.
+Python 3.12 research repo. **Dual-track:** (A) ORB-based ML research → Topstep 50K evaluation; (B) TV-strategy live auto-trade with Telegram + TopstepX execution. No formal build/test/lint/CI tooling. All scripts run with `python3` from project root.
 
 ## Architecture
 
@@ -10,49 +10,103 @@ data/
 ├── Level_1_Features/    # Parquet: breakout_events (34,187 rows), market_context, orb_ranges, macro_data
 │   └── modules/         # AUTO-DISCOVERED feature parquets (*_features.parquet)
 ├── Level_2_Datamart/    # training_datamart_orb.parquet (68,374 rows = 2× breakout events, rev+cont)
-└── Live/                # Live trading state (config + SQLite buffer + daemon log)
-    ├── topstepx_buffer.db    # SQLite: ohlcv_1m (TopstepX), ohlcv_1m_yfinance (fallback)
-    ├── topstepx_token.json   # JWT for TopstepX API
+└── Live/                # Live trading state
+    ├── combined_buffer.db    # ⭐ SINGLE SOURCE: MGC_1m.db (2010–2026) + topstepx_buffer.db (live)
+    ├── topstepx_buffer.db    # Live TopstepX WS data (ohlcv_1m)
+    ├── topstepx_token.json   # JWT for TopstepX API (refreshed via Playwright)
     ├── topstepx_creds.json   # TopstepX email + password
-    └── telegram.env          # Telegram bot token + chat ID
+    ├── telegram.env          # Telegram bot token + chat ID
+    ├── tv_signals.json       # Super Structure trade history (persisted)
+    ├── fvg_signals.json      # FVG Scalper trade history (persisted)
+    ├── tv_live.log           # TV daemon stdout/stderr
+    ├── topstepx_feed.log     # Feed daemon log
+    └── fvg_live.log          # FVG daemon log
 pipeline/
-├── live/                # 🔴 LIVE INFERENCE & EXECUTION (not in research loop)
-│   ├── runner.py           # Main daemon: ORB detect → features → predict → execute → Telegram
+├── live/                # 🔴 LIVE INFERENCE & EXECUTION
+│   ├── tv_strategy.py      # Super Structure: ST+DEMA+ADX+CCI, check(), run_live(), heartbeat state
+│   ├── fvg_scalper.py      # FVG Scalper: FVG+DEMA+ADX+CHOP, check(), run_live() (parked)
+│   ├── run_tv_live.py      # Entry-point for systemd daemon (single TVStrategy instance)
+│   ├── signal_bus.py       # Pub/sub: _format_tv_strategy(), _format_fvg_scalper(), Telegram send
+│   ├── user_db.py          # SQLite: users/chats/subscriptions, WAL mode
+│   ├── buffer.py           # BufferManager: SQLite read/write, fill_range(), detect_gaps(), repair()
+│   ├── runner.py           # ORB main daemon (research only, no Telegram)
 │   ├── feature_builder.py  # Replicates batch 42-feature pipeline from buffer
-│   ├── buffer.py           # SQLite buffer manager (TopstepX WS → SQLite)
 │   ├── orb_detector.py     # Session management, ORB range, breakout detection
 │   ├── portfolio.py        # Paper trading tracker with TP/SL auto-close
 │   ├── bot.py              # Telegram bot: /status, /last, /pnl, /portfolio, /features
-│   ├── rolling.py          # RollingStats manager (skeleton, not yet integrated)
+│   ├── rolling.py          # RollingStats manager (skeleton)
+│   ├── run_feed.py         # TopstepX WS → SQLite daemon (auto-reconnect + gap repair)
+│   ├── walkforward_telegram.py  # --batch (direct loop 2.98s) + --incremental modes
+│   ├── calibrate_tv.py     # Python vs TradingView trade comparison
+│   ├── send_tv_signals.py  # Direct backtest → Telegram sender
 │   ├── execute/
-│   │   └── topstepx.py     # TopstepX REST order execution (browser-mimic headers)
+│   │   └── tv_executor.py  # TV Trade Executor: market entry, flatten, heartbeat, SL tracking
 │   └── sources/
-│       └── topstepx.py     # TopstepX WebSocket feed (RealTimeBar, SubscribeBars)
-├── feature/modules/     # Feature generators (standalone CLI) + loader.py + _TEMPLATE
-├── analysis/            # Sweep runners, topstep_sim.py (shared), evaluation
-├── train/               # LGBM trainers (reversal + continuation)
-└── fetch/               # yfinance data ingestion
+│       └── topstepx.py     # TopstepX WebSocket feed (RealTimeBar, SubscribeBars) + token fetch
+├── research/             # Strategy backtest builders (separate from live execution)
+│   ├── build_st_trade_events.py    # Super Structure UI JSON/parquet generator
+│   └── build_fvg_trade_events.py   # FVG Scalper UI JSON/parquet generator (params override)
+├── feature/modules/      # Feature generators (standalone CLI) + loader.py + _TEMPLATE
+├── analysis/             # Sweep runners, topstep_sim.py (shared), evaluation
+│   └── sweep_fvg.py      # FVG parameter grid search
+├── train/                # LGBM trainers (reversal + continuation)
+├── fetch/                # yfinance data ingestion
+└── run/                  # Daemon management
+    ├── tv_listener.service    # systemd user service for TV strategy
+    └── restart_daemons.sh     # Post-reboot daemon launcher (cron @reboot)
 model/                   # Trained models + sweep reports
 _MEMORY/                 # Daily research logs (agent continuity)
 inferences/orb/          # STALE — do not use
 edges/orb_breakout/      # LEGACY — different target names, no Topstep sim
 _ARCH/                   # DEAD CODE — FastAPI backtest, old strategies
-ui/                      # Lightweight Charts SPA (JS/HTML)
+ui/                      # Lightweight Charts SPA (multi-strategy: ST + FVG)
 service/                 # EMPTY
 ```
 
+## Strategies
+
+### Super Structure (`tv_strategy`)
+- **Indicators:** SuperTrend(4.0, 12) + DEMA(200) + ADX(12) + CCI(12)
+- **Entry:** CCI > 100 (BUY) / CCI < -100 (SELL) AND ADX > 25 AND DEMA cross AND SuperTrend flip
+- **SL:** Dynamic trailing SuperTrend (code-only, NO exchange stop order)
+- **Exit:** SuperTrend flips opposite → flatten all (`DELETE /Position/close/{acct}`)
+- **Telgram:** `📡 *Super Structure — Signal*` / `📡 *Super Structure — Exit*` with ✅❌ PnL emoji
+- **Auto-trade:** 1 contract, market order, $1.74/round-turn commission
+
+### FVG Scalper (`fvg_scalper`)
+- **Indicators:** FVG (Fair Value Gap) + DEMA(200) + ADX(12) + CHOP(12)
+- **Entry:** Gap >= MIN_GAP_PTS AND DEMA trend AND ADX > 25 AND CHOP < 48 AND session gating
+- **SL:** Swing high/low (SL_LOOKBACK=15 bars)
+- **TP:** 1.0× risk (TP_RISK_RATIO=1.0)
+- **Sessions:** Asia + London only
+- **Exit:** DEMA exit on loss only (DEMA_EXIT_ONLY_LOSS=True)
+- **Telegram:** `📡 *FVG Scalper — Signal*` / `📡 *FVG Scalper — Exit*`
+- **Status:** Fully ported, calibrated (31/32 trades match TV), parked — not yet live
+
 ## Critical Gotchas (miss these and everything breaks)
 
+### ORB/ML track
 - **`date` dtype must be `datetime.date`**, not `str`. String dates cause silent NaN on ALL feature columns after merge. Every module must assert `df["date"] = pd.to_datetime(df["date"]).dt.date`.
-- **Module grain**: `(date, session, orb_tf, breakout_ts)` — one row per breakout event (34,187 rows). Do NOT include `year` or `side` in merge keys. The loader LEFT JOINs onto the 2-row rev/cont datamart.
+- **Module grain**: `(date, session, orb_tf, breakout_ts)` — one row per breakout event (34,187 rows). Do NOT include `year` or `side` in merge keys.
 - **No look-ahead**: features must use only data available BEFORE `breakout_ts`.
 - **Alphabetical merge order**: `loader.py` merges modules sorted by filename. Adding a module whose name sorts earlier shifts merge order (should be harmless, but be aware).
 - **Column name conflicts**: if two modules define the same feature column, pandas adds `_x`/`_y` suffixes silently. The loader warns. Use `--force` when regenerating a module with intent.
-- **Topstep trading day**: US CT-based. `map_to_topstep_trade_day()` subtracts 15h10m to map UTC timestamps to 5PM CT → 3:10PM CT next day boundary.
-- **Fixed commission**: $3.00/round-turn (not percentage). MGC = $1.00/tick/contract.
+- **Fixed commission**: $3.00/round-turn for ORB sim. MGC = $1.00/tick/contract.
 - **Data leakage**: `TRAIN_TO` must end before `HOLDOUT_FROM`. Set `TRAIN_TO="2025-11-30"`, `HOLDOUT_FROM="2025-12-01"`.
 - **Macro features merge on `date` only** (not full EVENT_KEY), forward-fill for weekends.
-- **All 10 labels are in the datamart**: `y_1r2_60m`, `y_1r4_60m`, `y_1r2_120m`, `y_1r4_120m`, `y_1r2_180m`, `y_1r4_180m`, `y_1r2_240m`, `y_1r4_240m`, `y_1r2_close60m`, `y_1r4_close60m`.
+
+### Live trading track
+- **`label="right"` in resample**: MUST use `label="right", closed="left"` for 5m bars. `label="left"` shifts timestamps 5 min behind TradingView — causes false entry signals and calibration mismatch.
+- **Single TVStrategy instance**: `run_tv_live.py` must create ONE `TVStrategy()`, call `.check()` ONCE then `.run_live()`. Two instances = double-trade.
+- **No exchange stop orders for Super Structure**: SL is code-only SuperTrend trail. Exit via `_flatten_all()` not stop order. Never send `POST /Order` with stop/target fields for this strategy.
+- **Commission**: TV live auto-trade uses $1.74/round-turn (TopstepX real: $0.87/leg × 2). ORB sim uses $3.00.
+- **Warmup**: use 120 days for DEMA(200) convergence. Shorter warmup → DEMA not converged → false signals on first bars.
+- **systemd over nohup**: Always use systemd `--user` service for daemons. `nohup`/`disown` die on terminal disconnect in this environment.
+- **Combined buffer**: use `combined_buffer.db` for backtests (3.6M bars). Use `topstepx_buffer.db` for live feed.
+- **`check()` 30s guard**: `_last_checked_now` prevents double-execution on restart. Don't remove.
+- **`_last_ts` dedup**: Skip indicator compute if 5m bar unchanged. Saves 642ms per skip.
+- **Topstep trading day**: US CT-based. `map_to_topstep_trade_day()` subtracts 15h10m to map UTC timestamps to 5PM CT → 3:10PM CT next day boundary.
+- **ORB v2.0 is research-only**: No Telegram, no live execution, no subscribers in user_db.
 
 ## Dependencies
 
@@ -64,7 +118,62 @@ service/                 # EMPTY
 
 ## Primary Commands
 
-### Feature Module Workflow (the main research loop)
+### Live Trading (systemd services)
+
+```bash
+# TV Strategy daemon
+systemctl --user start tv_listener
+systemctl --user stop tv_listener
+systemctl --user restart tv_listener
+systemctl --user status tv_listener
+journalctl --user -u tv_listener -f          # live logs
+journalctl --user -u tv_listener -n 50       # last 50 lines
+
+# Post-reboot restart all daemons
+bash pipeline/run/restart_daemons.sh
+
+# Feed daemon (manual start, usually via restart_daemons.sh)
+python3 pipeline/live/run_feed.py            # TopstepX WS → combined_buffer.db
+
+# UI backtest
+cd ui && python3 -m http.server 4173
+# → http://127.0.0.1:4173?strategy=st|fvg&session=Asia,London&days=90
+```
+
+### Calibration & Testing
+
+```bash
+# Compare Python signals vs TradingView export
+python3 pipeline/live/calibrate_tv.py
+
+# Batch backtest → Telegram (dry-run)
+python3 pipeline/live/walkforward_telegram.py --batch
+
+# Incremental backtest (simulates live check() loop)
+python3 pipeline/live/walkforward_telegram.py --incremental
+```
+
+### Strategy Backtest Builders
+
+```bash
+# Super Structure events for UI
+python3 pipeline/research/build_st_trade_events.py
+
+# FVG events for UI (default best params)
+python3 pipeline/research/build_fvg_trade_events.py
+
+# FVG events with custom params
+python3 pipeline/research/build_fvg_trade_events.py --params '{"MIN_GAP_PTS": 2.0, "SL_LOOKBACK": 20}'
+```
+
+### FVG Parameter Sweep
+
+```bash
+python3 pipeline/analysis/sweep_fvg.py           # phase 1 (broad)
+python3 pipeline/analysis/sweep_fvg.py --phase 2 # phase 2 (refined)
+```
+
+### Feature Module Workflow (ORB/ML)
 
 ```bash
 # Create new module from template
@@ -79,11 +188,9 @@ python3 pipeline/feature/modules/generate_{family}_features.py [--force]
 
 # Run active sweep (v6 modular — auto-discovers all modules)
 python3 pipeline/analysis/objective_sweep_orb_v6.py
-
-# AB comparison: move module out → sweep (baseline) → move back → sweep (test) → diff CSVs
 ```
 
-### Regenerate existing modules
+### Regenerate ORB feature modules
 
 ```bash
 python3 pipeline/feature/modules/generate_orb_context_features.py
@@ -95,17 +202,17 @@ python3 pipeline/feature/modules/generate_interaction_features.py
 python3 pipeline/feature/modules/generate_macro_features.py
 ```
 
-### Training & Evaluation
+### Training & Evaluation (ORB/ML)
 
 ```bash
 python3 pipeline/train/train_orb_reversal.py
 python3 pipeline/train/train_orb_continuation.py
-python3 pipeline/train/train_orb_walk_forward_v2.py     # Walk-forward v2.0 (all 42 features)
+python3 pipeline/train/train_orb_walk_forward_v2.py
 python3 pipeline/analysis/eval_holdout_orb.py
 python3 pipeline/analysis/eval_policy_switch_orb.py
 python3 pipeline/analysis/plot_policy_pnl_state.py
 python3 pipeline/analysis/test_refined_sim.py
-python3 pipeline/analysis/eval_topstep_pass_v2.py       # Topstep 50K pass-rate (v2.0 models)
+python3 pipeline/analysis/eval_topstep_pass_v2.py
 ```
 
 ### Data Fetching
@@ -119,7 +226,7 @@ python3 pipeline/feature/build_market_context.py
 python3 pipeline/feature/build_labels.py
 ```
 
-## Scoring Metric
+## Scoring Metric (ORB/ML)
 
 **`score = pass_rate - fail_mll_rate`** (range -1.0 to +1.0). This is the PRIMARY ranking metric, not AUC or win rate. 2026 pass rate is the most important year-specific metric (hardest regime).
 
@@ -139,6 +246,15 @@ python3 pipeline/feature/build_labels.py
 | ORB-15m | MGC_15m.db  |    1    | 15 min  |
 | ORB-30m | MGC_15m.db  |    2    | 30 min  |
 
+## TopstepX API Reference
+
+| Action | Method | Endpoint | Notes |
+|--------|--------|----------|-------|
+| Entry | `POST /Order` | type=2 (market), positionSize=±1 | No stop/target for ST strategy |
+| Exit | `DELETE /Position/close/{acct}` | Flatten all positions | 22303383 |
+| Cancel | `DELETE /Order/cancel/{acct}/symbol/F.US.MGC` | Cancel all orders | Batch cancel |
+| Token | Playwright browser login | `topstepx_token.json` | Refresh every few days |
+
 ## What NOT to do
 
 - Do not claim ORB_v1.0 is trade-ready.
@@ -146,5 +262,10 @@ python3 pipeline/feature/build_labels.py
 - Do not use code in `edges/orb_breakout/` — legacy naming conventions, incompatible grain.
 - Do not use code in `_ARCH/` — dead experiments (FastAPI, vectorbt, old strategies).
 - Do not create/run tests — no test framework exists. `test_refined_sim.py` is an ad-hoc comparison, not a test suite.
-- Do not modify existing feature modules — always create new ones.
+- Do not modify existing ORB feature modules — always create new ones.
 - Do not add `year` to EVENT_KEY merge keys.
+- Do not send exchange stop/limit orders for Super Structure — SL is code-only SuperTrend trail.
+- Do not use `label="left"` in resample — timestamps shift 5 min behind TradingView.
+- Do not create two TVStrategy instances — double-trade risk.
+- Do not use `nohup`/`disown` for daemons — use systemd `--user` service.
+- Do not start FVG listener until tested on paper (parked).

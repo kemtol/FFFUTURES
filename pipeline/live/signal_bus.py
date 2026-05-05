@@ -86,6 +86,8 @@ class SignalBus:
             text = self._format_orb_v2(payload)
         elif strategy_name == "tv_strategy":
             text = self._format_tv_strategy(payload)
+        elif strategy_name == "fvg_scalper":
+            text = self._format_fvg_scalper(payload)
         else:
             text = f"📡 *{strategy_name}* signal\n\n```\n{json.dumps(payload, indent=2, default=str)[:400]}\n```"
 
@@ -166,6 +168,42 @@ class SignalBus:
             reason = sig.get("reason", "")
             if reason:
                 lines[-1] += f"\nReason: `{reason}`"
+        return "\n".join(l for l in lines if l)
+
+    def _format_fvg_scalper(self, sig: dict) -> str:
+        action = sig.get("action", "n/a")
+        ts = sig.get("ts", "")
+
+        def p(key, fmt=".1f"):
+            try: return f"{float(sig.get(key, 0)):{fmt}}"
+            except: return str(sig.get(key, "n/a"))
+
+        ts_line = f"`{ts[:19]}`\n" if ts else ""
+
+        if action == "CLOSE":
+            pnl = sig.get("pnl", 0)
+            pnl_str = f"+${pnl:.0f}" if pnl >= 0 else f"-${abs(pnl):.0f}"
+            emoji = "✅" if pnl >= 0 else "❌"
+            reason = sig.get("reason", "")
+            lines = [
+                "📡 *FVG Scalper — Exit*",
+                "",
+                f"Time: {ts_line}" if ts else "",
+                f"Action: {emoji} `CLOSE` @ `${p('price')}`",
+                f"PnL: `{pnl_str}`",
+                f"Reason: {reason}" if reason else "",
+            ]
+        else:
+            emoji = "🟢" if action == "BUY" else "🔴"
+            lines = [
+                "📡 *FVG Scalper — Signal*",
+                "",
+                f"Time: {ts_line}" if ts else "",
+                f"Action: {emoji} `{action}` @ `${p('price')}`",
+                f"SL: `${p('sl')}`  |  TP: `${p('tp')}`",
+                f"Gap: `{p('gap_pts')}pts`  |  ADX: `{p('adx','.1f')}`  |  CHOP: `{p('chop','.1f')}`",
+                f"DEMA: `${p('dema','.1f')}`",
+            ]
         return "\n".join(l for l in lines if l)
 
     # ── Telegram send ───────────────────────────────────────────────────────

@@ -109,24 +109,43 @@ function resizePnlChart() {
 function getFilteredTrades() {
   const range = getActiveDateRange();
   const side = $("#sideFilter").val();
-  const session = $("#sessionFilter").val();
+  const sessions = sessionVals();
   const result = $("#resultFilter").val();
+  const gapMin = parseFloat($("#gapMin").val());
+  const gapMax = parseFloat($("#gapMax").val());
   const adxMin = parseFloat($("#adxMin").val());
   const adxMax = parseFloat($("#adxMax").val());
   const cciMin = parseFloat($("#cciMin").val());
   const cciMax = parseFloat($("#cciMax").val());
+  const chopMin = parseFloat($("#chopMin").val());
+  const chopMax = parseFloat($("#chopMax").val());
+  const demaSlopeMin = parseFloat($("#demaSlopeMin").val());
+  const demaDistMin = parseFloat($("#demaDistMin").val());
+  const demaDistMax = parseFloat($("#demaDistMax").val());
 
   return allTrades.filter(function (t) {
     if (range.startTime !== null && t.entry_time < range.startTime) return false;
     if (range.endTime !== null && t.entry_time > range.endTime) return false;
     if (side !== "All" && t.side !== side) return false;
-    if (session !== "All" && t.session !== session) return false;
+    if (sessions.length && !sessions.includes(t.session)) return false;
     if (result === "Win" && !t.is_win) return false;
     if (result === "Loss" && t.is_win) return false;
+    var gp = t.entry_gap_pts || 0;
+    if (!Number.isNaN(gapMin) && gp < gapMin) return false;
+    if (!Number.isNaN(gapMax) && gp > gapMax) return false;
     if (!Number.isNaN(adxMin) && t.entry_adx < adxMin) return false;
     if (!Number.isNaN(adxMax) && t.entry_adx > adxMax) return false;
-    if (!Number.isNaN(cciMin) && t.entry_cci < cciMin) return false;
-    if (!Number.isNaN(cciMax) && t.entry_cci > cciMax) return false;
+    var cc = t.entry_cci || 0;
+    if (!Number.isNaN(cciMin) && cc < cciMin) return false;
+    if (!Number.isNaN(cciMax) && cc > cciMax) return false;
+    var ch = t.entry_chop || 0;
+    if (!Number.isNaN(chopMin) && ch < chopMin) return false;
+    if (!Number.isNaN(chopMax) && ch > chopMax) return false;
+    var ds = t.entry_dema_slope || 0;
+    if (!Number.isNaN(demaSlopeMin) && ds < demaSlopeMin) return false;
+    var dd = t.dema_distance_atr || 0;
+    if (!Number.isNaN(demaDistMin) && dd < demaDistMin) return false;
+    if (!Number.isNaN(demaDistMax) && dd > demaDistMax) return false;
     return true;
   });
 }
@@ -145,6 +164,9 @@ function getActiveDateRange() {
   } else if (preset === "30D" && maxEntryTime !== null) {
     endTime = endOfUtcDay(maxEntryTime);
     startTime = startOfUtcDay(endTime - 29 * 86400);
+  } else if (preset === "90D" && maxEntryTime !== null) {
+    endTime = endOfUtcDay(maxEntryTime);
+    startTime = startOfUtcDay(endTime - 89 * 86400);
   } else if (preset === "Custom") {
     if (startDate) startTime = Date.parse(`${startDate}T00:00:00Z`) / 1000;
     if (endDate) endTime = Date.parse(`${endDate}T23:59:59Z`) / 1000;
@@ -248,9 +270,18 @@ function markerTime(epochSec) {
   return epochSec;
 }
 
+function updateTableHeader() {
+  const isFVG = currentStrategy === "fvg_scalper";
+  $(".col-dynamic").eq(0).text(isFVG ? "Gap" : "CCI");
+  $(".col-dynamic").eq(1).text(isFVG ? "CHOP" : "");
+} 
+
 function renderTable(trades) {
   const $body = $("#tradeRows");
   $body.empty();
+
+  const isFVG = currentStrategy === "fvg_scalper";
+  updateTableHeader();
 
   const rows = trades.slice().sort((a, b) => b.entry_time - a.entry_time);
   for (const t of rows) {
@@ -260,6 +291,13 @@ function renderTable(trades) {
     const selectedClass = t.trade_no === selectedTradeNo ? "selected" : "";
     const rText = t.r_multiple?.toFixed(2) ?? "";
 
+    const dyn1 = isFVG
+      ? (t.entry_gap_pts?.toFixed(1) ?? "—")
+      : (t.entry_cci?.toFixed(0) ?? "—");
+    const dyn2 = isFVG
+      ? (t.entry_chop?.toFixed(1) ?? "—")
+      : (t.entry_gap_pts?.toFixed(1) ?? "—");
+
     const $row = $(`
       <tr class="${selectedClass}" data-trade-no="${t.trade_no}">
         <td>${t.trade_no}</td>
@@ -268,9 +306,10 @@ function renderTable(trades) {
         <td class="text-end">${fmt.format(t.entry_price)}</td>
         <td class="text-end ${pnlClass}">${money.format(t.pnl_usd)}</td>
         <td class="text-end ${rClass}">${rText}</td>
-        <td class="text-end">${t.entry_adx.toFixed(1)}</td>
-        <td class="text-end">${t.entry_cci.toFixed(0)}</td>
-        <td>${t.session}</td>
+        <td class="text-end">${t.entry_adx?.toFixed(1) ?? "—"}</td>
+        <td class="text-end">${dyn1}</td>
+        <td class="text-end">${dyn2}</td>
+        <td>${t.session ?? "—"}</td>
         <td>${t.exit_ts} <span class="pill">${t.exit_reason}</span></td>
       </tr>
     `);
@@ -285,14 +324,21 @@ function renderDetail(t) {
     return;
   }
 
+  const isFVG = currentStrategy === "fvg_scalper";
+  const extraFields = isFVG
+    ? `<div>ADX: <b>${t.entry_adx?.toFixed(2) ?? "n/a"}</b> | CHOP: <b>${t.entry_chop?.toFixed(1) ?? "n/a"}</b></div>
+       <div>Gap: <b>${t.entry_gap_pts?.toFixed(1) ?? "n/a"} pts</b> | DEMA: <b>${t.entry_dema?.toFixed(1) ?? "n/a"}</b></div>
+       <div>DEMA slope: <b>${t.entry_dema_slope?.toFixed(4) ?? "n/a"}</b> | DEMA dist ATR: <b>${t.dema_distance_atr?.toFixed(2) ?? "n/a"}</b></div>`
+    : `<div>ADX: <b>${t.entry_adx?.toFixed(2) ?? "n/a"}</b> | CCI: <b>${t.entry_cci?.toFixed(2) ?? "n/a"}</b></div>
+       <div>DEMA dist ATR: <b>${t.dema_distance_atr?.toFixed(2) ?? "n/a"}</b> | ST dist ATR: <b>${t.st_distance_atr?.toFixed(2) ?? "n/a"}</b></div>`;
+
   $el.html(`
     <div><b>#${t.trade_no}</b> <span class="${t.side === "Long" ? "long" : "short"}">${t.side}</span> <span class="pill">${t.session}</span></div>
     <div>Entry: <b>${t.entry_ts}</b> at <b>${fmt.format(t.entry_price)}</b></div>
     <div>Exit: <b>${t.exit_ts}</b> at <b>${fmt.format(t.exit_price)}</b> <span class="pill">${t.exit_reason}</span></div>
     <div>PnL: <b class="${t.pnl_usd >= 0 ? "win" : "loss"}">${money.format(t.pnl_usd)}</b> | R: <b>${t.r_multiple?.toFixed(2) ?? "n/a"}</b></div>
     <div>MFE: <b>${money.format(t.mfe_usd)}</b> | MAE: <b>${money.format(t.mae_usd)}</b></div>
-    <div>ADX: <b>${t.entry_adx.toFixed(2)}</b> | CCI: <b>${t.entry_cci.toFixed(2)}</b></div>
-    <div>DEMA dist ATR: <b>${t.dema_distance_atr?.toFixed(2) ?? "n/a"}</b> | ST dist ATR: <b>${t.st_distance_atr?.toFixed(2) ?? "n/a"}</b></div>
+    ${extraFields}
     <div>Duration: <b>${t.duration_min} min</b> | Hit 1R: <b>${t.hit_1r ? "yes" : "no"}</b> | Hit 2R: <b>${t.hit_2r ? "yes" : "no"}</b></div>
   `);
 }
@@ -381,10 +427,19 @@ function applyFilters() {
 }
 
 async function loadData() {
-  setLoading(true, `Loading ${currentTimeframe} strategy...`);
+  const strategy = currentStrategy;
+  const tf = currentTimeframe;
+  console.log("[loadData]", strategy, tf, candleUrl(strategy, tf));
+  setLoading(true, `Loading ${tf} strategy...`);
+  allTrades = [];
+  allCandles = [];
+  filteredTrades = [];
+  selectedTradeNo = null;
+  renderDetail(null);
+
   const [candlesData, tradesData] = await Promise.all([
-    $.ajax({ url: candleUrl(currentTimeframe), cache: false, dataType: "json" }),
-    $.ajax({ url: tradeUrl(currentTimeframe), cache: false, dataType: "json" }),
+    $.ajax({ url: candleUrl(currentStrategy, currentTimeframe), cache: false, dataType: "json" }),
+    $.ajax({ url: tradeUrl(currentStrategy, currentTimeframe), cache: false, dataType: "json" }),
     delay(250),
   ]);
 
@@ -394,14 +449,15 @@ async function loadData() {
   chart.timeScale().fitContent();
   applyFilters();
   setLoading(false);
+  setStrategyStatus();
 }
 
-function candleUrl(timeframe) {
-  return `data/candles_${timeframe}.json`;
+function candleUrl(strategy, timeframe) {
+  return `data/candles_${strategy}_${timeframe}.json`;
 }
 
-function tradeUrl(timeframe) {
-  return `data/trade_events_${timeframe}.json`;
+function tradeUrl(strategy, timeframe) {
+  return `data/trade_events_${strategy}_${timeframe}.json`;
 }
 
 async function loadTimeframe(timeframe) {
@@ -411,8 +467,8 @@ async function loadTimeframe(timeframe) {
   setStatus(`Loading ${timeframe} strategy data...`);
   setLoading(true, `Loading ${timeframe} strategy...`);
   const [candlesData, tradesData] = await Promise.all([
-    $.ajax({ url: candleUrl(timeframe), cache: false, dataType: "json" }),
-    $.ajax({ url: tradeUrl(timeframe), cache: false, dataType: "json" }),
+    $.ajax({ url: candleUrl(currentStrategy, timeframe), cache: false, dataType: "json" }),
+    $.ajax({ url: tradeUrl(currentStrategy, timeframe), cache: false, dataType: "json" }),
     delay(250),
   ]);
   allCandles = candlesData.candles;
@@ -421,6 +477,128 @@ async function loadTimeframe(timeframe) {
   chart.timeScale().fitContent();
   applyFilters();
   setLoading(false);
+  setStrategyStatus();
+}
+
+function sessionVals() {
+  const checked = [];
+  $("#sessionFilter input:checked").each(function () { checked.push($(this).val()); });
+  return checked;
+}
+
+function setSessionVals(vals) {
+  if (!vals || !vals.length) {
+    $("#sessionFilter input").prop("checked", true);
+  } else {
+    $("#sessionFilter input").prop("checked", false);
+    vals.forEach(function (v) {
+      $(`#sessionFilter input[value="${v}"]`).prop("checked", true);
+    });
+  }
+}
+
+function setStrategyStatus() {
+  const name = $("#strategySelect option:selected").text();
+  const total = allTrades.length;
+  const pnl = allTrades.reduce((s, t) => s + t.pnl_usd, 0);
+  const wins = allTrades.filter(t => t.is_win).length;
+  const wr = total ? (wins / total * 100).toFixed(1) : "0";
+  setStatus(`${name} | ${currentTimeframe} | ${total} trades | PnL: ${money.format(pnl)} | WR: ${wr}%`);
+}
+
+function readUrlParams() {
+  const p = new URLSearchParams(window.location.search);
+  if (!p.toString()) return false;
+  console.log("[URL] Loading params:", p.toString());
+  if (p.has("strategy")) {
+    currentStrategy = p.get("strategy");
+    $("#strategySelect").val(currentStrategy);
+    console.log("[URL] Strategy:", currentStrategy);
+  }
+  if (p.has("timeframe")) {
+    currentTimeframe = p.get("timeframe");
+    $("#timeframeSelect").val(currentTimeframe);
+  }
+  if (p.has("date_from")) {
+    $("#dateStart").val(p.get("date_from"));
+    $("#rangePreset").val("Custom");
+  }
+  if (p.has("date_to")) {
+    $("#dateEnd").val(p.get("date_to"));
+    $("#rangePreset").val("Custom");
+  }
+  if (p.has("range")) $("#rangePreset").val(p.get("range"));
+  if (p.has("side")) $("#sideFilter").val(p.get("side"));
+  if (p.has("session")) {
+    const s = p.get("session");
+    if (s) setSessionVals(s.split(","));
+  } else {
+    setSessionVals(null);
+  }
+  return true;
+}
+
+function updateUrl() {
+  const range = getActiveDateRange();
+  const p = new URLSearchParams();
+  p.set("strategy", currentStrategy);
+  p.set("timeframe", currentTimeframe);
+  if (range.preset === "Custom") {
+    if ($("#dateStart").val()) p.set("date_from", $("#dateStart").val());
+    if ($("#dateEnd").val()) p.set("date_to", $("#dateEnd").val());
+  } else {
+    p.set("range", range.preset);
+  }
+  const side = $("#sideFilter").val();
+  if (side !== "All") p.set("side", side);
+  const sessions = sessionVals();
+  const allSessions = currentStrategy === "fvg_scalper"
+    ? ["Asia", "London", "NY", "Other"]
+    : ["Tokyo", "London", "US", "Other"];
+  if (sessions.length && sessions.length < allSessions.length) {
+    p.set("session", sessions.join(","));
+  }
+  const url = `${window.location.pathname}?${p.toString()}`;
+  if (url !== window.location.search) {
+    window.history.replaceState(null, "", url);
+  }
+}
+
+function applyFilters() {
+  const activeRange = getActiveDateRange();
+  filteredTrades = getFilteredTrades();
+  renderStats(filteredTrades);
+  renderMarkers(filteredTrades);
+  renderPnlCurve(filteredTrades);
+  renderTable(filteredTrades);
+  setStrategyStatus();
+  updateUrl();
+}
+
+function updateSessionFilter() {
+  const $sel = $("#sessionFilter");
+  $sel.empty();
+  const sessions = currentStrategy === "fvg_scalper"
+    ? ["Asia", "London", "NY", "Other"]
+    : ["Tokyo", "London", "US", "Other"];
+  sessions.forEach(function (s) {
+    $sel.append(`<label class="form-check form-check-inline"><input class="form-check-input" type="checkbox" value="${s}">${s}</label>`);
+  });
+  $("#sessionFilter input").on("change", applyFilters);
+  setSessionVals(null);  // all checked by default
+}
+
+function applyBestPreset() {
+  if (currentStrategy === "fvg_scalper") {
+    $("#gapMin").val("1.0");
+    $("#adxMin").val("12");
+    $("#chopMax").val("62");
+    $("#demaSlopeMin").val("0.03");
+    setSessionVals(["Asia", "London"]);
+  } else {
+    $("#adxMin").val("25");
+    setSessionVals(null);
+  }
 }
 
 function resetFilters() {
@@ -428,12 +606,19 @@ function resetFilters() {
   $("#dateStart").val("");
   $("#dateEnd").val("");
   $("#sideFilter").val("All");
-  $("#sessionFilter").val("All");
+  setSessionVals(null);
   $("#resultFilter").val("All");
+  $("#gapMin").val("");
+  $("#gapMax").val("");
   $("#adxMin").val("");
   $("#adxMax").val("");
   $("#cciMin").val("");
   $("#cciMax").val("");
+  $("#chopMin").val("");
+  $("#chopMax").val("");
+  $("#demaSlopeMin").val("");
+  $("#demaDistMin").val("");
+  $("#demaDistMax").val("");
   selectedTradeNo = null;
   renderDetail(null);
   applyFilters();
@@ -491,10 +676,24 @@ $(function () {
   });
   $("#strategySelect").on("change", function () {
     currentStrategy = $(this).val();
-    setStatus(`Switched to ${$("#strategySelect option:selected").text()}`);
-    // future: reload data for new strategy
+    if (currentStrategy === "orb_v2") return;
+    $("#rangePreset").val("All");
+    resetFilters();
+    updateSessionFilter();
+    applyBestPreset();
+    updateUrl();
+    setLoading(true);
+    loadData().catch(function (err) {
+      setLoading(false);
+      setStatus(`Load failed: ${err.message}`);
+      console.error(err);
+    });
   });
   $("#resetFilters").on("click", resetFilters);
+  $("#bestPresetBtn").on("click", function () {
+    applyBestPreset();
+    applyFilters();
+  });
   $("#telegramSignalBtn").on("click", function () {
     sendTelegramSignal();
   });
@@ -521,9 +720,12 @@ $(function () {
     selectTrade(Number($(this).data("trade-no")));
   });
 
+  readUrlParams();
+
   loadData().catch(function (err) {
     setLoading(false);
     setStatus(`Load failed: ${err.message}`);
     console.error(err);
   });
+  updateSessionFilter();
 });

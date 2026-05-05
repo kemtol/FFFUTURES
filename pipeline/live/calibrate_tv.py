@@ -20,7 +20,7 @@ from pipeline.live.tv_strategy import (
     _atr, adx, cci, dema, supertrend,
 )
 
-UI_JSON = ROOT / "ui" / "data" / "trade_events_5m.json"
+UI_JSON = ROOT / "ui" / "data" / "trade_events_st_dema_adx_cci_5m.json"
 RAW_DB = ROOT / "data" / "Level_0_Raw" / "MGC_1m.db"
 
 

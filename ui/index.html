@@ -28,6 +28,7 @@
           <label for="strategySelect" class="form-label">Strategy</label>
           <select id="strategySelect" class="form-select form-select-sm">
             <option value="st_dema_adx_cci" selected>Super Structure</option>
+            <option value="fvg_scalper">FVG Scalper</option>
             <option value="orb_v2" disabled>ORB v2.0 (coming soon)</option>
           </select>
         </div>
@@ -61,6 +62,7 @@
               <option value="All">All</option>
               <option value="7D">Last 7 Days</option>
               <option value="30D">Last 30 Days</option>
+              <option value="90D">Last 90 Days</option>
               <option value="Custom">Custom</option>
             </select>
           </div>
@@ -84,13 +86,7 @@
           </div>
           <div>
             <label for="sessionFilter" class="form-label">Session</label>
-            <select id="sessionFilter" class="form-select form-select-sm">
-              <option value="All">All</option>
-              <option value="Tokyo">Tokyo</option>
-              <option value="London">London</option>
-              <option value="US">US</option>
-              <option value="Other">Other</option>
-            </select>
+            <div id="sessionFilter" class="form-check-group"></div>
           </div>
           <div>
             <label for="resultFilter" class="form-label">Result</label>
@@ -99,6 +95,16 @@
               <option value="Win">Win</option>
               <option value="Loss">Loss</option>
             </select>
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label for="gapMin" class="form-label">Gap Min</label>
+              <input id="gapMin" class="form-control form-control-sm" type="number" placeholder="0" min="0" step="0.1">
+            </div>
+            <div class="col-6">
+              <label for="gapMax" class="form-label">Gap Max</label>
+              <input id="gapMax" class="form-control form-control-sm" type="number" placeholder="99" min="0" step="0.1">
+            </div>
           </div>
           <div class="row g-2">
             <div class="col-6">
@@ -120,6 +126,33 @@
               <input id="cciMax" class="form-control form-control-sm" type="number" placeholder="400" step="10">
             </div>
           </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label for="chopMin" class="form-label">CHOP Min</label>
+              <input id="chopMin" class="form-control form-control-sm" type="number" placeholder="0" min="0" max="100" step="1">
+            </div>
+            <div class="col-6">
+              <label for="chopMax" class="form-label">CHOP Max</label>
+              <input id="chopMax" class="form-control form-control-sm" type="number" placeholder="100" min="0" max="100" step="1">
+            </div>
+          </div>
+          <div class="row g-2">
+            <div class="col-12">
+              <label for="demaSlopeMin" class="form-label">DEMA Slope Min</label>
+              <input id="demaSlopeMin" class="form-control form-control-sm" type="number" placeholder="0" min="0" step="0.001">
+            </div>
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label for="demaDistMin" class="form-label">DEMA Dist Min</label>
+              <input id="demaDistMin" class="form-control form-control-sm" type="number" placeholder="0" min="0" step="0.01">
+            </div>
+            <div class="col-6">
+              <label for="demaDistMax" class="form-label">DEMA Dist Max</label>
+              <input id="demaDistMax" class="form-control form-control-sm" type="number" placeholder="99" min="0" step="0.01">
+            </div>
+          </div>
+          <button id="bestPresetBtn" class="btn btn-sm btn-outline-success w-100 mb-1" type="button">Best Preset</button>
           <button id="resetFilters" class="btn btn-sm btn-secondary w-100" type="button">Reset Filters</button>
         </div>
       </section>
@@ -252,7 +285,7 @@
         <div class="table-pane table-responsive">
           <table class="table table-dark table-hover table-sm align-middle mb-0 trade-table">
             <thead>
-              <tr>
+              <tr id="tradeHead">
                 <th style="width:58px">#</th>
                 <th style="width:138px">Entry UTC</th>
                 <th style="width:70px">Side</th>
@@ -260,7 +293,8 @@
                 <th class="text-end" style="width:80px">PnL</th>
                 <th class="text-end" style="width:70px">R</th>
                 <th class="text-end" style="width:70px">ADX</th>
-                <th class="text-end" style="width:78px">CCI</th>
+                <th class="text-end col-dynamic" style="width:78px">CCI</th>
+                <th class="text-end col-dynamic" style="width:70px">CHOP</th>
                 <th style="width:82px">Session</th>
                 <th>Exit</th>
               </tr>

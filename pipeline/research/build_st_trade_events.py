@@ -40,13 +40,14 @@ from pipeline.live.tv_strategy import (
 
 RAW_DB = ROOT / "data/Level_0_Raw/MGC_1m.db"
 OUT_PARQUET = ROOT / "data/Level_2_Datamart/st_dema_adx_cci_trade_events.parquet"
-OUT_CANDLES_JSON = ROOT / "ui/data/candles_5m.json"
-OUT_TRADES_JSON = ROOT / "ui/data/trade_events.json"
+OUT_CANDLES_JSON = ROOT / "ui/data/candles_st_dema_adx_cci_5m.json"
+OUT_TRADES_JSON = ROOT / "ui/data/trade_events_st_dema_adx_cci.json"
+STRATEGY_KEY = "st_dema_adx_cci"
 
 SYMBOL = "MICRO_GOLD"
 TIMEFRAME = "1m"
 POINT_VALUE_USD = 10.0
-ROUND_TURN_COMMISSION_USD = 3.0
+ROUND_TURN_COMMISSION_USD = 1.74
 WARMUP_DAYS = 120
 
 
@@ -76,19 +77,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--start", default="2026-01-01", help="event start date UTC")
     parser.add_argument("--end", default="2026-05-01", help="event end date UTC, exclusive")
     parser.add_argument("--raw-db", type=Path, default=RAW_DB)
+    parser.add_argument("--table", default="investing_ohlcv_1m", help="Source table name")
     parser.add_argument("--out", type=Path, default=OUT_PARQUET)
     parser.add_argument("--export-ui", action="store_true", help="write ui/data JSON files")
     return parser.parse_args()
 
 
-def load_ohlcv_1m(db_path: Path, start: str, end: str) -> pd.DataFrame:
+def load_ohlcv_1m(db_path: Path, start: str, end: str, table: str = "investing_ohlcv_1m") -> pd.DataFrame:
     warmup_start = (pd.Timestamp(start, tz="UTC") - pd.Timedelta(days=WARMUP_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
     end_ts = pd.Timestamp(end, tz="UTC").strftime("%Y-%m-%d %H:%M:%S")
     with sqlite3.connect(str(db_path)) as conn:
         df = pd.read_sql(
-            """
+            f"""
             SELECT timestamp_utc, open, high, low, close, volume
-            FROM investing_ohlcv_1m
+            FROM {table}
             WHERE symbol = ? AND timeframe = ?
               AND timestamp_utc >= ? AND timestamp_utc < ?
             ORDER BY epoch_ms
@@ -399,19 +401,20 @@ def export_ui(bars_by_tf: dict[str, pd.DataFrame], events_by_tf: dict[str, pd.Da
 
     for timeframe, candles in candle_sets.items():
         summary = summary_record(events_by_tf[timeframe], start, end, timeframe, len(candles))
-        out_path = ROOT / f"ui/data/candles_{timeframe}.json"
+        out_path = ROOT / f"ui/data/candles_{STRATEGY_KEY}_{timeframe}.json"
         out_path.write_text(json.dumps({"summary": summary, "candles": candles}, separators=(",", ":")))
 
-        trades_path = ROOT / f"ui/data/trade_events_{timeframe}.json"
+        trades_path = ROOT / f"ui/data/trade_events_{STRATEGY_KEY}_{timeframe}.json"
         trades_path.write_text(json.dumps({"summary": summary, "trades": trade_records(events_by_tf[timeframe])}, separators=(",", ":")))
 
-    OUT_TRADES_JSON.write_text((ROOT / "ui/data/trade_events_5m.json").read_text())
+    # Backward compat alias (legacy consumers)
+    OUT_TRADES_JSON.write_text((ROOT / f"ui/data/trade_events_{STRATEGY_KEY}_5m.json").read_text())
 
 
 def main() -> None:
     args = parse_args()
     print(f"Loading 1m OHLCV from {args.raw_db}...")
-    df_1m = load_ohlcv_1m(args.raw_db, args.start, args.end)
+    df_1m = load_ohlcv_1m(args.raw_db, args.start, args.end, args.table)
     bars_by_tf = {
         "1m": df_1m.set_index("timestamp_utc").sort_index(),
         "5m": resample_5m(df_1m),

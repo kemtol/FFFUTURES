@@ -194,7 +194,18 @@ class TVStrategy:
         self._cached_end: str | None = None
         self._signals: list[dict] = []
         self._entry_bar_ts: pd.Timestamp | None = None
+        self._executor = None
+        self._heartbeat_state: dict = {}
         self._load_signals()
+
+        # Init trade executor (auto-detect if credentials exist)
+        if (ROOT / "data" / "Live" / "topstepx_token.json").exists():
+            try:
+                from pipeline.live.execute.tv_executor import TVExecutor
+                self._executor = TVExecutor()
+                print("[TV] Trade executor initialized", flush=True)
+            except Exception:
+                pass
 
     def _load_signals(self) -> None:
         if SIGNALS_PATH.exists():
@@ -235,13 +246,20 @@ class TVStrategy:
                        "sl": sl, "reason": reason, **extra}
         if action == "CLOSE" and self._pos != 0:
             side = 1 if self._pos == 1 else -1
-            pnl = round((price - self._entry_price) * side * 10 - 3, 2)
+            pnl = round((price - self._entry_price) * side * 10 - 1.74, 2)
             bus_payload["pnl"] = pnl
             bus_payload["side"] = "Long" if self._pos == 1 else "Short"
         try:
             SignalBus().publish("tv_strategy", bus_payload)
         except Exception:
             pass
+
+        # Route to trade executor
+        if self._executor and action in ("BUY", "SELL", "CLOSE"):
+            try:
+                self._executor.on_signal(bus_payload)
+            except Exception as exc:
+                print(f"[TV] Executor error: {exc}", flush=True)
 
     def _is_in_session(self, ts: pd.Timestamp) -> bool:
         if not USE_SESSION:
@@ -277,7 +295,7 @@ class TVStrategy:
                 return []
         self._last_checked_now = now
 
-        start = (now - timedelta(days=90)).strftime("%Y-%m-%d %H:%M:%S")
+        start = (now - timedelta(days=120)).strftime("%Y-%m-%d %H:%M:%S")
         end = now.strftime("%Y-%m-%d %H:%M:%S")
 
         # Incremental fetch: only load new rows since last check
@@ -287,14 +305,22 @@ class TVStrategy:
                 if not new_rows.empty:
                     new_rows["timestamp_utc"] = pd.to_datetime(new_rows["timestamp_utc"], utc=True)
                     self._cached_df = pd.concat([self._cached_df, new_rows])
-                    cutoff_ts = pd.Timestamp(now - timedelta(days=90))
+                    cutoff_ts = pd.Timestamp(now - timedelta(days=120))
                     self._cached_df = self._cached_df[
                         self._cached_df["timestamp_utc"] >= cutoff_ts
                     ]
-            self._cached_end = end
+                    # Advance cached_end to after the last fetched bar (skip 1s to avoid re-fetch)
+                    last_max = self._cached_df["timestamp_utc"].max()
+                    self._cached_end = (last_max + pd.Timedelta(seconds=1)).strftime("%Y-%m-%d %H:%M:%S")
+            # Note: do NOT advance cached_end on empty fetch
         else:
             self._cached_df = self.buffer.get(start, end)
-            self._cached_end = end
+            # Set cached_end to just after the last fetched bar
+            if not self._cached_df.empty:
+                last_max = self._cached_df["timestamp_utc"].max()
+                self._cached_end = (last_max + pd.Timedelta(seconds=1)).strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                self._cached_end = end
 
         df = self._cached_df
         if len(df) < max(DEMA_LENGTH, ADX_LENGTH + 50, CCI_LENGTH + 50):
@@ -308,6 +334,20 @@ class TVStrategy:
 
         last_ts = df_5m.index[-1]
         if last_ts == self._last_ts:
+            # Same bar — update heartbeat_state OHLC/pos only (indicators unchanged)
+            try:
+                self._heartbeat_state.update({
+                    "ts": str(last_ts)[:19] if last_ts else "",
+                    "open": round(float(df_5m["open"].iloc[-1]), 1),
+                    "high": round(float(df_5m["high"].iloc[-1]), 1),
+                    "low": round(float(df_5m["low"].iloc[-1]), 1),
+                    "close": round(float(df_5m["close"].iloc[-1]), 1),
+                    "pos": self._pos,
+                    "entry_price": self._entry_price,
+                    "sl_price": self._sl_price,
+                })
+            except Exception:
+                pass
             return []  # No new bar — skip indicator compute
         self._last_ts = last_ts
 
@@ -420,6 +460,37 @@ class TVStrategy:
                                dema=round(cur_dema, 1),
                                ts=str(last_ts))
             new_signals.append(self._signals[-1])
+
+        # Store latest bar + indicator values for heartbeat
+        try:
+            prev_close = float(c[-2]) if len(c) > 1 else 0
+            prev_dema = float(d[-2]) if 'd' in dir() and len(d) > 1 else 0
+            self._heartbeat_state = {
+                "ts": str(last_ts)[:19] if last_ts else "",
+                "open": round(float(df_5m["open"].iloc[-1]), 1),
+                "high": round(float(df_5m["high"].iloc[-1]), 1),
+                "low": round(float(df_5m["low"].iloc[-1]), 1),
+                "close": round(float(c[-1]), 1),
+                "prev_close": round(prev_close, 1),
+                "dema": round(float(d[-1]), 1) if 'd' in dir() and len(d) > 0 else 0,
+                "prev_dema": round(prev_dema, 1),
+                "st": round(float(st[-1]), 1) if 'st' in dir() and len(st) > 0 else 0,
+                "adx": round(float(ax[-1]), 1) if 'ax' in dir() and len(ax) > 0 else 0,
+                "cci": round(float(cx[-1]), 0) if 'cx' in dir() and len(cx) > 0 else 0,
+                "direction": int(direction[-1]) if 'direction' in dir() and len(direction) > 0 else 0,
+                "pos": self._pos,
+                "entry_price": self._entry_price,
+                "sl_price": self._sl_price,
+            }
+        except Exception:
+            pass
+
+        # Trail stop-loss to latest SuperTrend if position active
+        if self._executor and self._pos != 0:
+            try:
+                self._executor.update_sl(self._sl_price)
+            except Exception:
+                pass
 
         return new_signals
 
@@ -565,6 +636,13 @@ class TVStrategy:
                                     print(f"[TV] No reply", flush=True)
                 except Exception as e:
                     print(f"[TV] Poll error: {e}", flush=True)
+
+                # Heartbeat every 5 min
+                if self._executor:
+                    try:
+                        self._executor.heartbeat(self._heartbeat_state)
+                    except Exception:
+                        pass
 
                 _time.sleep(30)
 

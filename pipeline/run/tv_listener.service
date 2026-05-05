@@ -1,0 +1,16 @@
+[Unit]
+Description=TV Strategy Live Listener
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/kemal/futures
+ExecStart=/usr/bin/python3 -u /home/kemal/futures/pipeline/live/run_tv_live.py
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/kemal/futures/data/Live/tv_live.log
+StandardError=append:/home/kemal/futures/data/Live/tv_live.log
+
+[Install]
+WantedBy=default.target
