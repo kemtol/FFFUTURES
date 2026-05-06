@@ -14,9 +14,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 TOKEN_FILE = ROOT / "data" / "Live" / "topstepx_token.json"
-ORDER_URL = "https://userapi.topstepx.com/Order"
+USERAPI = "https://userapi.topstepx.com"
+ORDER_URL = f"{USERAPI}/Order"
 SYMBOL_ID = "F.US.MGC"
 ACCOUNT_ID = 22303383
+USER_ID = 412653
 
 HEADERS = {
     "Content-Type": "application/json",
@@ -78,12 +80,50 @@ def _flatten_all() -> dict:
     """Close ALL positions via TopstepX Position/close endpoint."""
     token = _token()
     h = {**HEADERS, "Authorization": f"Bearer {token}"}
-    url = f"https://userapi.topstepx.com/Position/close/{ACCOUNT_ID}"
+    url = f"{USERAPI}/Position/close/{ACCOUNT_ID}"
     time.sleep(0.3)
     req = urllib.request.Request(url, method="DELETE", headers=h)
     resp = urllib.request.urlopen(req, timeout=10)
     body = resp.read()
     return json.loads(body) if body and body.strip() else {"status": resp.status, "msg": "flattened"}
+
+
+def _api_get(path: str) -> dict | list:
+    """Generic GET to userapi with bearer auth. Returns parsed JSON."""
+    token = _token()
+    h = {**HEADERS, "Authorization": f"Bearer {token}"}
+    req = urllib.request.Request(f"{USERAPI}{path}", method="GET", headers=h)
+    resp = urllib.request.urlopen(req, timeout=10)
+    return json.loads(resp.read())
+
+
+def _query_positions() -> list[dict]:
+    """List open positions for the user. Empty list = FLAT."""
+    try:
+        return _api_get(f"/Position/all/user/{USER_ID}") or []
+    except Exception as exc:
+        print(f"[SSExec] Position query failed: {exc}", flush=True)
+        return []
+
+
+def _validate_session() -> bool:
+    """Return True if token still valid."""
+    try:
+        r = _api_get("/Session/validate")
+        return isinstance(r, dict) and r.get("result") == 0
+    except Exception:
+        return False
+
+
+def _check_violations() -> list[dict]:
+    """Return active Topstep violations (MLL, daily loss, etc). Empty = OK."""
+    try:
+        r = _api_get(f"/Violations/active/{ACCOUNT_ID}")
+        if r is None or r == "":
+            return []
+        return r if isinstance(r, list) else []
+    except Exception:
+        return []
 
 
 class SuperStructureExecutor:
@@ -114,6 +154,45 @@ class SuperStructureExecutor:
         """Track trailing stop level (no API — exit handled by strategy logic)."""
         if not self.active: return
         self.sl_price = new_sl
+
+    def reconcile(self) -> dict:
+        """Sync executor state to exchange truth. Silent adopt — exchange wins.
+
+        Returns truth dict for the strategy to apply to its own state:
+            {"pos": int (-1/0/+1), "entry_price": float, "exchange_pl": float}
+        """
+        positions = _query_positions()
+        mgc = next((p for p in positions if p.get("symbolId") == SYMBOL_ID), None)
+
+        if mgc is None:
+            truth = {"pos": 0, "entry_price": 0.0, "exchange_pl": 0.0}
+        else:
+            size = int(mgc.get("positionSize", 0))
+            truth = {
+                "pos": 1 if size > 0 else (-1 if size < 0 else 0),
+                "entry_price": float(mgc.get("averagePrice", 0)),
+                "exchange_pl": float(mgc.get("profitAndLoss", 0)),
+            }
+
+        # Silent adopt — sync executor own state
+        prev_active = self.active
+        prev_side = self.pos_side
+        prev_entry = self.entry_price
+
+        self.active = truth["pos"] != 0
+        self.pos_side = "Long" if truth["pos"] == 1 else ("Short" if truth["pos"] == -1 else "")
+        self.entry_price = truth["entry_price"]
+        if not self.active:
+            self.sl_price = 0.0
+            self.sl_order_id = None
+
+        # Console log only when state actually changed
+        if prev_active != self.active or prev_side != self.pos_side or abs(prev_entry - self.entry_price) > 0.5:
+            print(f"[SSExec] Reconcile: was {prev_side or 'FLAT'}@{prev_entry:.1f} → "
+                  f"now {self.pos_side or 'FLAT'}@{self.entry_price:.1f} "
+                  f"(exchange P&L: {truth['exchange_pl']:.0f})", flush=True)
+
+        return truth
 
     def heartbeat(self, state: dict | None = None) -> None:
         """Send status to Telegram every 5 min. Called from super_structure.run_live.

@@ -48,6 +48,7 @@ SESSION_END = time(20, 0)
 AUTO_CLOSE = True
 
 SIGNALS_PATH = ROOT / "data" / "Live" / "super_structure_signals.json"
+STATE_PATH = ROOT / "data" / "Live" / "super_structure_state.json"
 EPS = 1e-10
 
 
@@ -196,7 +197,10 @@ class SuperStructure:
         self._entry_bar_ts: pd.Timestamp | None = None
         self._executor = None
         self._heartbeat_state: dict = {}
+        self._halt = False
+        self._halt_reason = ""
         self._load_signals()
+        self._load_state()
 
         # Init trade executor (auto-detect if credentials exist)
         if (ROOT / "data" / "Live" / "topstepx_token.json").exists():
@@ -204,8 +208,17 @@ class SuperStructure:
                 from pipeline.live.execute.super_structure_executor import SuperStructureExecutor
                 self._executor = SuperStructureExecutor()
                 print("[SS] Trade executor initialized", flush=True)
-            except Exception:
-                pass
+                # Reconcile from exchange at startup — fixes silent desync after restart
+                self.reconcile()
+                # Validate session (warn if token expiring soon)
+                try:
+                    from pipeline.live.execute.super_structure_executor import _validate_session
+                    if not _validate_session():
+                        print("[SS] ⚠️ Session validate FAILED — token may be expired", flush=True)
+                except Exception:
+                    pass
+            except Exception as exc:
+                print(f"[SS] Executor init failed: {exc}", flush=True)
 
     def _load_signals(self) -> None:
         if SIGNALS_PATH.exists():
@@ -217,6 +230,46 @@ class SuperStructure:
     def _save_signals(self) -> None:
         SIGNALS_PATH.parent.mkdir(parents=True, exist_ok=True)
         SIGNALS_PATH.write_text(json.dumps(self._signals, indent=2, default=str))
+
+    def _load_state(self) -> None:
+        """Load persisted halt flag (position state always reconciled from exchange)."""
+        if STATE_PATH.exists():
+            try:
+                d = json.loads(STATE_PATH.read_text())
+                self._halt = bool(d.get("halt", False))
+                self._halt_reason = str(d.get("halt_reason", ""))
+                if self._halt:
+                    print(f"[SS] Loaded HALT state: {self._halt_reason}", flush=True)
+            except Exception:
+                pass
+
+    def _save_state(self) -> None:
+        STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        STATE_PATH.write_text(json.dumps({
+            "halt": self._halt,
+            "halt_reason": self._halt_reason,
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+        }, indent=2))
+
+    def reconcile(self) -> dict:
+        """Pull truth from exchange, silently adopt. Returns truth dict."""
+        if not self._executor:
+            return {}
+        try:
+            truth = self._executor.reconcile()
+        except Exception as exc:
+            print(f"[SS] Reconcile failed: {exc}", flush=True)
+            return {}
+        prev_pos = self._pos
+        prev_entry = self._entry_price
+        self._pos = truth.get("pos", 0)
+        self._entry_price = truth.get("entry_price", 0.0)
+        if self._pos == 0:
+            self._sl_price = 0.0
+            self._entry_bar_ts = None
+        if prev_pos != self._pos or abs(prev_entry - self._entry_price) > 0.5:
+            print(f"[SS] State synced from exchange: pos={self._pos} entry={self._entry_price:.1f}", flush=True)
+        return truth
 
     def _store_signal(self, action: str, price: float, sl: float = 0.0,
                        reason: str = "", **extra) -> None:
@@ -439,7 +492,10 @@ class SuperStructure:
             self._sl_price = cur_st
 
         # ── Entry ──────────────────────────────────────────────────────────
-        if long_signal and self._pos == 0:
+        if self._halt:
+            if long_signal or short_signal:
+                print(f"[SS] HALT active — skipping entry signal ({self._halt_reason})", flush=True)
+        elif long_signal and self._pos == 0:
             self._pos = 1
             self._entry_price = cur_close
             self._sl_price = cur_st
@@ -450,7 +506,7 @@ class SuperStructure:
                                ts=str(last_ts))
             new_signals.append(self._signals[-1])
 
-        if short_signal and self._pos == 0:
+        elif short_signal and self._pos == 0:
             self._pos = -1
             self._entry_price = cur_close
             self._sl_price = cur_st
@@ -575,7 +631,8 @@ class SuperStructure:
                     return f"❌ Unsubscribed from {display}"
                 return "Unknown action. Use /strat on <name> or /strat off <name>"
 
-            elif cmd == "/ss" or cmd == "/ss_status":
+            elif cmd == "/ss" or cmd == "/ss_status" or cmd == "/state":
+                self.reconcile()  # always show fresh state
                 pos = "LONG" if self._pos == 1 else "SHORT" if self._pos == -1 else "FLAT"
                 entry = f"${self._entry_price:.1f}" if self._pos != 0 else "—"
                 sl = f"${self._sl_price:.1f}" if self._pos != 0 else "—"
@@ -583,12 +640,49 @@ class SuperStructure:
                 buy = sum(1 for x in self._signals if x["signal"]["action"] == "BUY")
                 sell = sum(1 for x in self._signals if x["signal"]["action"] == "SELL")
                 closes = sum(1 for x in self._signals if x["signal"]["action"] == "CLOSE")
-                return (f"📊 *Super Structure Status*\n\n"
-                        f"Position: {pos}\n"
+                halt_line = f"\n🚨 *HALTED* — {self._halt_reason}" if self._halt else ""
+                return (f"📊 *Super Structure Status*{halt_line}\n\n"
+                        f"Position: {pos}  *(synced from exchange)*\n"
                         f"Entry: {entry}  |  SL: {sl}\n"
                         f"Signals: {sig_count} total ({buy}B {sell}S {closes}C)\n"
                         f"Config: ST({ST_FACTOR},{ATR_PERIOD}) DEMA({DEMA_LENGTH}) "
                         f"ADX({ADX_LENGTH}>{ADX_THRESHOLD}) CCI({CCI_LENGTH})")
+
+            elif cmd == "/halt":
+                if self._halt:
+                    return f"⏸️ Already halted ({self._halt_reason})"
+                self._halt = True
+                self._halt_reason = "manual /halt"
+                self._save_state()
+                # Flatten any open exchange position to "keep it clean"
+                flat_msg = ""
+                if self._executor:
+                    try:
+                        from pipeline.live.execute.super_structure_executor import _flatten_all
+                        _flatten_all()
+                        flat_msg = "\nFlattened any open positions."
+                    except Exception as exc:
+                        flat_msg = f"\n⚠️ Flatten failed: {exc}"
+                self.reconcile()
+                return f"🛑 *HALT activated* — no new entries until /resume.{flat_msg}"
+
+            elif cmd == "/resume":
+                if not self._halt:
+                    return "▶️ Already running"
+                self._halt = False
+                self._halt_reason = ""
+                self._save_state()
+                self.reconcile()
+                return "▶️ *Resumed* — strategy active"
+
+            elif cmd == "/help":
+                return ("📋 *Commands*\n\n"
+                        "/strat — list subscriptions\n"
+                        "/strat on/off <name>\n"
+                        "/ss /state — current status (live exchange truth)\n"
+                        "/halt — flatten + stop new entries\n"
+                        "/resume — re-enable trading\n"
+                        "/help — this message")
 
             return None
 
@@ -596,7 +690,7 @@ class SuperStructure:
         print(f"[SS] Config: ST({ST_FACTOR},{ATR_PERIOD}) DEMA({DEMA_LENGTH}) "
               f"ADX({ADX_LENGTH}>{ADX_THRESHOLD}) CCI({CCI_LENGTH})", flush=True)
         if bot_enabled:
-            print(f"[SS] Telegram commands: /strat /ss", flush=True)
+            print(f"[SS] Telegram commands: /strat /ss /halt /resume /help", flush=True)
         while True:
             try:
                 signals = self.check()
@@ -637,10 +731,31 @@ class SuperStructure:
                 except Exception as e:
                     print(f"[SS] Poll error: {e}", flush=True)
 
-                # Heartbeat every 5 min
+                # Heartbeat every 5 min — also reconcile + safety checks
                 if self._executor:
                     try:
-                        self._executor.heartbeat(self._heartbeat_state)
+                        # Reconcile state from exchange (silent adopt)
+                        self.reconcile()
+                        # Auto-halt if Topstep violation active
+                        try:
+                            from pipeline.live.execute.super_structure_executor import (
+                                _check_violations, _flatten_all,
+                            )
+                            v = _check_violations()
+                            if v and not self._halt:
+                                self._halt = True
+                                self._halt_reason = f"violation: {v[0].get('type', 'unknown')}"
+                                self._save_state()
+                                try: _flatten_all()
+                                except Exception: pass
+                                tg_send(f"🚨 *Topstep VIOLATION* — auto-halt + flatten\n{self._halt_reason}")
+                                print(f"[SS] AUTO-HALT (violation): {self._halt_reason}", flush=True)
+                        except Exception:
+                            pass
+                        # Send heartbeat (with refreshed state)
+                        self._executor.heartbeat({**self._heartbeat_state, "pos": self._pos,
+                                                   "entry_price": self._entry_price,
+                                                   "sl_price": self._sl_price})
                     except Exception:
                         pass
 
