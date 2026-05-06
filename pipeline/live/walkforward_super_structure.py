@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Walkforward: run Python TV strategy on April 29-30, print signals."""
+"""Walkforward: run Python Super Structure on April 29-30, print signals."""
 from __future__ import annotations
 
 import json
@@ -13,7 +13,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pipeline.live.tv_strategy import (
+from pipeline.live.super_structure import (
     ADX_LENGTH, ADX_THRESHOLD, ATR_PERIOD, CCI_LENGTH, CCI_LONG_MIN,
     CCI_SHORT_MAX, CCI_SOURCE, DEMA_LENGTH, ST_FACTOR,
     _atr, adx, cci, dema, supertrend,

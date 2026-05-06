@@ -531,7 +531,7 @@ class FVGScalper:
                 if subs:
                     lines = ["📋 *Subscriptions:*\n"]
                     for s in subs:
-                        name = "FVG Scalper" if s == "fvg_scalper" else "Super Structure" if s == "tv_strategy" else s
+                        name = "FVG Scalper" if s == "fvg_scalper" else "Super Structure" if s == "super_structure" else s
                         lines.append(f"• {name}")
                     lines.append("\nUse /strat on <name> or /strat off <name>")
                     return "\n".join(lines)

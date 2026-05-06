@@ -8,7 +8,7 @@ multi-user subscription management.
 
 Usage:
     from pipeline.live.signal_bus import SignalBus
-    SignalBus().publish("tv_strategy", {"action": "BUY", ...})
+    SignalBus().publish("super_structure", {"action": "BUY", ...})
 """
 
 from __future__ import annotations
@@ -84,8 +84,8 @@ class SignalBus:
 
         if strategy_name == "orb_v2":
             text = self._format_orb_v2(payload)
-        elif strategy_name == "tv_strategy":
-            text = self._format_tv_strategy(payload)
+        elif strategy_name == "super_structure":
+            text = self._format_super_structure(payload)
         elif strategy_name == "fvg_scalper":
             text = self._format_fvg_scalper(payload)
         else:
@@ -131,7 +131,7 @@ class SignalBus:
         ]
         return "\n".join(lines)
 
-    def _format_tv_strategy(self, sig: dict) -> str:
+    def _format_super_structure(self, sig: dict) -> str:
         action = sig.get("action", "n/a")
         ts = sig.get("ts", "")
 

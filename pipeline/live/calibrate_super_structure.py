@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Calibrate Python TV strategy against ui/data/trade_events_5m.json."""
+"""Calibrate Python Super Structure against ui/data/trade_events_super_structure_5m.json."""
 from __future__ import annotations
 
 import json
@@ -14,13 +14,13 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pipeline.live.tv_strategy import (
+from pipeline.live.super_structure import (
     ADX_LENGTH, ADX_THRESHOLD, ATR_PERIOD, CCI_LENGTH, CCI_LONG_MIN,
     CCI_SHORT_MAX, CCI_SOURCE, DEMA_LENGTH, ST_FACTOR,
     _atr, adx, cci, dema, supertrend,
 )
 
-UI_JSON = ROOT / "ui" / "data" / "trade_events_st_dema_adx_cci_5m.json"
+UI_JSON = ROOT / "ui" / "data" / "trade_events_super_structure_5m.json"
 RAW_DB = ROOT / "data" / "Level_0_Raw" / "MGC_1m.db"
 
 

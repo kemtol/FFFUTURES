@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-TradingView Strategy Port — Python implementation.
+Super Structure Strategy — Python implementation (ported from TradingView Pine).
 Supertrend + DEMA + ADX + CCI + Session Filter.
 
 Runs on buffer data (topstepx_buffer.db), generates signals in
 the same format as webhook parser (action=BUY/SELL/CLOSE).
 
 Usage:
-    python3 pipeline/live/tv_strategy.py [--live]
+    python3 pipeline/live/super_structure.py [--live]
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ SESSION_START = time(13, 0)
 SESSION_END = time(20, 0)
 AUTO_CLOSE = True
 
-SIGNALS_PATH = ROOT / "data" / "Live" / "tv_signals.json"
+SIGNALS_PATH = ROOT / "data" / "Live" / "super_structure_signals.json"
 EPS = 1e-10
 
 
@@ -173,8 +173,8 @@ def cci(h: np.ndarray, l: np.ndarray, c: np.ndarray, period: int,
 
 # ── strategy runner ───────────────────────────────────────────────────────────
 
-class TVStrategy:
-    """Replicate TradingView strategy in Python using buffer data."""
+class SuperStructure:
+    """Super Structure strategy (Supertrend + DEMA + ADX + CCI), ported from TradingView Pine."""
 
     def __init__(self, buffer_or_db_path=None):
         from pipeline.live.buffer import DataBuffer, CANARY_DB
@@ -201,9 +201,9 @@ class TVStrategy:
         # Init trade executor (auto-detect if credentials exist)
         if (ROOT / "data" / "Live" / "topstepx_token.json").exists():
             try:
-                from pipeline.live.execute.tv_executor import TVExecutor
-                self._executor = TVExecutor()
-                print("[TV] Trade executor initialized", flush=True)
+                from pipeline.live.execute.super_structure_executor import SuperStructureExecutor
+                self._executor = SuperStructureExecutor()
+                print("[SS] Trade executor initialized", flush=True)
             except Exception:
                 pass
 
@@ -230,7 +230,7 @@ class TVStrategy:
             "adx": extra.get("adx", 0),
             "cci": extra.get("cci", 0),
             "dema": extra.get("dema", 0),
-            "parsed_from": f"tv_strategy.py: {action} {SYMBOL} @ {price:.1f}",
+            "parsed_from": f"super_structure.py: {action} {SYMBOL} @ {price:.1f}",
         }
         entry = {
             "received_at": datetime.now(timezone.utc).isoformat(),
@@ -238,7 +238,7 @@ class TVStrategy:
         }
         self._signals.append(entry)
         self._save_signals()
-        print(f"[TV] ⚡ SIGNAL: {action} {SYMBOL} @ {price:.1f}" +
+        print(f"[SS] ⚡ SIGNAL: {action} {SYMBOL} @ {price:.1f}" +
               (f" SL={sl:.1f}" if sl > 0 else "") +
               (f" ({reason})" if reason else ""), flush=True)
 
@@ -250,7 +250,7 @@ class TVStrategy:
             bus_payload["pnl"] = pnl
             bus_payload["side"] = "Long" if self._pos == 1 else "Short"
         try:
-            SignalBus().publish("tv_strategy", bus_payload)
+            SignalBus().publish("super_structure", bus_payload)
         except Exception:
             pass
 
@@ -259,7 +259,7 @@ class TVStrategy:
             try:
                 self._executor.on_signal(bus_payload)
             except Exception as exc:
-                print(f"[TV] Executor error: {exc}", flush=True)
+                print(f"[SS] Executor error: {exc}", flush=True)
 
     def _is_in_session(self, ts: pd.Timestamp) -> bool:
         if not USE_SESSION:
@@ -500,7 +500,7 @@ class TVStrategy:
         sells = sum(1 for s in self._signals if s["signal"]["action"] == "SELL")
         closes = n - buys - sells
         pos = "LONG" if self._pos == 1 else "SHORT" if self._pos == -1 else "FLAT"
-        return (f"[TV Strategy] {n} signals ({buys}B {sells}S {closes}C) | "
+        return (f"[Super Structure] {n} signals ({buys}B {sells}S {closes}C) | "
                 f"Pos: {pos} | Entry: {self._entry_price:.1f}")
 
     def run_live(self) -> None:
@@ -539,9 +539,9 @@ class TVStrategy:
                 resp = urllib.request.urlopen(url, data, timeout=5)
                 result = json.loads(resp.read())
                 if not result.get("ok"):
-                    print(f"[TV] Telegram send failed: {result}", flush=True)
+                    print(f"[SS] Telegram send failed: {result}", flush=True)
             except Exception as e:
-                print(f"[TV] Telegram send error: {e}", flush=True)
+                print(f"[SS] Telegram send error: {e}", flush=True)
 
         def tg_handle(cmd: str) -> str | None:
             cmd = cmd.strip().lower()
@@ -551,11 +551,11 @@ class TVStrategy:
                 if subs:
                     lines = ["📋 *Subscriptions:*\n"]
                     for s in subs:
-                        name = "Super Structure" if s == "tv_strategy" else s
+                        name = "Super Structure" if s == "super_structure" else s
                         lines.append(f"• {name}")
                     lines.append("\nUse /strat on <name> or /strat off <name>")
                     return "\n".join(lines)
-                return "📋 *No subscriptions.*\n\nUse /strat on tv_strategy or /strat off tv_strategy"
+                return "📋 *No subscriptions.*\n\nUse /strat on super_structure or /strat off super_structure"
 
             elif cmd.startswith("/strat on ") or cmd.startswith("/strat off "):
                 parts = cmd.split()
@@ -566,16 +566,16 @@ class TVStrategy:
                 if action == "on":
                     from pipeline.live.user_db import subscribe_by_chat as _sub
                     _sub(str(chat_id), name)
-                    display = "Super Structure" if name == "tv_strategy" else name
+                    display = "Super Structure" if name == "super_structure" else name
                     return f"✅ Subscribed to {display}"
                 elif action == "off":
                     from pipeline.live.user_db import unsubscribe_by_chat as _unsub
                     _unsub(str(chat_id), name)
-                    display = "Super Structure" if name == "tv_strategy" else name
+                    display = "Super Structure" if name == "super_structure" else name
                     return f"❌ Unsubscribed from {display}"
                 return "Unknown action. Use /strat on <name> or /strat off <name>"
 
-            elif cmd == "/tv" or cmd == "/tv_status":
+            elif cmd == "/ss" or cmd == "/ss_status":
                 pos = "LONG" if self._pos == 1 else "SHORT" if self._pos == -1 else "FLAT"
                 entry = f"${self._entry_price:.1f}" if self._pos != 0 else "—"
                 sl = f"${self._sl_price:.1f}" if self._pos != 0 else "—"
@@ -592,11 +592,11 @@ class TVStrategy:
 
             return None
 
-        print(f"[TV] Starting live strategy loop...", flush=True)
-        print(f"[TV] Config: ST({ST_FACTOR},{ATR_PERIOD}) DEMA({DEMA_LENGTH}) "
+        print(f"[SS] Starting live strategy loop...", flush=True)
+        print(f"[SS] Config: ST({ST_FACTOR},{ATR_PERIOD}) DEMA({DEMA_LENGTH}) "
               f"ADX({ADX_LENGTH}>{ADX_THRESHOLD}) CCI({CCI_LENGTH})", flush=True)
         if bot_enabled:
-            print(f"[TV] Telegram commands: /strat /tv", flush=True)
+            print(f"[SS] Telegram commands: /strat /ss", flush=True)
         while True:
             try:
                 signals = self.check()
@@ -605,7 +605,7 @@ class TVStrategy:
             except KeyboardInterrupt:
                 break
             except Exception as e:
-                print(f"[TV] Error: {e}", flush=True)
+                print(f"[SS] Error: {e}", flush=True)
 
             # Poll Telegram commands
             if bot_enabled:
@@ -623,19 +623,19 @@ class TVStrategy:
                             msg = update.get("message", {}).get("text", "")
                             chat = str(update.get("message", {}).get("chat", {}).get("id", ""))
                             if msg and chat:
-                                print(f"[TV] Command: {msg}", flush=True)
+                                print(f"[SS] Command: {msg}", flush=True)
                                 try:
                                     reply = tg_handle(msg)
                                 except Exception as ex:
-                                    print(f"[TV] tg_handle error: {ex}", flush=True)
+                                    print(f"[SS] tg_handle error: {ex}", flush=True)
                                     reply = None
                                 if reply:
-                                    print(f"[TV] Reply: {reply[:100]}", flush=True)
+                                    print(f"[SS] Reply: {reply[:100]}", flush=True)
                                     tg_send(reply)
                                 else:
-                                    print(f"[TV] No reply", flush=True)
+                                    print(f"[SS] No reply", flush=True)
                 except Exception as e:
-                    print(f"[TV] Poll error: {e}", flush=True)
+                    print(f"[SS] Poll error: {e}", flush=True)
 
                 # Heartbeat every 5 min
                 if self._executor:
@@ -651,16 +651,16 @@ class TVStrategy:
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="TV Strategy Python Port")
+    parser = argparse.ArgumentParser(description="Super Structure Strategy (Python port)")
     parser.add_argument("--live", action="store_true", help="Run live monitoring loop")
     parser.add_argument("--test", action="store_true", help="Single check + print status")
     args = parser.parse_args()
 
-    strategy = TVStrategy()
+    strategy = SuperStructure()
 
     if args.test:
         signals = strategy.check()
-        print(f"[TV] Checked: {len(signals)} new signals")
+        print(f"[SS] Checked: {len(signals)} new signals")
         print(strategy.stats())
 
     if args.live:

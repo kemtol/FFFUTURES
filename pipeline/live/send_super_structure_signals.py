@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run backtest (same logic as build_st_trade_events.py) and send to Telegram."""
+"""Run backtest (same logic as build_super_structure_trade_events.py) and send to Telegram."""
 from __future__ import annotations
 
 import json
@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
 from pipeline.live.signal_bus import SignalBus
-from pipeline.live.tv_strategy import (
+from pipeline.live.super_structure import (
     ADX_LENGTH, ADX_THRESHOLD, ATR_PERIOD, CCI_LENGTH, CCI_LONG_MIN,
     CCI_SHORT_MAX, CCI_SOURCE, DEMA_LENGTH, ST_FACTOR,
     _atr, adx, cci, dema, supertrend,
@@ -99,7 +99,7 @@ def run(publish_start: str, publish_end: str, data_start: str = "2026-01-01"):
                 payload = {"action": "CLOSE", "symbol": "MGC", "price": round(float(sl_price), 2),
                            "sl": 0, "ts": ts_str, "pnl": pnl_calc,
                            "adx": round(cur_adx, 1), "cci": round(cur_cci, 0), "dema": round(cur_dema, 1)}
-                bus.publish("tv_strategy", payload)
+                bus.publish("super_structure", payload)
             pos = 0
         elif pos == -1 and cur_high >= sl_price:
             if in_target:
@@ -108,7 +108,7 @@ def run(publish_start: str, publish_end: str, data_start: str = "2026-01-01"):
                 payload = {"action": "CLOSE", "symbol": "MGC", "price": round(float(sl_price), 2),
                            "sl": 0, "ts": ts_str, "pnl": pnl_calc,
                            "adx": round(cur_adx, 1), "cci": round(cur_cci, 0), "dema": round(cur_dema, 1)}
-                bus.publish("tv_strategy", payload)
+                bus.publish("super_structure", payload)
             pos = 0
 
         # Trend flip
@@ -119,7 +119,7 @@ def run(publish_start: str, publish_end: str, data_start: str = "2026-01-01"):
                 payload = {"action": "CLOSE", "symbol": "MGC", "price": round(cur_close, 2),
                            "sl": 0, "ts": ts_str, "pnl": pnl_calc,
                            "adx": round(cur_adx, 1), "cci": round(cur_cci, 0), "dema": round(cur_dema, 1)}
-                bus.publish("tv_strategy", payload)
+                bus.publish("super_structure", payload)
             pos = 0
         elif pos == -1 and cur_dir < 0:
             if in_target:
@@ -128,7 +128,7 @@ def run(publish_start: str, publish_end: str, data_start: str = "2026-01-01"):
                 payload = {"action": "CLOSE", "symbol": "MGC", "price": round(cur_close, 2),
                            "sl": 0, "ts": ts_str, "pnl": pnl_calc,
                            "adx": round(cur_adx, 1), "cci": round(cur_cci, 0), "dema": round(cur_dema, 1)}
-                bus.publish("tv_strategy", payload)
+                bus.publish("super_structure", payload)
             pos = 0
 
         if pos != 0:
@@ -142,7 +142,7 @@ def run(publish_start: str, publish_end: str, data_start: str = "2026-01-01"):
                            "sl": round(float(cur_st), 2), "adx": round(cur_adx, 1),
                            "cci": round(cur_cci, 0), "dema": round(cur_dema, 1),
                            "ts": ts_str}
-                bus.publish("tv_strategy", payload)
+                bus.publish("super_structure", payload)
         elif short_sig and pos == 0:
             pos = -1; sl_price = cur_st; entry_price = cur_close
             if in_target:
@@ -151,7 +151,7 @@ def run(publish_start: str, publish_end: str, data_start: str = "2026-01-01"):
                            "sl": round(float(cur_st), 2), "adx": round(cur_adx, 1),
                            "cci": round(cur_cci, 0), "dema": round(cur_dema, 1),
                            "ts": ts_str}
-                bus.publish("tv_strategy", payload)
+                bus.publish("super_structure", payload)
 
     print(f"\nTotal signals published: {trade_count}")
 
@@ -162,7 +162,7 @@ def main():
     ap.add_argument("--publish-start", default="2026-04-29 00:00:00")
     ap.add_argument("--publish-end", default="2026-05-01 00:00:00")
     ap.add_argument("--data-start", default="2026-01-01",
-                    help="Same as build_st_trade_events.py --start")
+                    help="Same as build_super_structure_trade_events.py --start")
     args = ap.parse_args()
     run(args.publish_start, args.publish_end, args.data_start)
 

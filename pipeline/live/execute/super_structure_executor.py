@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Super Structure auto-trade executor — bridges tv_strategy signals to TopstepX orders.
+"""Super Structure auto-trade executor — bridges super_structure signals to TopstepX orders.
 
 Usage:
-    from pipeline.live.execute.tv_executor import TVExecutor
-    ex = TVExecutor()
+    from pipeline.live.execute.super_structure_executor import SuperStructureExecutor
+    ex = SuperStructureExecutor()
     ex.on_signal({"action":"BUY","symbol":"MGC","price":4692.9,"sl":4612.1})
 """
 from __future__ import annotations
@@ -86,7 +86,7 @@ def _flatten_all() -> dict:
     return json.loads(body) if body and body.strip() else {"status": resp.status, "msg": "flattened"}
 
 
-class TVExecutor:
+class SuperStructureExecutor:
     """Executes Super Structure signals as TopstepX orders with trailing SL."""
 
     def __init__(self):
@@ -98,7 +98,7 @@ class TVExecutor:
         self._last_heartbeat = 0
 
     def on_signal(self, sig: dict) -> None:
-        """Route signal to order placement. Called from tv_strategy._store_signal."""
+        """Route signal to order placement. Called from super_structure._store_signal."""
         action = sig.get("action", "")
         price = sig.get("price", 0)
         sl = sig.get("sl", 0)
@@ -116,10 +116,10 @@ class TVExecutor:
         self.sl_price = new_sl
 
     def heartbeat(self, state: dict | None = None) -> None:
-        """Send status to Telegram every 5 min. Called from tv_strategy.run_live.
+        """Send status to Telegram every 5 min. Called from super_structure.run_live.
         
         Args:
-            state: dict with OHLC + indicators from tv_strategy._heartbeat_state
+            state: dict with OHLC + indicators from super_structure._heartbeat_state
         """
         now = time.time()
         if now - self._last_heartbeat < 300: return
@@ -200,7 +200,7 @@ class TVExecutor:
 
     def _enter(self, side: str, price: float, sl: float) -> None:
         if self.active:
-            print(f"[TVExec] Already in position, ignoring ENTRY", flush=True)
+            print(f"[SSExec] Already in position, ignoring ENTRY", flush=True)
             return
         try:
             size = 1 if side == "Buy" else -1
@@ -210,7 +210,7 @@ class TVExecutor:
                 "positionSize": size,
                 "customTag": str(uuid.uuid4())[:8], "timeType": 0,
             })
-            print(f"[TVExec] MARKET {side} @ {price:.1f}: {json.dumps(result)}", flush=True)
+            print(f"[SSExec] MARKET {side} @ {price:.1f}: {json.dumps(result)}", flush=True)
             self.active = True
             self.pos_side = "Long" if side == "Buy" else "Short"
             self.entry_price = price
@@ -221,7 +221,7 @@ class TVExecutor:
                 f"Entry: `${price:.1f}`\n"
                 f"SL (strategy): `${sl:.1f}`")
         except Exception as e:
-            print(f"[TVExec] ENTRY failed: {e}", flush=True)
+            print(f"[SSExec] ENTRY failed: {e}", flush=True)
             _send_telegram(f"⚠️ *Entry FAILED*: {e}")
 
     def _place_sl(self, sl: float) -> None:
@@ -238,11 +238,11 @@ class TVExecutor:
             if oid:
                 self.sl_order_id = int(oid)
             else:
-                print(f"[TVExec] SL response missing orderId: {json.dumps(result)[:200]}", flush=True)
+                print(f"[SSExec] SL response missing orderId: {json.dumps(result)[:200]}", flush=True)
             self.sl_price = sl
-            print(f"[TVExec] SL placed @ {sl:.1f} (order #{oid})", flush=True)
+            print(f"[SSExec] SL placed @ {sl:.1f} (order #{oid})", flush=True)
         except Exception as e:
-            print(f"[TVExec] SL order failed: {e}", flush=True)
+            print(f"[SSExec] SL order failed: {e}", flush=True)
             self.sl_order_id = None
 
     def _exit(self, price: float, reason: str, pnl: float) -> None:
@@ -251,7 +251,7 @@ class TVExecutor:
             result = _flatten_all()
             pnl_s = f"+{pnl:.0f}" if pnl >= 0 else f"-{abs(pnl):.0f}"
             emoji = "✅" if pnl >= 0 else "❌"
-            print(f"[TVExec] FLATTEN @ market PnL={pnl_s}: {json.dumps(result)}", flush=True)
+            print(f"[SSExec] FLATTEN @ market PnL={pnl_s}: {json.dumps(result)}", flush=True)
             _send_telegram(
                 f"{emoji} *Super Structure — Exit Executed*\n\n"
                 f"PnL: `{pnl_s}`\n"
@@ -262,5 +262,5 @@ class TVExecutor:
             self.sl_order_id = None
             self.entry_price = 0.0
         except Exception as e:
-            print(f"[TVExec] EXIT failed: {e}", flush=True)
+            print(f"[SSExec] EXIT failed: {e}", flush=True)
             _send_telegram(f"⚠️ *Exit FAILED*: {e}")

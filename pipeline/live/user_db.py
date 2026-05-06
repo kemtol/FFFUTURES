@@ -12,7 +12,7 @@ Schema:
 
 Usage:
   from pipeline.live.user_db import get_subscribers, subscribe, upsert_user
-  chat_ids = get_subscribers("tv_strategy")  # → ["7980136995", ...]
+  chat_ids = get_subscribers("super_structure")  # → ["7980136995", ...]
 """
 
 from __future__ import annotations

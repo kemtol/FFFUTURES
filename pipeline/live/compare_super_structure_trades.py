@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare Python TV strategy against TradingView transaction history."""
+"""Compare Python Super Structure against TradingView transaction history."""
 from __future__ import annotations
 
 import json
@@ -14,14 +14,14 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
 from pipeline.live.buffer import DataBuffer, CANARY_DB
-from pipeline.live.tv_strategy import (
-    TVStrategy, supertrend, dema, adx, cci,
+from pipeline.live.super_structure import (
+    SuperStructure, supertrend, dema, adx, cci,
     ATR_PERIOD, ST_FACTOR, DEMA_LENGTH, ADX_LENGTH, ADX_THRESHOLD,
     CCI_LENGTH, CCI_LONG_MIN, CCI_SHORT_MAX,
     CCI_SOURCE,
 )
 
-TRADES_FILE = ROOT / "data" / "Live" / "tv_trades.json"
+TRADES_FILE = ROOT / "data" / "Live" / "tradingview_trades.json"
 TV_LOCAL_UTC_OFFSET_HOURS = 0
 WARMUP_DAYS = 90
 
@@ -300,7 +300,7 @@ def main():
         "comparable_trades": comparable,
         "details": results,
     }
-    out_path = ROOT / "model" / "CALIBRATION" / "tv_strategy_comparison.json"
+    out_path = ROOT / "model" / "CALIBRATION" / "super_structure_comparison.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(out, indent=2, default=str))
     print(f"\nSaved to {out_path}")

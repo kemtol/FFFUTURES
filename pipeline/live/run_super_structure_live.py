@@ -7,9 +7,9 @@ sys.path.insert(0, str(ROOT))
 # Fallback: also try explicit path
 sys.path.insert(0, "/home/kemal/futures")
 
-from pipeline.live.tv_strategy import TVStrategy
+from pipeline.live.super_structure import SuperStructure
 from datetime import datetime, timezone
 
-t = TVStrategy()
-t.check(now=datetime.now(timezone.utc))
-t.run_live()
+s = SuperStructure()
+s.check(now=datetime.now(timezone.utc))
+s.run_live()

@@ -16,17 +16,19 @@ data/
     ├── topstepx_token.json   # JWT for TopstepX API (refreshed via Playwright)
     ├── topstepx_creds.json   # TopstepX email + password
     ├── telegram.env          # Telegram bot token + chat ID
-    ├── tv_signals.json       # Super Structure trade history (persisted)
-    ├── fvg_signals.json      # FVG Scalper trade history (persisted)
-    ├── tv_live.log           # TV daemon stdout/stderr
+    ├── super_structure_signals.json  # Super Structure trade history (persisted)
+    ├── fvg_signals.json              # FVG Scalper trade history (persisted)
+    ├── super_structure.log           # Super Structure daemon stdout/stderr
+    ├── tradingview_trades.json       # TradingView platform trade export (calibration source)
+    ├── super_structure.pine          # Pine Script source for TV indicator
     ├── topstepx_feed.log     # Feed daemon log
     └── fvg_live.log          # FVG daemon log
 pipeline/
 ├── live/                # 🔴 LIVE INFERENCE & EXECUTION
-│   ├── tv_strategy.py      # Super Structure: ST+DEMA+ADX+CCI, check(), run_live(), heartbeat state
+│   ├── super_structure.py  # Super Structure: ST+DEMA+ADX+CCI, check(), run_live(), heartbeat state
 │   ├── fvg_scalper.py      # FVG Scalper: FVG+DEMA+ADX+CHOP, check(), run_live() (parked)
-│   ├── run_tv_live.py      # Entry-point for systemd daemon (single TVStrategy instance)
-│   ├── signal_bus.py       # Pub/sub: _format_tv_strategy(), _format_fvg_scalper(), Telegram send
+│   ├── run_super_structure_live.py  # Entry-point for systemd daemon (single SuperStructure instance)
+│   ├── signal_bus.py       # Pub/sub: _format_super_structure(), _format_fvg_scalper(), Telegram send
 │   ├── user_db.py          # SQLite: users/chats/subscriptions, WAL mode
 │   ├── buffer.py           # BufferManager: SQLite read/write, fill_range(), detect_gaps(), repair()
 │   ├── runner.py           # ORB main daemon (research only, no Telegram)
@@ -37,14 +39,14 @@ pipeline/
 │   ├── rolling.py          # RollingStats manager (skeleton)
 │   ├── run_feed.py         # TopstepX WS → SQLite daemon (auto-reconnect + gap repair)
 │   ├── walkforward_telegram.py  # --batch (direct loop 2.98s) + --incremental modes
-│   ├── calibrate_tv.py     # Python vs TradingView trade comparison
-│   ├── send_tv_signals.py  # Direct backtest → Telegram sender
+│   ├── calibrate_super_structure.py  # Python vs TradingView trade comparison
+│   ├── send_super_structure_signals.py  # Direct backtest → Telegram sender
 │   ├── execute/
-│   │   └── tv_executor.py  # TV Trade Executor: market entry, flatten, heartbeat, SL tracking
+│   │   └── super_structure_executor.py  # Super Structure Trade Executor: market entry, flatten, heartbeat, SL tracking
 │   └── sources/
 │       └── topstepx.py     # TopstepX WebSocket feed (RealTimeBar, SubscribeBars) + token fetch
 ├── research/             # Strategy backtest builders (separate from live execution)
-│   ├── build_st_trade_events.py    # Super Structure UI JSON/parquet generator
+│   ├── build_super_structure_trade_events.py    # Super Structure UI JSON/parquet generator
 │   └── build_fvg_trade_events.py   # FVG Scalper UI JSON/parquet generator (params override)
 ├── feature/modules/      # Feature generators (standalone CLI) + loader.py + _TEMPLATE
 ├── analysis/             # Sweep runners, topstep_sim.py (shared), evaluation
@@ -52,7 +54,7 @@ pipeline/
 ├── train/                # LGBM trainers (reversal + continuation)
 ├── fetch/                # yfinance data ingestion
 └── run/                  # Daemon management
-    ├── tv_listener.service    # systemd user service for TV strategy
+    ├── super_structure.service  # systemd user service for Super Structure
     └── restart_daemons.sh     # Post-reboot daemon launcher (cron @reboot)
 model/                   # Trained models + sweep reports
 _MEMORY/                 # Daily research logs (agent continuity)
@@ -65,7 +67,7 @@ service/                 # EMPTY
 
 ## Strategies
 
-### Super Structure (`tv_strategy`)
+### Super Structure (`super_structure`)
 - **Indicators:** SuperTrend(4.0, 12) + DEMA(200) + ADX(12) + CCI(12)
 - **Entry:** CCI > 100 (BUY) / CCI < -100 (SELL) AND ADX > 25 AND DEMA cross AND SuperTrend flip
 - **SL:** Dynamic trailing SuperTrend (code-only, NO exchange stop order)
@@ -97,9 +99,9 @@ service/                 # EMPTY
 
 ### Live trading track
 - **`label="right"` in resample**: MUST use `label="right", closed="left"` for 5m bars. `label="left"` shifts timestamps 5 min behind TradingView — causes false entry signals and calibration mismatch.
-- **Single TVStrategy instance**: `run_tv_live.py` must create ONE `TVStrategy()`, call `.check()` ONCE then `.run_live()`. Two instances = double-trade.
+- **Single SuperStructure instance**: `run_super_structure_live.py` must create ONE `SuperStructure()`, call `.check()` ONCE then `.run_live()`. Two instances = double-trade.
 - **No exchange stop orders for Super Structure**: SL is code-only SuperTrend trail. Exit via `_flatten_all()` not stop order. Never send `POST /Order` with stop/target fields for this strategy.
-- **Commission**: TV live auto-trade uses $1.74/round-turn (TopstepX real: $0.87/leg × 2). ORB sim uses $3.00.
+- **Commission**: Super Structure live auto-trade uses $1.74/round-turn (TopstepX real: $0.87/leg × 2). ORB sim uses $3.00.
 - **Warmup**: use 120 days for DEMA(200) convergence. Shorter warmup → DEMA not converged → false signals on first bars.
 - **systemd over nohup**: Always use systemd `--user` service for daemons. `nohup`/`disown` die on terminal disconnect in this environment.
 - **Combined buffer**: use `combined_buffer.db` for backtests (3.6M bars). Use `topstepx_buffer.db` for live feed.
@@ -121,13 +123,13 @@ service/                 # EMPTY
 ### Live Trading (systemd services)
 
 ```bash
-# TV Strategy daemon
-systemctl --user start tv_listener
-systemctl --user stop tv_listener
-systemctl --user restart tv_listener
-systemctl --user status tv_listener
-journalctl --user -u tv_listener -f          # live logs
-journalctl --user -u tv_listener -n 50       # last 50 lines
+# Super Structure daemon
+systemctl --user start super_structure
+systemctl --user stop super_structure
+systemctl --user restart super_structure
+systemctl --user status super_structure
+journalctl --user -u super_structure -f      # live logs
+journalctl --user -u super_structure -n 50   # last 50 lines
 
 # Post-reboot restart all daemons
 bash pipeline/run/restart_daemons.sh
@@ -137,14 +139,14 @@ python3 pipeline/live/run_feed.py            # TopstepX WS → combined_buffer.d
 
 # UI backtest
 cd ui && python3 -m http.server 4173
-# → http://127.0.0.1:4173?strategy=st|fvg&session=Asia,London&days=90
+# → http://127.0.0.1:4173?strategy=super_structure|fvg_scalper&session=Asia,London&days=90
 ```
 
 ### Calibration & Testing
 
 ```bash
 # Compare Python signals vs TradingView export
-python3 pipeline/live/calibrate_tv.py
+python3 pipeline/live/calibrate_super_structure.py
 
 # Batch backtest → Telegram (dry-run)
 python3 pipeline/live/walkforward_telegram.py --batch
@@ -157,7 +159,7 @@ python3 pipeline/live/walkforward_telegram.py --incremental
 
 ```bash
 # Super Structure events for UI
-python3 pipeline/research/build_st_trade_events.py
+python3 pipeline/research/build_super_structure_trade_events.py
 
 # FVG events for UI (default best params)
 python3 pipeline/research/build_fvg_trade_events.py
@@ -266,6 +268,6 @@ python3 pipeline/feature/build_labels.py
 - Do not add `year` to EVENT_KEY merge keys.
 - Do not send exchange stop/limit orders for Super Structure — SL is code-only SuperTrend trail.
 - Do not use `label="left"` in resample — timestamps shift 5 min behind TradingView.
-- Do not create two TVStrategy instances — double-trade risk.
+- Do not create two SuperStructure instances — double-trade risk.
 - Do not use `nohup`/`disown` for daemons — use systemd `--user` service.
 - Do not start FVG listener until tested on paper (parked).

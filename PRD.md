@@ -34,8 +34,8 @@ Run multiple trading strategies in one daemon. Each strategy detects signals ind
 └─────────────────────────────────────────────────────────┘
 
 Users:
-  6283890722797 → subscribe [tv_strategy, orb_v2]
-  (future)      → subscribe [tv_strategy]
+  6283890722797 → subscribe [super_structure, orb_v2]
+  (future)      → subscribe [super_structure]
 ```
 
 ## Phase 1 Scope
@@ -49,7 +49,7 @@ SignalBus (singleton)
 ├── subscribe(user_id, strategy_name)
 ├── publish(strategy_name, payload)
 ├── _format_orb_signal()      → Telegram markdown
-├── _format_tv_signal()        → Telegram markdown
+├── _format_super_structure() → Telegram markdown
 ├── _send(user_id, text)       → raw Telegram API
 └── _load_token()              → read data/Live/telegram.env
 ```
@@ -58,13 +58,14 @@ Seed subscription:
 ```python
 HARDCODED_USER = "6283890722797"
 {
-  "tv_strategy": {HARDCODED_USER},
+  "super_structure": {HARDCODED_USER},
   "orb_v2":      {HARDCODED_USER},
 }
 ```
 
-### 2. Modify: `pipeline/live/tv_strategy.py`
-- After `_store_signal()`, call `SignalBus().publish("tv_strategy", {...})`
+### 2. Modify: `pipeline/live/super_structure.py`
+
+- After `_store_signal()`, call `SignalBus().publish("super_structure", {...})`
 - Payload: action, symbol, price, sl, reason, adx, cci
 
 ### 3. Modify: `pipeline/live/runner.py`
@@ -72,7 +73,7 @@ HARDCODED_USER = "6283890722797"
 - Keep TelegramBot for command polling only
 
 ### 4. Modify: `pipeline/live/runner.py` entry point
-- When `--live`: start `TVStrategy.run_live()` in a daemon thread alongside existing loop
+- When `--live`: start `SuperStructure.run_live()` in a daemon thread alongside existing loop
 - Single process, single Telegram bot, shared token
 
 ## Final Entry Point
@@ -83,7 +84,7 @@ python3 pipeline/live/runner.py --live
 | Thread | Loop | Publish To |
 |--------|------|------------|
 | ORB v2.0 | 60s detect + predict | SignalBus → Telegram |
-| TV Strategy | 30s check | SignalBus → Telegram |
+| Super Structure | 30s check | SignalBus → Telegram |
 | Webhook :8080 | HTTP server | → `_maybe_execute` → exec |
 | Telegram command | 5s polling | /status /last /pnl /portfolio /features |
 
@@ -93,7 +94,7 @@ python3 pipeline/live/runner.py --live
 - Telegram bot token from `data/Live/telegram.env`
 - Subscriptions are in-memory dict (no persistence needed for Phase 1)
 - Strategy on/off state per-strategy class (not in bus)
-- `mark_as_written` trigger preserved (webhook still saves to `tv_signals.json`)
+- `mark_as_written` trigger preserved (webhook still saves to `super_structure_signals.json`)
 
 ## Phase 2 (Out of Scope)
 - SignalBus → Order Management Service

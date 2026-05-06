@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build trade-event datamart for ST + DEMA + ADX + CCI strategy.
+"""Build trade-event datamart for Super Structure (ST + DEMA + ADX + CCI) strategy.
 
 This is the bridge between a simple backtest and setup/probability research:
 one output row per completed trade, with entry-time features and realized
@@ -21,7 +21,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pipeline.live.tv_strategy import (
+from pipeline.live.super_structure import (
     ADX_LENGTH,
     ADX_THRESHOLD,
     ATR_PERIOD,
@@ -39,10 +39,10 @@ from pipeline.live.tv_strategy import (
 )
 
 RAW_DB = ROOT / "data/Level_0_Raw/MGC_1m.db"
-OUT_PARQUET = ROOT / "data/Level_2_Datamart/st_dema_adx_cci_trade_events.parquet"
-OUT_CANDLES_JSON = ROOT / "ui/data/candles_st_dema_adx_cci_5m.json"
-OUT_TRADES_JSON = ROOT / "ui/data/trade_events_st_dema_adx_cci.json"
-STRATEGY_KEY = "st_dema_adx_cci"
+OUT_PARQUET = ROOT / "data/Level_2_Datamart/super_structure_trade_events.parquet"
+OUT_CANDLES_JSON = ROOT / "ui/data/candles_super_structure_5m.json"
+OUT_TRADES_JSON = ROOT / "ui/data/trade_events_super_structure.json"
+STRATEGY_KEY = "super_structure"
 
 SYMBOL = "MICRO_GOLD"
 TIMEFRAME = "1m"

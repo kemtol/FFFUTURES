@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build trade-event datamart for FVG + DEMA Scalper strategy.
 
-Mirrors build_st_trade_events.py with FVG detection, DEMA filter, ADX+CHOP
+Mirrors build_super_structure_trade_events.py with FVG detection, DEMA filter, ADX+CHOP
 regime, session gating, and swing SL/TP.
 """
 from __future__ import annotations

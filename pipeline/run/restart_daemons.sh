@@ -11,8 +11,8 @@ setsid python3 pipeline/live/run_feed.py </dev/null &>> data/Live/topstepx_feed.
 
 sleep 5
 
-echo "Starting TV listener..."
-setsid python3 pipeline/live/run_tv_live.py </dev/null &>> data/Live/tv_live.log &
+echo "Starting Super Structure listener..."
+setsid python3 pipeline/live/run_super_structure_live.py </dev/null &>> data/Live/super_structure.log &
 
 echo "Starting FVG listener..."
 setsid python3 -c "

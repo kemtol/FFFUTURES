@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Walkforward TV strategy: --batch (direct loop, ~0.5s) or --incremental (live sim)."""
+"""Walkforward Super Structure: --batch (direct loop, ~0.5s) or --incremental (live sim)."""
 from __future__ import annotations
 
 import sqlite3, sys, time, shutil, tempfile
@@ -13,8 +13,8 @@ sys.path.insert(0, str(ROOT))
 
 from pipeline.live.buffer import DataBuffer
 from pipeline.live.signal_bus import SignalBus
-from pipeline.live.tv_strategy import (
-    TVStrategy, ADX_LENGTH, ADX_THRESHOLD, ATR_PERIOD, CCI_LENGTH,
+from pipeline.live.super_structure import (
+    SuperStructure, ADX_LENGTH, ADX_THRESHOLD, ATR_PERIOD, CCI_LENGTH,
     CCI_LONG_MIN, CCI_SHORT_MAX, CCI_SOURCE, DEMA_LENGTH, ST_FACTOR,
     _atr, adx, cci, dema, supertrend,
 )
@@ -98,7 +98,7 @@ def run_batch(start_ts: str, end_ts: str, send: bool = False):
                       "ts": ts_str, "pnl": pnl, "sl": 0, "adx": round(cur_adx, 1),
                       "cci": round(cur_cci, 0), "dema": round(cur_dema, 1)}
                 print(fmt_signal(pl)); sent += 1
-                if bus: bus.publish("tv_strategy", pl)
+                if bus: bus.publish("super_structure", pl)
             pos = 0
         elif pos == -1 and cur_high >= sl_price:
             if in_target:
@@ -107,7 +107,7 @@ def run_batch(start_ts: str, end_ts: str, send: bool = False):
                       "ts": ts_str, "pnl": pnl, "sl": 0, "adx": round(cur_adx, 1),
                       "cci": round(cur_cci, 0), "dema": round(cur_dema, 1)}
                 print(fmt_signal(pl)); sent += 1
-                if bus: bus.publish("tv_strategy", pl)
+                if bus: bus.publish("super_structure", pl)
             pos = 0
 
         if pos == 1 and cur_dir > 0:
@@ -117,7 +117,7 @@ def run_batch(start_ts: str, end_ts: str, send: bool = False):
                       "ts": ts_str, "pnl": pnl, "sl": 0, "adx": round(cur_adx, 1),
                       "cci": round(cur_cci, 0), "dema": round(cur_dema, 1)}
                 print(fmt_signal(pl)); sent += 1
-                if bus: bus.publish("tv_strategy", pl)
+                if bus: bus.publish("super_structure", pl)
             pos = 0
         elif pos == -1 and cur_dir < 0:
             if in_target:
@@ -126,7 +126,7 @@ def run_batch(start_ts: str, end_ts: str, send: bool = False):
                       "ts": ts_str, "pnl": pnl, "sl": 0, "adx": round(cur_adx, 1),
                       "cci": round(cur_cci, 0), "dema": round(cur_dema, 1)}
                 print(fmt_signal(pl)); sent += 1
-                if bus: bus.publish("tv_strategy", pl)
+                if bus: bus.publish("super_structure", pl)
             pos = 0
 
         if pos != 0:
@@ -140,7 +140,7 @@ def run_batch(start_ts: str, end_ts: str, send: bool = False):
                       "adx": round(cur_adx, 1), "cci": round(cur_cci, 0),
                       "dema": round(cur_dema, 1)}
                 print(fmt_signal(pl)); sent += 1
-                if bus: bus.publish("tv_strategy", pl)
+                if bus: bus.publish("super_structure", pl)
         elif short_sig and pos == 0:
             pos = -1; sl_price = cur_st; entry_price = cur_close
             if in_target:
@@ -149,16 +149,16 @@ def run_batch(start_ts: str, end_ts: str, send: bool = False):
                       "adx": round(cur_adx, 1), "cci": round(cur_cci, 0),
                       "dema": round(cur_dema, 1)}
                 print(fmt_signal(pl)); sent += 1
-                if bus: bus.publish("tv_strategy", pl)
+                if bus: bus.publish("super_structure", pl)
 
     print(f"\nSignals: {sent}")
 
 
 def run_incremental(start_ts: str, end_ts: str, send: bool = False):
-    """Feed bars one-at-a-time, call tv.check() — simulates live."""
+    """Feed bars one-at-a-time, call ss.check() — simulates live."""
     warmup_start = (pd.Timestamp(start_ts) - pd.Timedelta(days=90)).strftime("%Y-%m-%d %H:%M:%S")
 
-    tmpdir = tempfile.mkdtemp(prefix="tv_wf_")
+    tmpdir = tempfile.mkdtemp(prefix="ss_wf_")
     buf_path = Path(tmpdir) / "buffer.db"
     buffer = DataBuffer(db_path=buf_path)
 
@@ -188,7 +188,7 @@ def run_incremental(start_ts: str, end_ts: str, send: bool = False):
             src, params=[start_ts, end_ts],
         )
 
-    tv = TVStrategy(buffer_or_db_path=buffer)
+    ss = SuperStructure(buffer_or_db_path=buffer)
     bus = SignalBus() if send else None
 
     print(f"\n{'='*70}")
@@ -212,13 +212,13 @@ def run_incremental(start_ts: str, end_ts: str, send: bool = False):
             )
             conn.commit()
         now_ts = pd.Timestamp(ts).tz_localize("UTC").to_pydatetime()
-        signals = tv.check(now=now_ts) or []
+        signals = ss.check(now=now_ts) or []
         for wrapper in signals:
             sig = wrapper.get("signal", wrapper)
             print(fmt_signal(sig))
             sent += 1
             if bus:
-                bus.publish("tv_strategy", sig)
+                bus.publish("super_structure", sig)
 
     total = time.perf_counter() - t0
     print(f"\nSignals: {sent}  |  Time: {total:.2f}s  |  "

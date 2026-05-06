@@ -15,7 +15,7 @@ let allTrades = [];
 let filteredTrades = [];
 let selectedTradeNo = null;
 let currentTimeframe = "5m";
-let currentStrategy = "st_dema_adx_cci";
+let currentStrategy = "super_structure";
 
 function setStatus(text) {
   $("#status").text(text);

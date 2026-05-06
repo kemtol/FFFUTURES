@@ -193,7 +193,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
             "parsed_from": text.strip()[:200],
         }
 
-        signal_path = Path(__file__).resolve().parent.parent.parent / "data" / "Live" / "tv_signals.json"
+        signal_path = Path(__file__).resolve().parent.parent.parent / "data" / "Live" / "super_structure_signals.json"
         try:
             if signal_path.exists():
                 signals = json.loads(signal_path.read_text())

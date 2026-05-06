@@ -29,7 +29,7 @@ Live status as of 2026-05-02:
 
 TradingView comparator status:
 
-- `pipeline/live/tv_strategy.py` matches TradingView strategy semantics closely after indicator and lifecycle fixes.
+- `pipeline/live/super_structure.py` matches TradingView strategy semantics closely after indicator and lifecycle fixes.
 - Current comparison artifact shows 32 closed trades matched and 1 open trade entry matched (96.97% match).
 
 Databento repair status:

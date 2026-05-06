@@ -695,10 +695,10 @@ if __name__ == "__main__":
         runner.portfolio.start_balance = 50000.0
         runner.portfolio.balance = 50000.0
 
-        from pipeline.live.tv_strategy import TVStrategy
-        tv = TVStrategy(buffer_or_db_path=runner.buffer)
+        from pipeline.live.super_structure import SuperStructure
+        ss = SuperStructure(buffer_or_db_path=runner.buffer)
 
-        # Replay on_bar callback: check both ORB and TV per bar
+        # Replay on_bar callback: check both ORB and Super Structure per bar
         def _on_replay_bar(bar: dict) -> None:
             try:
                 now_ts = pd.Timestamp(bar["timestamp_utc"], tz="UTC").to_pydatetime()
@@ -708,10 +708,10 @@ if __name__ == "__main__":
                     for s in signals:
                         print(f"SIGNAL|{s['ts']}|{s['session']}|{s['side']}|{s['decision']}|"
                               f"entry={s['entry']}|TP={s['tp']}|SL={s['sl']}", flush=True)
-                # TV Strategy check (only on 5m bar boundaries)
+                # Super Structure check (only on 5m bar boundaries)
                 if bar["epoch_ms"] % 300_000 == 0:
-                    tv_signals = tv.check(now=now_ts)
-                    for tsig in tv_signals:
+                    ss_signals = ss.check(now=now_ts)
+                    for sig in ss_signals:
                         pass  # _store_signal already prints + publishes
                 # Portfolio update
                 latest = runner.buffer.latest()
@@ -781,11 +781,11 @@ if __name__ == "__main__":
         print(f"[Live] Strategy: {TARGET} ({RR:.0f}R), Risk: $100/1R", flush=True)
         print(f"[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC", flush=True)
 
-        # Start TV Strategy in daemon thread
-        from pipeline.live.tv_strategy import TVStrategy
-        tv = TVStrategy()
-        threading.Thread(target=tv.run_live, daemon=True).start()
-        print("[Live] TV Strategy thread started", flush=True)
+        # Start Super Structure in daemon thread
+        from pipeline.live.super_structure import SuperStructure
+        ss = SuperStructure()
+        threading.Thread(target=ss.run_live, daemon=True).start()
+        print("[Live] Super Structure thread started", flush=True)
 
         # Start webhook receiver for TradingView → Gmail → alerts
         webhook = WebhookServer(port=8080)
