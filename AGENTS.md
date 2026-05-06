@@ -68,12 +68,150 @@ service/                 # EMPTY
 ## Strategies
 
 ### Super Structure (`super_structure`)
-- **Indicators:** SuperTrend(4.0, 12) + DEMA(200) + ADX(12) + CCI(12)
-- **Entry:** CCI > 100 (BUY) / CCI < -100 (SELL) AND ADX > 25 AND DEMA cross AND SuperTrend flip
-- **SL:** Dynamic trailing SuperTrend (code-only, NO exchange stop order)
-- **Exit:** SuperTrend flips opposite → flatten all (`DELETE /Position/close/{acct}`)
-- **Telgram:** `📡 *Super Structure — Signal*` / `📡 *Super Structure — Exit*` with ✅❌ PnL emoji
-- **Auto-trade:** 1 contract, market order, $1.74/round-turn commission
+
+A trend-following multi-filter strategy on MGC 5m, ported from a TradingView Pine script. Live auto-trades through TopstepX. Single contract, market entries, code-managed trailing SL. The "edge" is filter-stacking: every condition must agree before entry, every condition individually can exit.
+
+#### Fundamental — what it is
+
+Indicators (all on 5m TF, resampled from 1m):
+
+| Indicator | Params | Role |
+|-----------|--------|------|
+| SuperTrend | factor=4.0, ATR=12 | Regime (`direction` ±1) + dynamic SL anchor |
+| DEMA | length=200 | Long-term trend filter; cross is entry trigger |
+| ADX | length=12, threshold=25 | Strength gate |
+| CCI | length=12, source=hl2 | Momentum trigger (>100 long, <−100 short) |
+
+Entry logic (`super_structure.py:387-390`):
+```
+LONG  = ADX>25 ∧ CCI>+100 ∧ (cross_up_DEMA ∨ close>DEMA) ∧ ST_dir == −1
+SHORT = ADX>25 ∧ CCI<−100 ∧ (cross_dn_DEMA ∨ close<DEMA) ∧ ST_dir == +1
+```
+
+Exit logic (`super_structure.py:392-435`): SL hit (`low ≤ sl` long / `high ≥ sl` short, `reason="SL"`) OR SuperTrend flip (`reason="TREND_FLIP"`). SL value = current SuperTrend, re-assigned each bar — pure trailing, code-only. **No exchange stop order.** If the daemon dies mid-position, the position has zero protection until the daemon comes back.
+
+Calibration: 6/6 core trades match TradingView (Apr 29-30 2026); ~$0.20 average price delta from yfinance vs broker OHLC source — irreducible, not a bug. Internal subscription/publish key is `super_structure`. UI URL value: `?strategy=super_structure`.
+
+Cost model: $10/point on MGC × 1 contract, commission **$1.74/round-turn** (TopstepX real: $0.87/leg × 2). Do not use $3.00 — that's the ORB sim number.
+
+#### Objective — what it's trying to do
+
+Hit a **Topstep 50K evaluation pass** (+$3,000 in ~20 trading days, MLL $2,000, consistency rule). The Super Structure → FVG pairing is intentional: ST is the magnitude play (lower WR, higher avg trade), FVG when it goes live will be the frequency play (higher WR, lower avg trade). Don't tune Super Structure for win rate; tune for expectancy and drawdown survival.
+
+#### Architecture
+
+```
+TopstepX WS → run_feed.py → combined_buffer.db (3.6M bars 1m, append-only)
+                                        ↓ poll every 30s
+                              SuperStructure.check(now=…)
+                                ├─ guard: skip if <30s since last check
+                                ├─ incremental fetch: cache df, query new rows only
+                                ├─ resample 1m → 5m (label="right", closed="left")
+                                ├─ dedup: skip indicator compute if _last_ts unchanged
+                                ├─ compute ST / DEMA / ADX / CCI
+                                ├─ exit checks (SL, then trend flip)
+                                ├─ entry checks (long/short)
+                                └─ update _heartbeat_state
+                                            ↓
+                                _store_signal(action, price, sl, …)
+                                ├─ append to self._signals (in-memory)
+                                ├─ write super_structure_signals.json
+                                ├─ SignalBus.publish("super_structure", payload)
+                                │     └→ Telegram chat 7980136995
+                                └─ executor.on_signal(payload)
+                                      └→ SuperStructureExecutor
+                                          ├─ _enter() → POST /Order (market, type=2)
+                                          ├─ update_sl() → in-memory only (no API)
+                                          └─ _exit() → DELETE /Position/close/{acct}
+```
+
+It's a **pull-based** loop, not push from WebSocket. Strategies poll the buffer; the WS daemon's only job is writing to SQLite. Performance comes from the 3-layer optimization in `check()` (per memory `_MEMORY/20260503.md`):
+
+| Layer | Mechanism | Effect |
+|-------|-----------|--------|
+| 30s guard | skip if `now − _last_checked_now < 30s` | 0.4µs no-op |
+| Dedup `_last_ts` | skip indicator compute if 5m bar unchanged | saves ~642ms |
+| Incremental fetch | cache df, only query new rows since `_cached_end` | saves ~365ms |
+
+In a 24h live run with 1-minute polling: ~101s total CPU = 0.12% utilization.
+
+State variables (all in-memory, all reset on restart — see Footguns):
+
+| Var | Lives in | Persists? |
+|-----|----------|-----------|
+| `_pos`, `_entry_price`, `_sl_price` | `SuperStructure` instance | ❌ |
+| `_last_ts`, `_cached_df`, `_cached_end` | `SuperStructure` instance | ❌ |
+| `_heartbeat_state` | `SuperStructure` instance | ❌ |
+| `active`, `pos_side`, `entry_price`, `sl_price`, `sl_order_id` | `SuperStructureExecutor` | ❌ |
+| `_signals[]` (history) | `super_structure_signals.json` | ✅ |
+| `_seen` dedup LRU | `SignalBus` instance | ❌ |
+| Subscriptions | `users.db` table | ✅ |
+
+File map:
+
+| File | Role |
+|------|------|
+| `pipeline/live/super_structure.py` | Strategy class, indicator funcs, `check()`, `run_live()` (poll loop + Telegram cmd handler) |
+| `pipeline/live/execute/super_structure_executor.py` | TopstepX REST: `_enter`, `_exit`, `_flatten_all`, `heartbeat` |
+| `pipeline/live/signal_bus.py` | Pub/sub, formatter `_format_super_structure`, dedup LRU(500), Telegram send |
+| `pipeline/live/user_db.py` | SQLite subscription DB |
+| `pipeline/live/buffer.py` | DataBuffer query layer over `combined_buffer.db` |
+| `pipeline/live/run_super_structure_live.py` | systemd entrypoint |
+| `pipeline/run/super_structure.service` | systemd unit (Restart=always, RestartSec=10) |
+| `pipeline/research/build_super_structure_trade_events.py` | Backtest → parquet + UI JSON |
+| `pipeline/live/calibrate_super_structure.py` | Compare Python vs UI backtest trades |
+| `pipeline/live/compare_super_structure_trades.py` | Compare Python vs TradingView export (`tradingview_trades.json`) |
+| `pipeline/live/walkforward_super_structure.py` | Walkforward sim (1 weekend window) |
+| `pipeline/live/walkforward_telegram.py` | Walkforward + optional Telegram publish (`--batch` direct loop, `--incremental` simulates live) |
+| `pipeline/live/send_super_structure_signals.py` | Backtest → publish to Telegram (replay tool) |
+| `data/Live/super_structure.pine` | Pine source for the TV indicator (visual mirror of strategy) |
+
+#### Operations — how it runs
+
+| Aspect | Spec |
+|--------|------|
+| Process model | One systemd `--user` daemon per strategy. Two strategies = two daemons. |
+| Service | `super_structure.service` → `python3 -u run_super_structure_live.py` |
+| Restart | `Restart=always`, `RestartSec=10` (don't lower — rapid loop on crash) |
+| Polling cadence | `check()` every 30s in `run_live` loop (`super_structure.py:600`) |
+| Logs | `data/Live/super_structure.log` (append, **no rotation**) + `journalctl --user -u super_structure` |
+| Heartbeat | Every 5 min via `executor.heartbeat(state)` — needs `bot_enabled` ∧ `_executor` |
+| Token | `data/Live/topstepx_token.json`, manual refresh via Playwright |
+| Telegram cfg | `data/Live/telegram.env` (TOKEN + CHAT_ID) |
+| Telegram cmds | `/strat`, `/strat on/off <name>`, `/ss`, `/ss_status` |
+| Subscribers | 1 user (`6283890722797` → chat `7980136995`) in `users.db` |
+| Manual ops | `systemctl --user {start,stop,restart,status} super_structure` |
+| Live tail | `journalctl --user -u super_structure -f` |
+
+Common reasons the daemon will misbehave: token expired, Telegram rate-limit (409), DB lock from concurrent feed writer, missing `combined_buffer.db`, missing `telegram.env`, two listener processes (`restart_daemons.sh` + systemd both starting it).
+
+#### Footguns (read before touching)
+
+These are real, currently present in the code or known to bite:
+
+1. **Duplicate exit block.** `super_structure.py:420-435` re-runs the SL + trend-flip exit checks already done at lines 392-418. The second block is dead code (because `_pos` is already 0), but it's confusing and any logic edit must be made in *both* places or you get drift.
+
+2. **No state persistence across restart.** `_pos`, `_entry_price`, `_sl_price`, executor's `active` — all reset to 0/empty on daemon restart. If the exchange position is open and the daemon restarts, the strategy thinks it's flat and will happily place a fresh entry. **This was observed during the rename on 2026-05-06: a duplicate BUY was placed because of restart.** Any restart while in-position is a double-trade risk.
+
+3. **No exchange stop order.** SL exists only as `_sl_price` in Python memory and the trailing SuperTrend value. If the process dies, the exchange position has no protective stop. The 10s `RestartSec` is a partial mitigation but not a guarantee.
+
+4. **Single instance only.** `run_super_structure_live.py` calls `check()` once then `run_live()`. Two daemons = two executors = two orders per signal. Never let `restart_daemons.sh` and `systemctl start` both run it.
+
+5. **`label="right"` is mandatory** on the 5m resample. `label="left"` shifts every timestamp 5 minutes behind TradingView's chart and silently produces wrong entries — calibration looks broken when it isn't.
+
+6. **30s `check()` guard is not optional.** `_last_checked_now` prevents double-execution after a fast restart inside the 30s window. Don't remove the guard "just to be sure".
+
+7. **DEMA(200) needs ≥120 days of warmup.** Shorter and DEMA hasn't converged → false signals on first bars. The warmup window is hardcoded in `check()` at `now − 120 days`.
+
+8. **Database lock errors** during simultaneous feed write + strategy read are visible in logs. They self-recover; ignore unless they spike.
+
+9. **Telegram 409 Conflict** in logs means another process is calling `getUpdates` with the same bot token. Likely cause: `restart_daemons.sh` left an orphan process, or FVG listener is running concurrently and polling the same bot.
+
+10. **Log file grows without rotation.** `super_structure.log` is append-only. Rotate manually or set up `logrotate` before this fills the disk.
+
+11. **Token refresh is manual.** When `topstepx_token.json` expires, the executor's API calls 401-fail silently into the `except` and the strategy keeps publishing signals to Telegram with no execution. Watch for "MARKET ... failed" in logs.
+
+12. **Internal name vs file name confusion is gone, but TradingView-platform refs still exist.** `tradingview_trades.json`, `super_structure.pine` are TV-platform artifacts and intentionally keep TV/tradingview prefixes.
 
 ### FVG Scalper (`fvg_scalper`)
 - **Indicators:** FVG (Fair Value Gap) + DEMA(200) + ADX(12) + CHOP(12)
