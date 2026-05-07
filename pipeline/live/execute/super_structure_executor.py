@@ -174,6 +174,19 @@ class SuperStructureExecutor:
                 "exchange_pl": float(mgc.get("profitAndLoss", 0)),
             }
 
+        # Sync active SL order from exchange if local sl_order_id is missing
+        if truth["pos"] != 0 and not self.sl_order_id:
+            try:
+                # Try to find a Stop order for this symbol
+                # We need to know the correct endpoint for active orders
+                # Based on previous 404s, let's try to infer from typical TopstepX patterns
+                # or just rely on the AUTO-PROTECT logic in the strategy if we can't find it.
+                # For now, if we have a position but no ID, we'll let AUTO-PROTECT re-place it
+                # to be 100% sure we have a known order ID to manage.
+                pass
+            except Exception:
+                pass
+
         # Silent adopt — sync executor own state
         prev_active = self.active
         prev_side = self.pos_side
@@ -191,6 +204,12 @@ class SuperStructureExecutor:
             print(f"[SSExec] Reconcile: was {prev_side or 'FLAT'}@{prev_entry:.1f} → "
                   f"now {self.pos_side or 'FLAT'}@{self.entry_price:.1f} "
                   f"(exchange P&L: {truth['exchange_pl']:.0f})", flush=True)
+
+        # AUTO-PROTECT: If active but no SL order ID, place one now
+        if self.active and not self.sl_order_id:
+            emergency_sl = (self.entry_price - 50.0) if self.pos_side == "Long" else (self.entry_price + 50.0)
+            print(f"[SSExec] AUTO-PROTECT: No SL found for {self.pos_side} position. Placing Hard SL @ {emergency_sl:.1f}...", flush=True)
+            self._place_sl(emergency_sl)
 
         return truth
 
@@ -293,12 +312,19 @@ class SuperStructureExecutor:
             self.active = True
             self.pos_side = "Long" if side == "Buy" else "Short"
             self.entry_price = price
-            # SL managed by strategy logic (SuperTrend) — no exchange stop order needed
+            
+            # Place EMERGENCY HARD SL on exchange (50 points / $500 wide)
+            # This is a safety net if the bot dies. 
+            emergency_sl = (price - 50.0) if side == "Buy" else (price + 50.0)
+            print(f"[SSExec] Placing emergency Hard SL @ {emergency_sl:.1f}...", flush=True)
+            self._place_sl(emergency_sl)
+
             _send_telegram(
                 f"🚀 *Super Structure — Entry Executed*\n\n"
                 f"Action: {side}\n"
                 f"Entry: `${price:.1f}`\n"
-                f"SL (strategy): `${sl:.1f}`")
+                f"Logic SL: `${sl:.1f}`\n"
+                f"Hard SL: `${emergency_sl:.1f}` (Exchange)")
         except Exception as e:
             print(f"[SSExec] ENTRY failed: {e}", flush=True)
             _send_telegram(f"⚠️ *Entry FAILED*: {e}")
@@ -307,9 +333,10 @@ class SuperStructureExecutor:
         if not self.active: return
         try:
             size = -1 if self.pos_side == "Long" else 1  # reverse side for stop
+            # Using type: 4 for STOP MARKET in TopstepX API
             result = _api({
                 "accountId": ACCOUNT_ID, "symbolId": SYMBOL_ID,
-                "type": 2, "limitPrice": None, "stopPrice": sl,
+                "type": 4, "limitPrice": None, "stopPrice": sl,
                 "positionSize": size,
                 "customTag": f"SL-{uuid.uuid4().hex[:6]}", "timeType": 0,
             })
@@ -319,7 +346,7 @@ class SuperStructureExecutor:
             else:
                 print(f"[SSExec] SL response missing orderId: {json.dumps(result)[:200]}", flush=True)
             self.sl_price = sl
-            print(f"[SSExec] SL placed @ {sl:.1f} (order #{oid})", flush=True)
+            print(f"[SSExec] SL placed @ {sl:.1f} (order #{self.sl_order_id})", flush=True)
         except Exception as e:
             print(f"[SSExec] SL order failed: {e}", flush=True)
             self.sl_order_id = None
@@ -327,7 +354,17 @@ class SuperStructureExecutor:
     def _exit(self, price: float, reason: str, pnl: float) -> None:
         if not self.active: return
         try:
+            # 1. Close position
             result = _flatten_all()
+            
+            # 2. Wait a bit for exchange to process, then cancel debris
+            time.sleep(0.5)
+            try:
+                _cancel_all_orders()
+                print(f"[SSExec] Cancelled exchange orders.", flush=True)
+            except Exception as ce:
+                print(f"[SSExec] Cancel orders failed: {ce}", flush=True)
+
             pnl_s = f"+{pnl:.0f}" if pnl >= 0 else f"-{abs(pnl):.0f}"
             emoji = "✅" if pnl >= 0 else "❌"
             print(f"[SSExec] FLATTEN @ market PnL={pnl_s}: {json.dumps(result)}", flush=True)

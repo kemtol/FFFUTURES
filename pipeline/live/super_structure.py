@@ -189,6 +189,7 @@ class SuperStructure:
         self._pos = 0
         self._entry_price = 0.0
         self._sl_price = 0.0
+        self._sl_order_id = None
         self._last_ts: pd.Timestamp | None = None
         self._last_checked_now: datetime | None = None
         self._cached_df: pd.DataFrame | None = None
@@ -207,6 +208,9 @@ class SuperStructure:
             try:
                 from pipeline.live.execute.super_structure_executor import SuperStructureExecutor
                 self._executor = SuperStructureExecutor()
+                # Restore sl_order_id to executor if we just loaded it from state
+                if self._sl_order_id:
+                    self._executor.sl_order_id = self._sl_order_id
                 print("[SS] Trade executor initialized", flush=True)
                 # Reconcile from exchange at startup — fixes silent desync after restart
                 self.reconcile()
@@ -232,24 +236,52 @@ class SuperStructure:
         SIGNALS_PATH.write_text(json.dumps(self._signals, indent=2, default=str))
 
     def _load_state(self) -> None:
-        """Load persisted halt flag (position state always reconciled from exchange)."""
+        """Load persisted state (halt flag, position, entry, SL).
+        Note: Position truth is reconciled from exchange in __init__ if executor exists.
+        """
         if STATE_PATH.exists():
             try:
                 d = json.loads(STATE_PATH.read_text())
                 self._halt = bool(d.get("halt", False))
                 self._halt_reason = str(d.get("halt_reason", ""))
+                self._pos = int(d.get("pos", 0))
+                self._entry_price = float(d.get("entry_price", 0.0))
+                self._sl_price = float(d.get("sl_price", 0.0))
+                self._sl_order_id = d.get("sl_order_id")
                 if self._halt:
                     print(f"[SS] Loaded HALT state: {self._halt_reason}", flush=True)
-            except Exception:
-                pass
+                if self._pos != 0:
+                    print(f"[SS] Loaded POSITION state: {self._pos} @ {self._entry_price:.1f} (SL: {self._sl_price:.1f}, Order: {self._sl_order_id})", flush=True)
+            except Exception as e:
+                print(f"[SS] Error loading state: {e}", flush=True)
 
     def _save_state(self) -> None:
+        """Atomic write of current state to prevent corruption."""
+        import os
         STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        STATE_PATH.write_text(json.dumps({
-            "halt": self._halt,
-            "halt_reason": self._halt_reason,
-            "saved_at": datetime.now(timezone.utc).isoformat(),
-        }, indent=2))
+        tmp_path = STATE_PATH.with_suffix(".tmp")
+        
+        # Sync order ID from executor if active
+        if self._executor and hasattr(self._executor, "sl_order_id"):
+            self._sl_order_id = self._executor.sl_order_id
+
+        try:
+            data = {
+                "halt": self._halt,
+                "halt_reason": self._halt_reason,
+                "pos": self._pos,
+                "entry_price": self._entry_price,
+                "sl_price": self._sl_price,
+                "sl_order_id": self._sl_order_id,
+                "saved_at": datetime.now(timezone.utc).isoformat(),
+            }
+            tmp_path.write_text(json.dumps(data, indent=2))
+            os.replace(tmp_path, STATE_PATH)
+        except Exception as e:
+            print(f"[SS] Error saving state: {e}", flush=True)
+            if tmp_path.exists():
+                try: os.remove(tmp_path)
+                except: pass
 
     def reconcile(self) -> dict:
         """Pull truth from exchange, silently adopt. Returns truth dict."""
@@ -266,7 +298,14 @@ class SuperStructure:
         self._entry_price = truth.get("entry_price", 0.0)
         if self._pos == 0:
             self._sl_price = 0.0
+            self._sl_order_id = None
             self._entry_bar_ts = None
+        
+        # Sync order ID back to executor if it's missing but we have it in memory
+        if self._pos != 0 and self._sl_order_id and self._executor:
+            if getattr(self._executor, "sl_order_id", None) != self._sl_order_id:
+                self._executor.sl_order_id = self._sl_order_id
+
         if prev_pos != self._pos or abs(prev_entry - self._entry_price) > 0.5:
             print(f"[SS] State synced from exchange: pos={self._pos} entry={self._entry_price:.1f}", flush=True)
         return truth
@@ -449,13 +488,15 @@ class SuperStructure:
                                    ts=str(last_ts))
                 new_signals.append(self._signals[-1])
                 self._pos = 0
+                self._save_state()
 
-        if self._pos == -1:
+        elif self._pos == -1:
             if h[i] >= self._sl_price:
                 self._store_signal("CLOSE", self._sl_price, reason="SL",
                                    ts=str(last_ts))
                 new_signals.append(self._signals[-1])
                 self._pos = 0
+                self._save_state()
 
         # ── Trend flip ─────────────────────────────────────────────────────
         if self._pos == 1 and cur_dir > 0:
@@ -463,33 +504,21 @@ class SuperStructure:
                                ts=str(last_ts))
             new_signals.append(self._signals[-1])
             self._pos = 0
+            self._save_state()
 
         elif self._pos == -1 and cur_dir < 0:
             self._store_signal("CLOSE", cur_close, reason="TREND_FLIP",
                                ts=str(last_ts))
             new_signals.append(self._signals[-1])
             self._pos = 0
-
-        if self._pos == -1:
-            if h[i] >= self._sl_price:
-                self._store_signal("CLOSE", self._sl_price, reason="SL")
-                new_signals.append(self._signals[-1])
-                self._pos = 0
-
-        # ── Trend flip ─────────────────────────────────────────────────────
-        if self._pos == 1 and cur_dir > 0:
-            self._store_signal("CLOSE", cur_close, reason="TREND_FLIP")
-            new_signals.append(self._signals[-1])
-            self._pos = 0
-
-        elif self._pos == -1 and cur_dir < 0:
-            self._store_signal("CLOSE", cur_close, reason="TREND_FLIP")
-            new_signals.append(self._signals[-1])
-            self._pos = 0
+            self._save_state()
 
         # Submit/update the dynamic stop for the next bar.
         if self._pos != 0:
+            prev_sl = self._sl_price
             self._sl_price = cur_st
+            if abs(prev_sl - self._sl_price) > 0.1:
+                self._save_state()
 
         # ── Entry ──────────────────────────────────────────────────────────
         if self._halt:
@@ -499,6 +528,7 @@ class SuperStructure:
             self._pos = 1
             self._entry_price = cur_close
             self._sl_price = cur_st
+            self._save_state()
             self._store_signal("BUY", cur_close, cur_st,
                                adx=round(cur_adx, 1) if not np.isnan(cur_adx) else 0,
                                cci=round(cur_cci, 0) if not np.isnan(cur_cci) else 0,
@@ -510,6 +540,7 @@ class SuperStructure:
             self._pos = -1
             self._entry_price = cur_close
             self._sl_price = cur_st
+            self._save_state()
             self._store_signal("SELL", cur_close, cur_st,
                                adx=round(cur_adx, 1) if not np.isnan(cur_adx) else 0,
                                cci=round(cur_cci, 0) if not np.isnan(cur_cci) else 0,

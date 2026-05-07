@@ -1,0 +1,16 @@
+[Unit]
+Description=TopstepX WebSocket Feed Daemon
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/kemal/futures
+ExecStart=/usr/bin/python3 -u /home/kemal/futures/pipeline/live/run_feed.py
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/kemal/futures/data/Live/topstepx_feed.log
+StandardError=append:/home/kemal/futures/data/Live/topstepx_feed.log
+
+[Install]
+WantedBy=default.target
