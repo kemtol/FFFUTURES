@@ -21,6 +21,8 @@ SIGNALS_PATH = ROOT / "data" / "Live" / "super_structure_signals.json"
 EXECUTIONS_PATH = ROOT / "data" / "Live" / "super_structure_executions.jsonl"
 UI_PATH = ROOT / "ui" / "data" / "trade_events_super_structure_5m.json"
 OUT_DIR = ROOT / "data" / "Live" / "parity"
+TELEGRAM_ENV_PATH = ROOT / "data" / "Live" / "telegram.env"
+TELEGRAM_STATE_PATH = OUT_DIR / ".last_telegram_state.json"
 POINT_VALUE = 10.0
 COMMISSION_RT = 1.74
 
@@ -684,10 +686,102 @@ def format_telegram_report(report: dict, max_critical_rows: int = 8) -> str:
     return "\n".join(lines)
 
 
+def _load_telegram_env() -> tuple[str, str]:
+    if not TELEGRAM_ENV_PATH.exists():
+        return "", ""
+    token, chat_id = "", ""
+    for line in TELEGRAM_ENV_PATH.read_text().strip().split("\n"):
+        if "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        if k == "TELEGRAM_BOT_TOKEN":
+            token = v.strip()
+        elif k == "TELEGRAM_CHAT_ID":
+            chat_id = v.strip()
+    return token, chat_id
+
+
+def _telegram_send(token: str, chat_id: str, text: str) -> bool:
+    import urllib.request, urllib.parse
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    data = urllib.parse.urlencode({
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "Markdown",
+    }).encode()
+    try:
+        resp = urllib.request.urlopen(url, data, timeout=10)
+        result = json.loads(resp.read())
+        return bool(result.get("ok"))
+    except Exception as exc:
+        print(f"telegram send error: {exc}", file=sys.stderr)
+        return False
+
+
+def _state_signature(report: dict) -> dict:
+    s = report["summary"]
+    critical = int(s.get("critical", 0))
+    return {
+        "date": report["date"],
+        "status": "CRITICAL" if critical else "PASS",
+        "signals": int(s.get("signals", 0)),
+        "executions": int(s.get("executions", 0)),
+        "ui": int(s.get("ui_theoretical_trades", 0)),
+        "critical": critical,
+    }
+
+
+def _should_push_auto(current: dict, previous: dict | None) -> tuple[bool, str]:
+    if current["signals"] == 0 and current["executions"] == 0 and current["ui"] == 0:
+        return False, "empty day"
+    if previous is None:
+        return True, "first run"
+    keys = ("date", "status", "signals", "executions", "ui", "critical")
+    if any(current[k] != previous.get(k) for k in keys):
+        return True, "state changed"
+    if current["status"] == "CRITICAL":
+        return True, "still critical"
+    return False, "no change"
+
+
+def maybe_push_telegram(report: dict, mode: str) -> None:
+    if mode == "never":
+        return
+    token, chat_id = _load_telegram_env()
+    if not (token and chat_id):
+        print("telegram env missing, skipping push", file=sys.stderr)
+        return
+
+    current = _state_signature(report)
+    previous = None
+    if mode == "auto" and TELEGRAM_STATE_PATH.exists():
+        try:
+            previous = json.loads(TELEGRAM_STATE_PATH.read_text())
+        except Exception:
+            previous = None
+
+    if mode == "auto":
+        push, reason = _should_push_auto(current, previous)
+        if not push:
+            print(f"auto: skip ({reason})")
+            return
+        print(f"auto: push ({reason})")
+
+    text = format_telegram_report(report)
+    if not _telegram_send(token, chat_id, text):
+        return
+    if mode == "auto":
+        TELEGRAM_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        current["sent_at"] = datetime.now(timezone.utc).isoformat()
+        TELEGRAM_STATE_PATH.write_text(json.dumps(current, indent=2))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Super Structure 3-way parity report")
     parser.add_argument("--date", help="Trading-day date in selected timezone, e.g. 2026-05-07")
     parser.add_argument("--tz", default="Asia/Jakarta", choices=["Asia/Jakarta", "UTC"], help="Date timezone; default Asia/Jakarta")
+    parser.add_argument("--telegram", default="never", choices=["never", "auto", "always"],
+                        help="Push report to Telegram. 'auto' only pushes on state change or critical; 'always' pushes every run.")
     args = parser.parse_args()
 
     report = build_parity_report(args.date, args.tz)
@@ -695,6 +789,7 @@ def main() -> int:
     print(md_text)
     print(f"JSON report: {json_path}")
     print(f"Markdown report: {md_path}")
+    maybe_push_telegram(report, args.telegram)
     return 1 if report["summary"]["critical"] else 0
 
 

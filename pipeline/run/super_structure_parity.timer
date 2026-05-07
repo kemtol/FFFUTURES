@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Super Structure Parity Every 15 Minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15min
+AccuracySec=30s
+Unit=super_structure_parity.service
+
+[Install]
+WantedBy=timers.target
