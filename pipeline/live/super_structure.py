@@ -900,15 +900,18 @@ class SuperStructure:
             except Exception:
                 pass
 
-        def tg_send(msg: str) -> None:
+        def tg_send(msg: str, target_chat_id: str | None = None) -> None:
             try:
+                dest_chat = target_chat_id or chat_id
                 url = f"https://api.telegram.org/bot{token}/sendMessage"
-                data = urllib.parse.urlencode({"chat_id": chat_id, "text": msg,
+                data = urllib.parse.urlencode({"chat_id": dest_chat, "text": msg,
                                                 "parse_mode": "Markdown"}).encode()
                 resp = urllib.request.urlopen(url, data, timeout=5)
                 result = json.loads(resp.read())
                 if not result.get("ok"):
                     print(f"[SS] Telegram send failed: {result}", flush=True)
+                else:
+                    print(f"[SS] Telegram sent to {dest_chat}", flush=True)
             except Exception as e:
                 print(f"[SS] Telegram send error: {e}", flush=True)
 
@@ -1078,7 +1081,7 @@ class SuperStructure:
                                     reply = None
                                 if reply:
                                     print(f"[SS] Reply: {reply[:100]}", flush=True)
-                                    tg_send(reply)
+                                    tg_send(reply, chat)
                                 else:
                                     print(f"[SS] No reply", flush=True)
                 except Exception as e:
