@@ -1018,12 +1018,8 @@ class SuperStructure:
                         write_parity_report,
                     )
                     report = build_parity_report(date_arg, tz_arg)
-                    _, md_path, _ = write_parity_report(report)
-                    rel_md = md_path.relative_to(ROOT)
-                    return (
-                        format_telegram_report(report)
-                        + f"\n\nSaved report: `{rel_md}`"
-                    )
+                    write_parity_report(report)
+                    return format_telegram_report(report)
                 except Exception as exc:
                     print(f"[SS] parity command error: {exc}", flush=True)
                     return f"⚠️ *Parity failed*: `{exc}`"

@@ -307,7 +307,9 @@ def signal_vs_ui(signal_trades: list[dict], ui_trades: list[dict],
                 "trade_id": tr.get("trade_id", ""),
                 "side": tr.get("side", ""),
                 "signal_entry": "",
+                "signal_exit": fmt_ts(sig["ts"]),
                 "ui_entry": "",
+                "ui_exit": "",
                 "entry_delta_min": None,
                 "exit_delta_min": None,
                 "entry_px_delta": None,
@@ -326,7 +328,9 @@ def signal_vs_ui(signal_trades: list[dict], ui_trades: list[dict],
                 "trade_id": tr["trade_id"],
                 "side": tr["side"],
                 "signal_entry": fmt_ts(entry["ts"]),
+                "signal_exit": fmt_ts(exit_sig["ts"]) if exit_sig else "",
                 "ui_entry": "MISSING",
+                "ui_exit": "",
                 "entry_delta_min": None,
                 "exit_delta_min": None,
                 "entry_px_delta": None,
@@ -355,7 +359,9 @@ def signal_vs_ui(signal_trades: list[dict], ui_trades: list[dict],
             "trade_id": tr["trade_id"],
             "side": tr["side"],
             "signal_entry": fmt_ts(entry["ts"]),
+            "signal_exit": fmt_ts(sig_exit_ts) if sig_exit_ts is not None else "",
             "ui_entry": fmt_ts(ui["entry_dt"]),
+            "ui_exit": fmt_ts(ui["exit_dt"]) if ui.get("exit_dt") is not None else "",
             "entry_delta_min": (entry["ts"] - ui["entry_dt"]).total_seconds() / 60.0,
             "exit_delta_min": ((sig_exit_ts - ui["exit_dt"]).total_seconds() / 60.0 if sig_exit_ts is not None and ui.get("exit_dt") is not None else None),
             "entry_px_delta": entry["price"] - float(ui.get("entry_price", 0.0)),
@@ -377,7 +383,9 @@ def topstep_vs_ui(exec_trades: list[dict], ui_trades: list[dict]) -> list[dict]:
                 "trade_id": tr.get("trade_id", ""),
                 "side": tr.get("side", ""),
                 "actual_entry": "",
+                "actual_exit": fmt_ts(tr.get("exit_execution", {}).get("ts")),
                 "ui_entry": "",
+                "ui_exit": "",
                 "entry_delta_min": None,
                 "exit_delta_min": None,
                 "entry_px_delta": None,
@@ -395,7 +403,9 @@ def topstep_vs_ui(exec_trades: list[dict], ui_trades: list[dict]) -> list[dict]:
                 "trade_id": tr.get("trade_id", ""),
                 "side": tr.get("side", ""),
                 "actual_entry": fmt_ts(entry.get("ts")),
+                "actual_exit": fmt_ts(tr.get("exit_execution", {}).get("ts")) if tr.get("exit_execution") else "",
                 "ui_entry": "MISSING",
+                "ui_exit": "",
                 "entry_delta_min": None,
                 "exit_delta_min": None,
                 "entry_px_delta": None,
@@ -410,6 +420,10 @@ def topstep_vs_ui(exec_trades: list[dict], ui_trades: list[dict]) -> list[dict]:
         actual_pnl = trade_pnl(entry_px, exit_px, tr["side"])
         ui_pnl = ui.get("pnl_usd")
         actual_open_ui_closed = exit_ex is None and ui.get("exit_dt") is not None
+        if exit_ex and exit_ex.get("event_type") == "MANUAL_CLOSE":
+            actual_exit = "manual"
+        else:
+            actual_exit = fmt_ts(exit_ex.get("ts")) if exit_ex else ""
         exit_delta_min = None
         if (
             exit_ex
@@ -428,7 +442,9 @@ def topstep_vs_ui(exec_trades: list[dict], ui_trades: list[dict]) -> list[dict]:
             "trade_id": tr.get("trade_id", ""),
             "side": tr["side"],
             "actual_entry": fmt_ts(entry.get("ts")),
+            "actual_exit": actual_exit,
             "ui_entry": fmt_ts(ui["entry_dt"]),
+            "ui_exit": fmt_ts(ui["exit_dt"]) if ui.get("exit_dt") is not None else "",
             "entry_delta_min": (entry.get("ts") - ui["entry_dt"]).total_seconds() / 60.0,
             "exit_delta_min": exit_delta_min,
             "entry_px_delta": (float(entry_px) - float(ui.get("entry_price", 0.0)) if entry_px is not None else None),
@@ -555,6 +571,76 @@ def _short_row(row: dict, section: str) -> str:
     )
 
 
+def _time_part(value: str) -> str:
+    if not value:
+        return "open"
+    if value == "manual":
+        return "manual"
+    try:
+        return pd.Timestamp(value).strftime("%H:%M")
+    except Exception:
+        return str(value)[-5:] if len(str(value)) >= 5 else str(value)
+
+
+def _span(entry: str, exit_: str) -> str:
+    return f"{_time_part(entry)}>{_time_part(exit_)}"
+
+
+def _fit(value: str, width: int) -> str:
+    value = str(value)
+    if len(value) > width:
+        return value[:max(0, width - 1)] + "…"
+    return value.ljust(width)
+
+
+def comparison_table_for_telegram(report: dict) -> str:
+    svu = report["signal_vs_ui_theoretical"]
+    tvu_by_trade = {
+        row.get("trade_id", ""): row
+        for row in report["topstep_vs_ui_theoretical"]
+    }
+    rows = []
+    for row in svu:
+        actual = tvu_by_trade.get(row.get("trade_id", ""), {})
+        side = "L" if row.get("side") == "Long" else ("S" if row.get("side") == "Short" else "?")
+        status = "OK" if row.get("severity") == "PASS" and actual.get("severity", "PASS") == "PASS" else "CRIT"
+        note = ""
+        combined_note = f"{row.get('note', '')} {actual.get('note', '')}"
+        if "manually closed" in combined_note:
+            note = "manual"
+        elif status != "OK":
+            note = "check"
+        rows.append({
+            "side": side,
+            "signal": _span(row.get("signal_entry", ""), row.get("signal_exit", "")),
+            "topstep": _span(actual.get("actual_entry", ""), actual.get("actual_exit", "")),
+            "ui": _span(row.get("ui_entry", ""), row.get("ui_exit", "")),
+            "status": status,
+            "note": note,
+        })
+
+    if not rows:
+        return "No matched trade rows."
+
+    lines = [
+        "Side Signal        Topstep       UI            St  Note",
+        "---- ------------- ------------- ------------- --- ------",
+    ]
+    for row in rows[:10]:
+        lines.append(
+            f"{_fit(row['side'], 4)} "
+            f"{_fit(row['signal'], 13)} "
+            f"{_fit(row['topstep'], 13)} "
+            f"{_fit(row['ui'], 13)} "
+            f"{_fit(row['status'], 3)} "
+            f"{row['note']}"
+        )
+    remaining = len(rows) - 10
+    if remaining > 0:
+        lines.append(f"... {remaining} more row(s)")
+    return "\n".join(lines)
+
+
 def format_telegram_report(report: dict, max_critical_rows: int = 8) -> str:
     summary = report["summary"]
     critical = int(summary.get("critical", 0))
@@ -568,6 +654,11 @@ def format_telegram_report(report: dict, max_critical_rows: int = 8) -> str:
         f"Critical rows: `{critical}`",
         "",
         "_UI = theoretical backtest from TopstepX buffer snapshot, not execution truth._",
+        "",
+        "*Comparison*",
+        "```",
+        comparison_table_for_telegram(report),
+        "```",
     ]
     if critical:
         lines.extend(["", "*Critical details:*"])
