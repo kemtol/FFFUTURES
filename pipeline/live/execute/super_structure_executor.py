@@ -14,6 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 TOKEN_FILE = ROOT / "data" / "Live" / "topstepx_token.json"
+EXECUTIONS_PATH = ROOT / "data" / "Live" / "super_structure_executions.jsonl"
 USERAPI = "https://userapi.topstepx.com"
 ORDER_URL = f"{USERAPI}/Order"
 SYMBOL_ID = "F.US.MGC"
@@ -31,6 +32,58 @@ HEADERS = {
     "Sec-Fetch-Site": "same-site",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 }
+
+
+def _append_execution_event(event: dict) -> None:
+    """Append one structured execution event; text logs are not source of truth."""
+    EXECUTIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    row = {
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "signal_id": event.get("signal_id", ""),
+        "trade_id": event.get("trade_id", ""),
+        "event_type": event.get("event_type", ""),
+        "action": event.get("action", ""),
+        "requested_price": event.get("requested_price"),
+        "executed_price": event.get("executed_price"),
+        "order_id": event.get("order_id"),
+        "api_result": event.get("api_result"),
+        "error": event.get("error", ""),
+    }
+    with EXECUTIONS_PATH.open("a") as f:
+        f.write(json.dumps(row, default=str, separators=(",", ":")) + "\n")
+
+
+def _extract_order_id(result: dict) -> object:
+    if not isinstance(result, dict):
+        return None
+    for key in ("orderId", "id", "order_id"):
+        if result.get(key) is not None:
+            return result.get(key)
+    nested = result.get("order")
+    if isinstance(nested, dict):
+        for key in ("orderId", "id", "order_id"):
+            if nested.get(key) is not None:
+                return nested.get(key)
+    return None
+
+
+def _extract_executed_price(result: dict) -> float | None:
+    if not isinstance(result, dict):
+        return None
+    for key in ("executedPrice", "filledPrice", "averagePrice", "avgFillPrice", "price"):
+        value = result.get(key)
+        if value is not None:
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                pass
+    for nested_key in ("order", "position", "fill"):
+        nested = result.get(nested_key)
+        if isinstance(nested, dict):
+            px = _extract_executed_price(nested)
+            if px is not None:
+                return px
+    return None
 
 def _token() -> str:
     if TOKEN_FILE.exists():
@@ -97,13 +150,17 @@ def _api_get(path: str) -> dict | list:
     return json.loads(resp.read())
 
 
-def _query_positions() -> list[dict]:
-    """List open positions for the user. Empty list = FLAT."""
+def _query_positions() -> list[dict] | None:
+    """List open positions for the user.
+
+    Empty list means the exchange confirmed FLAT.
+    None means the exchange state is unknown and must not be treated as FLAT.
+    """
     try:
         return _api_get(f"/Position/all/user/{USER_ID}") or []
     except Exception as exc:
         print(f"[SSExec] Position query failed: {exc}", flush=True)
-        return []
+        return None
 
 
 def _validate_session() -> bool:
@@ -135,6 +192,8 @@ class SuperStructureExecutor:
         self.entry_price = 0.0
         self.sl_price = 0.0
         self.sl_order_id: int | None = None
+        self.exchange_state_known = False
+        self.last_reconcile_error = ""
         self._last_heartbeat = 0
 
     def on_signal(self, sig: dict) -> None:
@@ -143,12 +202,16 @@ class SuperStructureExecutor:
         price = sig.get("price", 0)
         sl = sig.get("sl", 0)
 
+        if action in ("BUY", "SELL") and not self.exchange_state_known:
+            print(f"[SSExec] Exchange state UNKNOWN — ignoring {action} ENTRY", flush=True)
+            return
+
         if action == "BUY":
-            self._enter("Buy", price, sl)
+            self._enter("Buy", price, sl, sig)
         elif action == "SELL":
-            self._enter("Sell", price, sl)
+            self._enter("Sell", price, sl, sig)
         elif action == "CLOSE":
-            self._exit(price, sig.get("reason", ""), sig.get("pnl", 0))
+            self._exit(price, sig.get("reason", ""), sig.get("pnl", 0), sig)
 
     def update_sl(self, new_sl: float) -> None:
         """Track trailing stop level (no API — exit handled by strategy logic)."""
@@ -158,17 +221,34 @@ class SuperStructureExecutor:
     def reconcile(self) -> dict:
         """Sync executor state to exchange truth. Silent adopt — exchange wins.
 
-        Returns truth dict for the strategy to apply to its own state:
-            {"pos": int (-1/0/+1), "entry_price": float, "exchange_pl": float}
+        Returns truth dict for the strategy to apply to its own state.
+        If ok=False, callers must preserve their last known position state and
+        block new entries until a later reconcile succeeds.
         """
         positions = _query_positions()
+        if positions is None:
+            self.exchange_state_known = False
+            self.last_reconcile_error = "position_query_failed"
+            return {
+                "ok": False,
+                "exchange_state_known": False,
+                "error": self.last_reconcile_error,
+                "pos": 1 if self.pos_side == "Long" else (-1 if self.pos_side == "Short" else 0),
+                "entry_price": self.entry_price,
+                "exchange_pl": 0.0,
+            }
+
+        self.exchange_state_known = True
+        self.last_reconcile_error = ""
         mgc = next((p for p in positions if p.get("symbolId") == SYMBOL_ID), None)
 
         if mgc is None:
-            truth = {"pos": 0, "entry_price": 0.0, "exchange_pl": 0.0}
+            truth = {"ok": True, "exchange_state_known": True, "pos": 0, "entry_price": 0.0, "exchange_pl": 0.0}
         else:
             size = int(mgc.get("positionSize", 0))
             truth = {
+                "ok": True,
+                "exchange_state_known": True,
                 "pos": 1 if size > 0 else (-1 if size < 0 else 0),
                 "entry_price": float(mgc.get("averagePrice", 0)),
                 "exchange_pl": float(mgc.get("profitAndLoss", 0)),
@@ -231,10 +311,16 @@ class SuperStructureExecutor:
         adx = s.get("adx", 0); cci = s.get("cci", 0)
         direction = s.get("direction", 0)
         pos = s.get("pos", 0)
+        exchange_known = s.get("exchange_state_known", True)
+        exchange_error = s.get("exchange_state_error", "")
         ADX_THR = 25; CCI_L = 100.0; CCI_S = -100.0
 
         # Signal status analysis
         reasons = []
+        if not exchange_known:
+            err = f" ({exchange_error})" if exchange_error else ""
+            reasons.append(f"⛔ Exchange state UNKNOWN{err} — entries blocked")
+
         if adx <= ADX_THR: reasons.append(f"❌ ADX `{adx}` < `{ADX_THR}`")
         else: reasons.append(f"✅ ADX `{adx}` > `{ADX_THR}`")
 
@@ -270,6 +356,7 @@ class SuperStructureExecutor:
                 signal_analysis,
                 "",
                 f"Position: *FLAT*",
+                f"Exchange: *{'KNOWN' if exchange_known else 'UNKNOWN'}*",
             ]
         else:
             side = "🟢 LONG" if pos == 1 else "🔴 SHORT"
@@ -289,6 +376,7 @@ class SuperStructureExecutor:
                 "",
                 f"📊 *5m Bar*: O:`{o}` H:`{hi}` L:`{lo}` C:`{cl}`",
                 f"📐 ST:`{st_val}` | DEMA:`{dema}` | ADX:`{adx}` | CCI:`{cci}`",
+                f"Exchange: *{'KNOWN' if exchange_known else 'UNKNOWN'}*",
             ]
 
         msg = "\n".join(l for l in lines if l)
@@ -296,10 +384,11 @@ class SuperStructureExecutor:
 
     # ── internal ──────────────────────────────────────────────────────────
 
-    def _enter(self, side: str, price: float, sl: float) -> None:
+    def _enter(self, side: str, price: float, sl: float, sig: dict | None = None) -> None:
         if self.active:
             print(f"[SSExec] Already in position, ignoring ENTRY", flush=True)
             return
+        sig = sig or {}
         try:
             size = 1 if side == "Buy" else -1
             result = _api({
@@ -307,6 +396,16 @@ class SuperStructureExecutor:
                 "type": 2, "limitPrice": None, "stopPrice": None,
                 "positionSize": size,
                 "customTag": str(uuid.uuid4())[:8], "timeType": 0,
+            })
+            _append_execution_event({
+                "signal_id": sig.get("signal_id", ""),
+                "trade_id": sig.get("trade_id", ""),
+                "event_type": "MARKET",
+                "action": side.upper(),
+                "requested_price": price,
+                "executed_price": _extract_executed_price(result),
+                "order_id": _extract_order_id(result),
+                "api_result": result,
             })
             print(f"[SSExec] MARKET {side} @ {price:.1f}: {json.dumps(result)}", flush=True)
             self.active = True
@@ -326,6 +425,17 @@ class SuperStructureExecutor:
                 f"Logic SL: `${sl:.1f}`\n"
                 f"Hard SL: `${emergency_sl:.1f}` (Exchange)")
         except Exception as e:
+            _append_execution_event({
+                "signal_id": sig.get("signal_id", ""),
+                "trade_id": sig.get("trade_id", ""),
+                "event_type": "MARKET",
+                "action": side.upper(),
+                "requested_price": price,
+                "executed_price": None,
+                "order_id": None,
+                "api_result": None,
+                "error": str(e),
+            })
             print(f"[SSExec] ENTRY failed: {e}", flush=True)
             _send_telegram(f"⚠️ *Entry FAILED*: {e}")
 
@@ -351,11 +461,22 @@ class SuperStructureExecutor:
             print(f"[SSExec] SL order failed: {e}", flush=True)
             self.sl_order_id = None
 
-    def _exit(self, price: float, reason: str, pnl: float) -> None:
+    def _exit(self, price: float, reason: str, pnl: float, sig: dict | None = None) -> None:
         if not self.active: return
+        sig = sig or {}
         try:
             # 1. Close position
             result = _flatten_all()
+            _append_execution_event({
+                "signal_id": sig.get("signal_id", ""),
+                "trade_id": sig.get("trade_id", ""),
+                "event_type": "FLATTEN",
+                "action": "CLOSE",
+                "requested_price": price,
+                "executed_price": _extract_executed_price(result),
+                "order_id": _extract_order_id(result),
+                "api_result": result,
+            })
             
             # 2. Wait a bit for exchange to process, then cancel debris
             time.sleep(0.5)
@@ -378,5 +499,16 @@ class SuperStructureExecutor:
             self.sl_order_id = None
             self.entry_price = 0.0
         except Exception as e:
+            _append_execution_event({
+                "signal_id": sig.get("signal_id", ""),
+                "trade_id": sig.get("trade_id", ""),
+                "event_type": "FLATTEN",
+                "action": "CLOSE",
+                "requested_price": price,
+                "executed_price": None,
+                "order_id": None,
+                "api_result": None,
+                "error": str(e),
+            })
             print(f"[SSExec] EXIT failed: {e}", flush=True)
             _send_telegram(f"⚠️ *Exit FAILED*: {e}")

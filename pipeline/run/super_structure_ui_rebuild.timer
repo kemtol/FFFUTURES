@@ -1,0 +1,11 @@
+[Unit]
+Description=Rebuild Super Structure UI Data Every 15 Minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15min
+AccuracySec=30s
+Unit=super_structure_ui_rebuild.service
+
+[Install]
+WantedBy=timers.target

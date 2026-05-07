@@ -11,6 +11,7 @@ cd /home/kemal/futures
 echo "Ensuring systemd services are running..."
 systemctl --user restart topstepx_feed
 systemctl --user restart super_structure
+systemctl --user start super_structure_ui_rebuild.timer
 
 echo "All daemons handled."
 echo "UI: http://127.0.0.1:4173"

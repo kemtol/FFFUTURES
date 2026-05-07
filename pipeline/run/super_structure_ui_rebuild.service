@@ -1,0 +1,11 @@
+[Unit]
+Description=Rebuild Super Structure UI Data
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/kemal/futures
+ExecStart=/usr/bin/python3 -u /home/kemal/futures/pipeline/live/rebuild_super_structure_ui.py
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=append:/home/kemal/futures/data/Live/super_structure_ui_rebuild.log
+StandardError=append:/home/kemal/futures/data/Live/super_structure_ui_rebuild.log

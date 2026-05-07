@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import hashlib
 import time as _time
 from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
@@ -50,6 +51,50 @@ AUTO_CLOSE = True
 SIGNALS_PATH = ROOT / "data" / "Live" / "super_structure_signals.json"
 STATE_PATH = ROOT / "data" / "Live" / "super_structure_state.json"
 EPS = 1e-10
+
+
+def _signal_price(sig: dict) -> float:
+    """Support old webhook entries that used `entry` instead of `price`."""
+    try:
+        return float(sig.get("price", sig.get("entry", 0.0)) or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _stable_id(prefix: str, *parts: object) -> str:
+    raw = "|".join(str(p) for p in parts)
+    return f"{prefix}_{hashlib.sha1(raw.encode('utf-8')).hexdigest()[:16]}"
+
+
+def derive_signal_id(sig: dict, received_at: str = "", sequence: int = 0) -> str:
+    """Deterministic ID for new signals and historical fallback parsing."""
+    existing = sig.get("signal_id")
+    if existing:
+        return str(existing)
+    ts = str(sig.get("ts") or received_at or "")
+    action = str(sig.get("action") or "")
+    price = round(_signal_price(sig), 4)
+    return _stable_id("sssig", ts, action, price, sequence)
+
+
+def derive_trade_id_from_entry(sig: dict, received_at: str = "", sequence: int = 0) -> str:
+    existing = sig.get("trade_id")
+    if existing:
+        return str(existing)
+    signal_id = derive_signal_id(sig, received_at, sequence)
+    return _stable_id("sstrade", signal_id)
+
+
+def _to_utc_timestamp(value) -> pd.Timestamp | None:
+    if value in (None, ""):
+        return None
+    try:
+        ts = pd.Timestamp(value)
+        if ts.tzinfo is None:
+            return ts.tz_localize("UTC")
+        return ts.tz_convert("UTC")
+    except Exception:
+        return None
 
 
 # ── indicators ────────────────────────────────────────────────────────────────
@@ -196,15 +241,24 @@ class SuperStructure:
         self._cached_end: str | None = None
         self._signals: list[dict] = []
         self._entry_bar_ts: pd.Timestamp | None = None
+        self._trade_id = ""
+        self._last_processed_bar_ts: pd.Timestamp | None = None
         self._executor = None
         self._heartbeat_state: dict = {}
+        self._exchange_state_known = True
+        self._exchange_state_error = ""
+        self._last_blocked_trade_key = ""
+        self._manual_close_block_action = ""
         self._halt = False
         self._halt_reason = ""
         self._load_signals()
         self._load_state()
+        self._ensure_runtime_ids()
 
         # Init trade executor (auto-detect if credentials exist)
         if (ROOT / "data" / "Live" / "topstepx_token.json").exists():
+            self._exchange_state_known = False
+            self._exchange_state_error = "startup_reconcile_pending"
             try:
                 from pipeline.live.execute.super_structure_executor import SuperStructureExecutor
                 self._executor = SuperStructureExecutor()
@@ -248,6 +302,9 @@ class SuperStructure:
                 self._entry_price = float(d.get("entry_price", 0.0))
                 self._sl_price = float(d.get("sl_price", 0.0))
                 self._sl_order_id = d.get("sl_order_id")
+                self._trade_id = str(d.get("trade_id", "") or "")
+                self._last_processed_bar_ts = _to_utc_timestamp(d.get("last_processed_bar_ts"))
+                self._manual_close_block_action = str(d.get("manual_close_block_action", "") or "")
                 if self._halt:
                     print(f"[SS] Loaded HALT state: {self._halt_reason}", flush=True)
                 if self._pos != 0:
@@ -273,6 +330,14 @@ class SuperStructure:
                 "entry_price": self._entry_price,
                 "sl_price": self._sl_price,
                 "sl_order_id": self._sl_order_id,
+                "trade_id": self._trade_id,
+                "last_processed_bar_ts": (
+                    self._last_processed_bar_ts.isoformat()
+                    if self._last_processed_bar_ts is not None else ""
+                ),
+                "manual_close_block_action": self._manual_close_block_action,
+                "exchange_state_known": self._exchange_state_known,
+                "exchange_state_error": self._exchange_state_error,
                 "saved_at": datetime.now(timezone.utc).isoformat(),
             }
             tmp_path.write_text(json.dumps(data, indent=2))
@@ -286,20 +351,55 @@ class SuperStructure:
     def reconcile(self) -> dict:
         """Pull truth from exchange, silently adopt. Returns truth dict."""
         if not self._executor:
+            self._exchange_state_known = True
+            self._exchange_state_error = ""
             return {}
         try:
             truth = self._executor.reconcile()
         except Exception as exc:
             print(f"[SS] Reconcile failed: {exc}", flush=True)
-            return {}
+            self._exchange_state_known = False
+            self._exchange_state_error = str(exc)
+            self._save_state()
+            return {"ok": False, "exchange_state_known": False, "error": str(exc)}
+        if not truth.get("ok", True):
+            self._exchange_state_known = False
+            self._exchange_state_error = str(truth.get("error", "exchange_state_unknown"))
+            print(f"[SS] Exchange state UNKNOWN — preserving local pos={self._pos} entry={self._entry_price:.1f}; entries blocked", flush=True)
+            self._save_state()
+            return truth
+        self._exchange_state_known = True
+        self._exchange_state_error = ""
         prev_pos = self._pos
         prev_entry = self._entry_price
+        prev_trade_id = self._trade_id
         self._pos = truth.get("pos", 0)
         self._entry_price = truth.get("entry_price", 0.0)
         if self._pos == 0:
+            if prev_pos != 0 and prev_trade_id:
+                self._manual_close_block_action = "BUY" if prev_pos == 1 else "SELL"
+                try:
+                    from pipeline.live.execute.super_structure_executor import _append_execution_event
+                    _append_execution_event({
+                        "signal_id": "",
+                        "trade_id": prev_trade_id,
+                        "event_type": "MANUAL_CLOSE",
+                        "action": "CLOSE",
+                        "requested_price": None,
+                        "executed_price": None,
+                        "order_id": None,
+                        "api_result": truth,
+                    })
+                except Exception as exc:
+                    print(f"[SS] Manual close ledger write failed: {exc}", flush=True)
             self._sl_price = 0.0
             self._sl_order_id = None
             self._entry_bar_ts = None
+            self._trade_id = ""
+        elif not self._trade_id:
+            open_trade = self._latest_unmatched_entry()
+            if open_trade:
+                self._trade_id = open_trade["trade_id"]
         
         # Sync order ID back to executor if it's missing but we have it in memory
         if self._pos != 0 and self._sl_order_id and self._executor:
@@ -308,34 +408,113 @@ class SuperStructure:
 
         if prev_pos != self._pos or abs(prev_entry - self._entry_price) > 0.5:
             print(f"[SS] State synced from exchange: pos={self._pos} entry={self._entry_price:.1f}", flush=True)
+        self._save_state()
         return truth
+
+    def _ensure_runtime_ids(self) -> None:
+        """Backfill in-memory IDs and restart cursor from historical signals."""
+        open_trade = self._latest_unmatched_entry()
+        if self._pos != 0 and not self._trade_id and open_trade:
+            self._trade_id = open_trade["trade_id"]
+        if self._pos != 0 and self._last_processed_bar_ts is None and open_trade:
+            self._last_processed_bar_ts = open_trade["ts"]
+            print(f"[SS] Derived last_processed_bar_ts from open entry: {self._last_processed_bar_ts}", flush=True)
+
+    def _signal_sequence(self, action: str, ts: str, price: float) -> int:
+        """Return sequence number among existing signals with same identity tuple."""
+        seq = 0
+        rounded = round(float(price), 4)
+        for entry in self._signals:
+            sig = entry.get("signal", {})
+            if (
+                str(sig.get("action", "")) == action
+                and str(sig.get("ts") or entry.get("received_at") or "") == str(ts)
+                and round(_signal_price(sig), 4) == rounded
+            ):
+                seq += 1
+        return seq
+
+    def _latest_unmatched_entry(self) -> dict | None:
+        """Find latest entry signal without a following CLOSE signal."""
+        stack: list[dict] = []
+        for seq, entry in enumerate(self._signals):
+            sig = entry.get("signal", {})
+            action = sig.get("action")
+            received_at = str(entry.get("received_at", ""))
+            if action in ("BUY", "SELL"):
+                ts = _to_utc_timestamp(sig.get("ts") or received_at)
+                if ts is None:
+                    continue
+                signal_id = derive_signal_id(sig, received_at, seq)
+                trade_id = derive_trade_id_from_entry(sig, received_at, seq)
+                stack.append({"ts": ts, "signal_id": signal_id, "trade_id": trade_id, "action": action})
+            elif action == "CLOSE" and stack:
+                stack.pop()
+        return stack[-1] if stack else None
+
+    def _has_signal(self, action: str, ts: str) -> bool:
+        if not ts:
+            return False
+        return any(
+            s.get("signal", {}).get("action") == action and
+            s.get("signal", {}).get("ts") == ts
+            for s in self._signals
+        )
+
+    def _block_trade(self, key: str, msg: str) -> None:
+        if key != self._last_blocked_trade_key:
+            print(msg, flush=True)
+            self._last_blocked_trade_key = key
 
     def _store_signal(self, action: str, price: float, sl: float = 0.0,
                        reason: str = "", **extra) -> None:
+        signal_ts = str(extra.get("ts", ""))
+        sequence = self._signal_sequence(action, signal_ts, price)
+        temp_sig = {"action": action, "price": price, "ts": signal_ts}
+        signal_id = str(extra.get("signal_id") or derive_signal_id(temp_sig, sequence=sequence))
+
+        if action in ("BUY", "SELL"):
+            trade_id = str(extra.get("trade_id") or derive_trade_id_from_entry(
+                {**temp_sig, "signal_id": signal_id}, sequence=sequence
+            ))
+            self._trade_id = trade_id
+        elif action == "CLOSE":
+            latest = self._latest_unmatched_entry()
+            trade_id = str(extra.get("trade_id") or self._trade_id or (latest["trade_id"] if latest else ""))
+        else:
+            trade_id = str(extra.get("trade_id") or "")
+
         sig = {
+            "signal_id": signal_id,
+            "trade_id": trade_id,
             "action": action,
             "symbol": SYMBOL,
             "price": price,
             "sl": sl,
             "reason": reason,
-            "ts": extra.get("ts", ""),
+            "ts": signal_ts,
             "adx": extra.get("adx", 0),
             "cci": extra.get("cci", 0),
             "dema": extra.get("dema", 0),
             "parsed_from": f"super_structure.py: {action} {SYMBOL} @ {price:.1f}",
         }
         entry = {
+            "signal_id": signal_id,
+            "trade_id": trade_id,
             "received_at": datetime.now(timezone.utc).isoformat(),
             "signal": sig,
         }
         self._signals.append(entry)
         self._save_signals()
+        if action in ("BUY", "SELL"):
+            self._save_state()
         print(f"[SS] ⚡ SIGNAL: {action} {SYMBOL} @ {price:.1f}" +
               (f" SL={sl:.1f}" if sl > 0 else "") +
               (f" ({reason})" if reason else ""), flush=True)
 
         bus_payload = {"action": action, "symbol": SYMBOL, "price": price,
-                       "sl": sl, "reason": reason, **extra}
+                       "sl": sl, "reason": reason, "signal_id": signal_id,
+                       "trade_id": trade_id, **extra}
         if action == "CLOSE" and self._pos != 0:
             side = 1 if self._pos == 1 else -1
             pnl = round((price - self._entry_price) * side * 10 - 1.74, 2)
@@ -377,9 +556,40 @@ class SuperStructure:
             return "US"
         return "Other"
 
+    def _set_heartbeat_state(self, last_ts, df_5m, c, d, st, ax, cx, direction) -> None:
+        try:
+            prev_close = float(c[-2]) if len(c) > 1 else 0
+            prev_dema = float(d[-2]) if len(d) > 1 else 0
+            self._heartbeat_state = {
+                "ts": str(last_ts)[:19] if last_ts is not None else "",
+                "open": round(float(df_5m["open"].iloc[-1]), 1),
+                "high": round(float(df_5m["high"].iloc[-1]), 1),
+                "low": round(float(df_5m["low"].iloc[-1]), 1),
+                "close": round(float(c[-1]), 1),
+                "prev_close": round(prev_close, 1),
+                "dema": round(float(d[-1]), 1) if len(d) > 0 else 0,
+                "prev_dema": round(prev_dema, 1),
+                "st": round(float(st[-1]), 1) if len(st) > 0 else 0,
+                "adx": round(float(ax[-1]), 1) if len(ax) > 0 else 0,
+                "cci": round(float(cx[-1]), 0) if len(cx) > 0 else 0,
+                "direction": int(direction[-1]) if len(direction) > 0 else 0,
+                "pos": self._pos,
+                "entry_price": self._entry_price,
+                "sl_price": self._sl_price,
+                "exchange_state_known": self._exchange_state_known,
+                "exchange_state_error": self._exchange_state_error,
+            }
+        except Exception:
+            pass
+
     def check(self, now: "datetime | None" = None) -> list[dict]:
-        """Fetch latest data and check for signals. Returns new signals."""
+        """Fetch latest data and process every unprocessed completed 5m bar."""
         now = now or datetime.now(timezone.utc)
+        now_ts = pd.Timestamp(now)
+        if now_ts.tzinfo is None:
+            now_ts = now_ts.tz_localize("UTC")
+        else:
+            now_ts = now_ts.tz_convert("UTC")
 
         # Fast path: skip if called again within 30s of last check
         if self._last_checked_now is not None:
@@ -424,24 +634,14 @@ class SuperStructure:
             {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"}
         ).dropna()
 
-        last_ts = df_5m.index[-1]
-        if last_ts == self._last_ts:
-            # Same bar — update heartbeat_state OHLC/pos only (indicators unchanged)
-            try:
-                self._heartbeat_state.update({
-                    "ts": str(last_ts)[:19] if last_ts else "",
-                    "open": round(float(df_5m["open"].iloc[-1]), 1),
-                    "high": round(float(df_5m["high"].iloc[-1]), 1),
-                    "low": round(float(df_5m["low"].iloc[-1]), 1),
-                    "close": round(float(df_5m["close"].iloc[-1]), 1),
-                    "pos": self._pos,
-                    "entry_price": self._entry_price,
-                    "sl_price": self._sl_price,
-                })
-            except Exception:
-                pass
-            return []  # No new bar — skip indicator compute
-        self._last_ts = last_ts
+        # With label="right", a bar timestamp is complete only at/after that
+        # timestamp. Exclude the currently forming right-labeled 5m bar.
+        completed_cutoff = now_ts.floor("5min")
+        df_5m = df_5m[df_5m.index <= completed_cutoff]
+        if df_5m.empty:
+            return []
+
+        latest_completed_ts = df_5m.index[-1]
 
         if len(df_5m) < 50:
             return []
@@ -455,122 +655,204 @@ class SuperStructure:
         ax = adx(h, l, c, ADX_LENGTH)
         cx = cci(h, l, c, CCI_LENGTH, source=CCI_SOURCE)
 
-        i = len(c) - 1
-        if i < DEMA_LENGTH:
+        if len(c) - 1 < DEMA_LENGTH:
             return []
-
-        cur_close = c[i]
-        cur_dema = d[i]
-        cur_dir = direction[i]
-        cur_adx = ax[i] if i < len(ax) and not np.isnan(ax[i]) else 0
-        cur_cci = cx[i]
-        cur_st = st[i]
-
-        adx_ok = not USE_ADX or cur_adx > ADX_THRESHOLD
-        cci_ok_long = not USE_CCI or cur_cci > CCI_LONG_MIN
-        cci_ok_short = not USE_CCI or cur_cci < CCI_SHORT_MAX
-        session_label = self._session_name(last_ts)
 
         new_signals = []
 
-        # ── Entry ──────────────────────────────────────────────────────────
-        cross_up = (c[i-1] < d[i-1] and cur_close > cur_dema)
-        cross_dn = (c[i-1] > d[i-1] and cur_close < cur_dema)
-        long_signal = adx_ok and cci_ok_long and \
-                    (cross_up or cur_close > cur_dema) and cur_dir < 0
-        short_signal = adx_ok and cci_ok_short and \
-                      (cross_dn or cur_close < cur_dema) and cur_dir > 0
+        if self._last_processed_bar_ts is None:
+            target_indices = [len(df) - 1]
+        else:
+            target_indices = [
+                idx for idx, ts in enumerate(df.index)
+                if ts > self._last_processed_bar_ts and idx >= DEMA_LENGTH
+            ]
 
-        # ── Existing Stop Orders ───────────────────────────────────────────
-        if self._pos == 1:
-            if l[i] <= self._sl_price:
-                self._store_signal("CLOSE", self._sl_price, reason="SL",
-                                   ts=str(last_ts))
-                new_signals.append(self._signals[-1])
+        if not target_indices:
+            if latest_completed_ts != self._last_ts:
+                self._last_ts = latest_completed_ts
+                self._set_heartbeat_state(latest_completed_ts, df, c, d, st, ax, cx, direction)
+            return []
+
+        for i in target_indices:
+            bar_ts = df.index[i]
+            cur_close = float(c[i])
+            cur_dema = float(d[i])
+            cur_dir = int(direction[i])
+            cur_adx = float(ax[i]) if i < len(ax) and not np.isnan(ax[i]) else 0.0
+            cur_cci = float(cx[i]) if not np.isnan(cx[i]) else 0.0
+            cur_st = float(st[i]) if not np.isnan(st[i]) else 0.0
+
+            adx_ok = not USE_ADX or cur_adx > ADX_THRESHOLD
+            cci_ok_long = not USE_CCI or cur_cci > CCI_LONG_MIN
+            cci_ok_short = not USE_CCI or cur_cci < CCI_SHORT_MAX
+            cross_up = (c[i - 1] < d[i - 1] and cur_close > cur_dema)
+            cross_dn = (c[i - 1] > d[i - 1] and cur_close < cur_dema)
+            long_signal = adx_ok and cci_ok_long and \
+                (cross_up or cur_close > cur_dema) and cur_dir < 0
+            short_signal = adx_ok and cci_ok_short and \
+                (cross_dn or cur_close < cur_dema) and cur_dir > 0
+            signal_ts = str(bar_ts)
+
+            if self._manual_close_block_action:
+                blocked_active = (
+                    self._manual_close_block_action == "BUY" and long_signal
+                ) or (
+                    self._manual_close_block_action == "SELL" and short_signal
+                )
+                opposite_active = (
+                    self._manual_close_block_action == "BUY" and short_signal
+                ) or (
+                    self._manual_close_block_action == "SELL" and long_signal
+                )
+                if not blocked_active or opposite_active:
+                    print(
+                        f"[SS] Manual-close re-entry block cleared ({self._manual_close_block_action})",
+                        flush=True,
+                    )
+                    self._manual_close_block_action = ""
+                    self._save_state()
+
+            self._set_heartbeat_state(bar_ts, df.iloc[:i + 1], c[:i + 1], d[:i + 1], st[:i + 1], ax[:i + 1], cx[:i + 1], direction[:i + 1])
+
+            sl_hit = (
+                (self._pos == 1 and l[i] <= self._sl_price) or
+                (self._pos == -1 and h[i] >= self._sl_price)
+            )
+            trend_flip = (
+                (self._pos == 1 and cur_dir > 0) or
+                (self._pos == -1 and cur_dir < 0)
+            )
+            exchange_unknown = self._executor is not None and not self._exchange_state_known
+            if exchange_unknown and (sl_hit or trend_flip or long_signal or short_signal):
+                if sl_hit or trend_flip:
+                    self._block_trade(
+                        f"unknown-close:{signal_ts}",
+                        "[SS] Exchange state UNKNOWN — skipping CLOSE/flatten; preserving local position state",
+                    )
+                if long_signal or short_signal:
+                    side = "BUY" if long_signal else "SELL"
+                    self._block_trade(
+                        f"unknown-entry:{signal_ts}:{side}",
+                        f"[SS] Exchange state UNKNOWN — skipping {side} entry; preserving local pos={self._pos} entry={self._entry_price:.1f}",
+                    )
+                return new_signals
+
+            # Existing stop orders are active before the current bar's strategy
+            # recalculation. If hit, fill at the previously submitted stop.
+            if self._pos == 1 and l[i] <= self._sl_price:
+                if self._has_signal("CLOSE", signal_ts):
+                    self._block_trade(f"dup-close:{signal_ts}", f"[SS] Duplicate CLOSE skipped for {signal_ts}")
+                else:
+                    self._store_signal("CLOSE", self._sl_price, reason="SL", ts=signal_ts)
+                    new_signals.append(self._signals[-1])
                 self._pos = 0
+                self._entry_price = 0.0
+                self._sl_price = 0.0
+                self._trade_id = ""
                 self._save_state()
 
-        elif self._pos == -1:
-            if h[i] >= self._sl_price:
-                self._store_signal("CLOSE", self._sl_price, reason="SL",
-                                   ts=str(last_ts))
-                new_signals.append(self._signals[-1])
+            elif self._pos == -1 and h[i] >= self._sl_price:
+                if self._has_signal("CLOSE", signal_ts):
+                    self._block_trade(f"dup-close:{signal_ts}", f"[SS] Duplicate CLOSE skipped for {signal_ts}")
+                else:
+                    self._store_signal("CLOSE", self._sl_price, reason="SL", ts=signal_ts)
+                    new_signals.append(self._signals[-1])
                 self._pos = 0
+                self._entry_price = 0.0
+                self._sl_price = 0.0
+                self._trade_id = ""
                 self._save_state()
 
-        # ── Trend flip ─────────────────────────────────────────────────────
-        if self._pos == 1 and cur_dir > 0:
-            self._store_signal("CLOSE", cur_close, reason="TREND_FLIP",
-                               ts=str(last_ts))
-            new_signals.append(self._signals[-1])
-            self._pos = 0
-            self._save_state()
-
-        elif self._pos == -1 and cur_dir < 0:
-            self._store_signal("CLOSE", cur_close, reason="TREND_FLIP",
-                               ts=str(last_ts))
-            new_signals.append(self._signals[-1])
-            self._pos = 0
-            self._save_state()
-
-        # Submit/update the dynamic stop for the next bar.
-        if self._pos != 0:
-            prev_sl = self._sl_price
-            self._sl_price = cur_st
-            if abs(prev_sl - self._sl_price) > 0.1:
+            # Trend flip close happens on bar close if the stop did not already fill.
+            if self._pos == 1 and cur_dir > 0:
+                if self._has_signal("CLOSE", signal_ts):
+                    self._block_trade(f"dup-close:{signal_ts}", f"[SS] Duplicate CLOSE skipped for {signal_ts}")
+                else:
+                    self._store_signal("CLOSE", cur_close, reason="TREND_FLIP", ts=signal_ts)
+                    new_signals.append(self._signals[-1])
+                self._pos = 0
+                self._entry_price = 0.0
+                self._sl_price = 0.0
+                self._trade_id = ""
                 self._save_state()
 
-        # ── Entry ──────────────────────────────────────────────────────────
-        if self._halt:
-            if long_signal or short_signal:
-                print(f"[SS] HALT active — skipping entry signal ({self._halt_reason})", flush=True)
-        elif long_signal and self._pos == 0:
-            self._pos = 1
-            self._entry_price = cur_close
-            self._sl_price = cur_st
-            self._save_state()
-            self._store_signal("BUY", cur_close, cur_st,
-                               adx=round(cur_adx, 1) if not np.isnan(cur_adx) else 0,
-                               cci=round(cur_cci, 0) if not np.isnan(cur_cci) else 0,
-                               dema=round(cur_dema, 1),
-                               ts=str(last_ts))
-            new_signals.append(self._signals[-1])
+            elif self._pos == -1 and cur_dir < 0:
+                if self._has_signal("CLOSE", signal_ts):
+                    self._block_trade(f"dup-close:{signal_ts}", f"[SS] Duplicate CLOSE skipped for {signal_ts}")
+                else:
+                    self._store_signal("CLOSE", cur_close, reason="TREND_FLIP", ts=signal_ts)
+                    new_signals.append(self._signals[-1])
+                self._pos = 0
+                self._entry_price = 0.0
+                self._sl_price = 0.0
+                self._trade_id = ""
+                self._save_state()
 
-        elif short_signal and self._pos == 0:
-            self._pos = -1
-            self._entry_price = cur_close
-            self._sl_price = cur_st
+            # Submit/update the dynamic stop for the next bar.
+            if self._pos != 0:
+                prev_sl = self._sl_price
+                self._sl_price = cur_st
+                if abs(prev_sl - self._sl_price) > 0.1:
+                    self._save_state()
+
+            # Entries are market orders processed on bar close.
+            if self._halt:
+                if long_signal or short_signal:
+                    print(f"[SS] HALT active — skipping entry signal ({self._halt_reason})", flush=True)
+            elif long_signal and self._pos == 0:
+                if self._manual_close_block_action == "BUY":
+                    self._block_trade(
+                        f"manual-close-block-buy:{signal_ts}",
+                        f"[SS] Manual close detected — skipping BUY re-entry for {signal_ts}; waiting for a fresh signal",
+                    )
+                    self._last_processed_bar_ts = bar_ts
+                    self._last_ts = bar_ts
+                    self._save_state()
+                    continue
+                if self._has_signal("BUY", signal_ts):
+                    self._block_trade(f"dup-buy:{signal_ts}", f"[SS] Duplicate BUY skipped for {signal_ts}")
+                else:
+                    self._pos = 1
+                    self._entry_price = cur_close
+                    self._sl_price = cur_st
+                    self._store_signal("BUY", cur_close, cur_st,
+                                       adx=round(cur_adx, 1) if not np.isnan(cur_adx) else 0,
+                                       cci=round(cur_cci, 0) if not np.isnan(cur_cci) else 0,
+                                       dema=round(cur_dema, 1),
+                                       ts=signal_ts)
+                    new_signals.append(self._signals[-1])
+
+            elif short_signal and self._pos == 0:
+                if self._manual_close_block_action == "SELL":
+                    self._block_trade(
+                        f"manual-close-block-sell:{signal_ts}",
+                        f"[SS] Manual close detected — skipping SELL re-entry for {signal_ts}; waiting for a fresh signal",
+                    )
+                    self._last_processed_bar_ts = bar_ts
+                    self._last_ts = bar_ts
+                    self._save_state()
+                    continue
+                if self._has_signal("SELL", signal_ts):
+                    self._block_trade(f"dup-sell:{signal_ts}", f"[SS] Duplicate SELL skipped for {signal_ts}")
+                else:
+                    self._pos = -1
+                    self._entry_price = cur_close
+                    self._sl_price = cur_st
+                    self._store_signal("SELL", cur_close, cur_st,
+                                       adx=round(cur_adx, 1) if not np.isnan(cur_adx) else 0,
+                                       cci=round(cur_cci, 0) if not np.isnan(cur_cci) else 0,
+                                       dema=round(cur_dema, 1),
+                                       ts=signal_ts)
+                    new_signals.append(self._signals[-1])
+
+            self._last_processed_bar_ts = bar_ts
+            self._last_ts = bar_ts
             self._save_state()
-            self._store_signal("SELL", cur_close, cur_st,
-                               adx=round(cur_adx, 1) if not np.isnan(cur_adx) else 0,
-                               cci=round(cur_cci, 0) if not np.isnan(cur_cci) else 0,
-                               dema=round(cur_dema, 1),
-                               ts=str(last_ts))
-            new_signals.append(self._signals[-1])
 
         # Store latest bar + indicator values for heartbeat
-        try:
-            prev_close = float(c[-2]) if len(c) > 1 else 0
-            prev_dema = float(d[-2]) if 'd' in dir() and len(d) > 1 else 0
-            self._heartbeat_state = {
-                "ts": str(last_ts)[:19] if last_ts else "",
-                "open": round(float(df_5m["open"].iloc[-1]), 1),
-                "high": round(float(df_5m["high"].iloc[-1]), 1),
-                "low": round(float(df_5m["low"].iloc[-1]), 1),
-                "close": round(float(c[-1]), 1),
-                "prev_close": round(prev_close, 1),
-                "dema": round(float(d[-1]), 1) if 'd' in dir() and len(d) > 0 else 0,
-                "prev_dema": round(prev_dema, 1),
-                "st": round(float(st[-1]), 1) if 'st' in dir() and len(st) > 0 else 0,
-                "adx": round(float(ax[-1]), 1) if 'ax' in dir() and len(ax) > 0 else 0,
-                "cci": round(float(cx[-1]), 0) if 'cx' in dir() and len(cx) > 0 else 0,
-                "direction": int(direction[-1]) if 'direction' in dir() and len(direction) > 0 else 0,
-                "pos": self._pos,
-                "entry_price": self._entry_price,
-                "sl_price": self._sl_price,
-            }
-        except Exception:
-            pass
+        latest_i = target_indices[-1]
+        self._set_heartbeat_state(df.index[latest_i], df.iloc[:latest_i + 1], c[:latest_i + 1], d[:latest_i + 1], st[:latest_i + 1], ax[:latest_i + 1], cx[:latest_i + 1], direction[:latest_i + 1])
 
         # Trail stop-loss to latest SuperTrend if position active
         if self._executor and self._pos != 0:
@@ -667,17 +949,26 @@ class SuperStructure:
                 pos = "LONG" if self._pos == 1 else "SHORT" if self._pos == -1 else "FLAT"
                 entry = f"${self._entry_price:.1f}" if self._pos != 0 else "—"
                 sl = f"${self._sl_price:.1f}" if self._pos != 0 else "—"
+                pos_source = "synced from exchange" if self._exchange_state_known else "last known local state"
                 sig_count = len(self._signals)
                 buy = sum(1 for x in self._signals if x["signal"]["action"] == "BUY")
                 sell = sum(1 for x in self._signals if x["signal"]["action"] == "SELL")
                 closes = sum(1 for x in self._signals if x["signal"]["action"] == "CLOSE")
                 halt_line = f"\n🚨 *HALTED* — {self._halt_reason}" if self._halt else ""
+                exchange_line = ""
+                if self._executor:
+                    if self._exchange_state_known:
+                        exchange_line = "\nExchange: *KNOWN*"
+                    else:
+                        reason = f" — `{self._exchange_state_error}`" if self._exchange_state_error else ""
+                        exchange_line = f"\nExchange: *UNKNOWN*{reason}\nEntries: *BLOCKED*"
                 return (f"📊 *Super Structure Status*{halt_line}\n\n"
-                        f"Position: {pos}  *(synced from exchange)*\n"
+                        f"Position: {pos}  *({pos_source})*\n"
                         f"Entry: {entry}  |  SL: {sl}\n"
                         f"Signals: {sig_count} total ({buy}B {sell}S {closes}C)\n"
                         f"Config: ST({ST_FACTOR},{ATR_PERIOD}) DEMA({DEMA_LENGTH}) "
-                        f"ADX({ADX_LENGTH}>{ADX_THRESHOLD}) CCI({CCI_LENGTH})")
+                        f"ADX({ADX_LENGTH}>{ADX_THRESHOLD}) CCI({CCI_LENGTH})"
+                        f"{exchange_line}")
 
             elif cmd == "/halt":
                 if self._halt:
@@ -706,11 +997,40 @@ class SuperStructure:
                 self.reconcile()
                 return "▶️ *Resumed* — strategy active"
 
+            elif cmd == "/parity" or cmd.startswith("/parity "):
+                parts = cmd.split()
+                date_arg = None
+                tz_arg = "Asia/Jakarta"
+                if len(parts) >= 2:
+                    if parts[1] == "utc":
+                        tz_arg = "UTC"
+                    else:
+                        date_arg = parts[1]
+                if len(parts) >= 3 and parts[2] == "utc":
+                    tz_arg = "UTC"
+                try:
+                    from pipeline.live.parity_super_structure import (
+                        build_parity_report,
+                        format_telegram_report,
+                        write_parity_report,
+                    )
+                    report = build_parity_report(date_arg, tz_arg)
+                    _, md_path, _ = write_parity_report(report)
+                    rel_md = md_path.relative_to(ROOT)
+                    return (
+                        format_telegram_report(report)
+                        + f"\n\nSaved report: `{rel_md}`"
+                    )
+                except Exception as exc:
+                    print(f"[SS] parity command error: {exc}", flush=True)
+                    return f"⚠️ *Parity failed*: `{exc}`"
+
             elif cmd == "/help":
                 return ("📋 *Commands*\n\n"
                         "/strat — list subscriptions\n"
                         "/strat on/off <name>\n"
                         "/ss /state — current status (live exchange truth)\n"
+                        "/parity [YYYY-MM-DD] [utc] — 3-way parity report\n"
                         "/halt — flatten + stop new entries\n"
                         "/resume — re-enable trading\n"
                         "/help — this message")
@@ -721,9 +1041,11 @@ class SuperStructure:
         print(f"[SS] Config: ST({ST_FACTOR},{ATR_PERIOD}) DEMA({DEMA_LENGTH}) "
               f"ADX({ADX_LENGTH}>{ADX_THRESHOLD}) CCI({CCI_LENGTH})", flush=True)
         if bot_enabled:
-            print(f"[SS] Telegram commands: /strat /ss /halt /resume /help", flush=True)
+            print(f"[SS] Telegram commands: /strat /ss /parity /halt /resume /help", flush=True)
         while True:
             try:
+                if self._executor:
+                    self.reconcile()
                 signals = self.check()
                 for s in signals:
                     pass  # signals already stored + printed in _store_signal
