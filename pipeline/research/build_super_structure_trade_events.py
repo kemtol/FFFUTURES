@@ -327,6 +327,36 @@ def build_events(df_bars: pd.DataFrame, event_start: str, timeframe_min: int) ->
         out["entry_date"] = out["entry_ts"].dt.date.astype(str)
         out["exit_date"] = out["exit_ts"].dt.date.astype(str)
         out["trade_no"] = np.arange(1, len(out) + 1)
+    if open_trade is not None and open_trade.entry_ts >= event_start_ts:
+        last_ts = df_bars.index[-1]
+        last_i = len(df_bars) - 1
+        last_close = float(c[-1])
+        gross_points = (
+            last_close - open_trade.entry_price
+            if open_trade.side == "Long"
+            else open_trade.entry_price - last_close
+        )
+        risk_points = abs(open_trade.entry_price - open_trade.initial_sl)
+        out.attrs["open_trade"] = {
+            "entry_ts": open_trade.entry_ts.strftime("%Y-%m-%d %H:%M"),
+            "entry_time": int(open_trade.entry_ts.timestamp()),
+            "last_ts": last_ts.strftime("%Y-%m-%d %H:%M"),
+            "last_time": int(last_ts.timestamp()),
+            "side": open_trade.side,
+            "entry_price": open_trade.entry_price,
+            "last_price": last_close,
+            "unrealized_pnl_usd": gross_points * POINT_VALUE_USD,
+            "risk_points": risk_points,
+            "entry_adx": open_trade.entry_adx,
+            "entry_cci": open_trade.entry_cci,
+            "entry_dema": open_trade.entry_dema,
+            "entry_supertrend": open_trade.entry_supertrend,
+            "entry_st_direction": open_trade.entry_direction,
+            "entry_i": open_trade.entry_i,
+            "last_i": last_i,
+            "duration_min": (last_i - open_trade.entry_i) * timeframe_min,
+            "session": session_name(open_trade.entry_ts),
+        }
     return out
 
 
@@ -376,6 +406,32 @@ def trade_records(events: pd.DataFrame) -> list[dict]:
     return records
 
 
+def open_trade_records(events: pd.DataFrame) -> list[dict]:
+    open_trade = events.attrs.get("open_trade")
+    if not open_trade:
+        return []
+    return [{
+        "status": "OPEN",
+        "entry_time": int(open_trade["entry_time"]),
+        "exit_time": None,
+        "entry_ts": open_trade["entry_ts"],
+        "exit_ts": "",
+        "last_ts": open_trade["last_ts"],
+        "last_time": int(open_trade["last_time"]),
+        "side": open_trade["side"],
+        "entry_price": round(float(open_trade["entry_price"]), 4),
+        "last_price": round(float(open_trade["last_price"]), 4),
+        "exit_price": None,
+        "exit_reason": "OPEN",
+        "unrealized_pnl_usd": round(float(open_trade["unrealized_pnl_usd"]), 2),
+        "risk_points": round(float(open_trade["risk_points"]), 4),
+        "entry_adx": round(float(open_trade["entry_adx"]), 2),
+        "entry_cci": round(float(open_trade["entry_cci"]), 2),
+        "session": open_trade["session"],
+        "duration_min": int(open_trade["duration_min"]),
+    }]
+
+
 def summary_record(events: pd.DataFrame, start: str, end: str, timeframe: str, candle_count: int) -> dict:
     gross_profit = float(events.loc[events["pnl_usd"] > 0, "pnl_usd"].sum()) if not events.empty else 0.0
     gross_loss = abs(float(events.loc[events["pnl_usd"] < 0, "pnl_usd"].sum())) if not events.empty else 0.0
@@ -405,7 +461,11 @@ def export_ui(bars_by_tf: dict[str, pd.DataFrame], events_by_tf: dict[str, pd.Da
         out_path.write_text(json.dumps({"summary": summary, "candles": candles}, separators=(",", ":")))
 
         trades_path = ROOT / f"ui/data/trade_events_{STRATEGY_KEY}_{timeframe}.json"
-        trades_path.write_text(json.dumps({"summary": summary, "trades": trade_records(events_by_tf[timeframe])}, separators=(",", ":")))
+        trades_path.write_text(json.dumps({
+            "summary": summary,
+            "trades": trade_records(events_by_tf[timeframe]),
+            "open_trades": open_trade_records(events_by_tf[timeframe]),
+        }, separators=(",", ":")))
 
     # Backward compat alias (legacy consumers)
     OUT_TRADES_JSON.write_text((ROOT / f"ui/data/trade_events_{STRATEGY_KEY}_5m.json").read_text())

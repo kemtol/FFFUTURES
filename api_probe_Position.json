@@ -1,0 +1,20 @@
+[
+  {
+    "id": 705391947,
+    "symbolId": "F.US.MGC",
+    "symbolName": "/MGC",
+    "positionSize": -1,
+    "stopLoss": null,
+    "takeProfit": null,
+    "toMake": null,
+    "risk": null,
+    "averagePrice": 4715.7,
+    "profitAndLoss": 12.0,
+    "entryTime": "2026-05-07T17:20:05.277811+00:00",
+    "accountId": 22303383,
+    "stopLossOrderId": null,
+    "takeProfitOrderId": null,
+    "contractId": "CON.F.US.MGC.M26",
+    "contractDisplayName": "MGCM26"
+  }
+]

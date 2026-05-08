@@ -25,6 +25,7 @@ TELEGRAM_ENV_PATH = ROOT / "data" / "Live" / "telegram.env"
 TELEGRAM_STATE_PATH = OUT_DIR / ".last_telegram_state.json"
 POINT_VALUE = 10.0
 COMMISSION_RT = 1.74
+ENTRY_TOLERANCE = pd.Timedelta(minutes=5)
 
 
 def parse_ts(value, default_tz: str = "UTC") -> pd.Timestamp | None:
@@ -146,8 +147,215 @@ def load_ui_trades() -> list[dict]:
         row = dict(tr)
         row["entry_dt"] = parse_ts(row.get("entry_ts"), default_tz="UTC")
         row["exit_dt"] = parse_ts(row.get("exit_ts"), default_tz="UTC")
+        row["status"] = row.get("status", "CLOSED")
+        out.append(row)
+    for tr in data.get("open_trades", []):
+        row = dict(tr)
+        row["entry_dt"] = parse_ts(row.get("entry_ts"), default_tz="UTC")
+        row["exit_dt"] = None
+        row["status"] = "OPEN"
         out.append(row)
     return out
+
+
+def is_entry_signal(sig: dict) -> bool:
+    return sig.get("action") in ("BUY", "SELL")
+
+
+def is_market_entry(ex: dict) -> bool:
+    return ex.get("event_type") == "MARKET" and str(ex.get("action", "")).upper() in ("BUY", "SELL")
+
+
+def signal_side(sig: dict) -> str:
+    return "Long" if sig.get("action") == "BUY" else "Short"
+
+
+def execution_side(ex: dict) -> str:
+    return "Long" if str(ex.get("action", "")).upper() == "BUY" else "Short"
+
+
+def execution_error_text(ex: dict) -> str:
+    if ex.get("error"):
+        return str(ex.get("error"))
+    api = ex.get("api_result")
+    if isinstance(api, dict):
+        if api.get("errorMessage"):
+            return str(api.get("errorMessage"))
+        result = api.get("result")
+        if result not in (None, 0):
+            return f"api_result={result}"
+    return ""
+
+
+def execution_entry_ok(ex: dict) -> bool:
+    if not is_market_entry(ex):
+        return False
+    if execution_error_text(ex):
+        return False
+    api = ex.get("api_result")
+    if isinstance(api, dict) and api.get("result") not in (None, 0):
+        return False
+    return ex.get("executed_price") is not None
+
+
+def match_execution_entry(sig: dict, executions: list[dict], used: set[int]) -> tuple[int | None, dict | None]:
+    candidates = []
+    for i, ex in enumerate(executions):
+        if i in used or not is_market_entry(ex):
+            continue
+        if execution_side(ex) != sig["side"]:
+            continue
+        same_signal = sig.get("signal_id") and ex.get("signal_id") == sig.get("signal_id")
+        same_trade = sig.get("trade_id") and ex.get("trade_id") == sig.get("trade_id")
+        if same_signal or same_trade:
+            candidates.append((i, ex))
+    return candidates[0] if candidates else (None, None)
+
+
+def match_ui_entry(side: str, entry_ts: pd.Timestamp | None, ui_trades: list[dict], used: set[int]) -> tuple[int | None, dict | None]:
+    if entry_ts is None:
+        return None, None
+    best_i = None
+    best = None
+    best_dt = ENTRY_TOLERANCE + pd.Timedelta(seconds=1)
+    for i, tr in enumerate(ui_trades):
+        if i in used or tr.get("side") != side or tr.get("entry_dt") is None:
+            continue
+        dt = abs(tr["entry_dt"] - entry_ts)
+        if dt <= ENTRY_TOLERANCE and dt < best_dt:
+            best_i = i
+            best = tr
+            best_dt = dt
+    return best_i, best
+
+
+def overlapping_ui_trade(side: str, ts: pd.Timestamp | None, ui_trades: list[dict]) -> dict | None:
+    if ts is None:
+        return None
+    for tr in ui_trades:
+        if tr.get("side") != side or tr.get("entry_dt") is None:
+            continue
+        exit_dt = tr.get("exit_dt")
+        if tr["entry_dt"] <= ts and (exit_dt is None or ts <= exit_dt):
+            return tr
+    return None
+
+
+def signal_entry_vs_topstep(signals: list[dict], executions: list[dict]) -> list[dict]:
+    rows = []
+    used_exec: set[int] = set()
+    signal_ids = {s.get("signal_id", "") for s in signals if is_entry_signal(s)}
+    trade_ids = {s.get("trade_id", "") for s in signals if is_entry_signal(s)}
+
+    for sig in [s for s in signals if is_entry_signal(s)]:
+        match_i, match = match_execution_entry(sig, executions, used_exec)
+        if match_i is not None:
+            used_exec.add(match_i)
+        if match is None:
+            rows.append({
+                "severity": "CRITICAL",
+                "signal_id": sig["signal_id"],
+                "trade_id": sig["trade_id"],
+                "side": sig["side"],
+                "signal_entry": fmt_ts(sig["ts"]),
+                "signal_px": sig["price"],
+                "topstep_entry": "MISSING",
+                "topstep_px": None,
+                "slippage": None,
+                "drift_type": "MISSING_ENTRY_EXECUTION",
+                "note": "entry signal has no matching Topstep MARKET event",
+            })
+            continue
+        ok = execution_entry_ok(match)
+        topstep_px = match.get("executed_price")
+        rows.append({
+            "severity": "PASS" if ok else "CRITICAL",
+            "signal_id": sig["signal_id"],
+            "trade_id": sig["trade_id"],
+            "side": sig["side"],
+            "signal_entry": fmt_ts(sig["ts"]),
+            "signal_px": sig["price"],
+            "topstep_entry": fmt_ts(match.get("ts")),
+            "topstep_px": topstep_px,
+            "slippage": (float(topstep_px) - sig["price"]) if topstep_px is not None else None,
+            "drift_type": "" if ok else "ENTRY_REJECTED",
+            "note": "" if ok else execution_error_text(match) or "Topstep MARKET event did not confirm a fill",
+        })
+
+    for i, ex in enumerate(executions):
+        if i in used_exec or not is_market_entry(ex):
+            continue
+        if ex.get("signal_id") not in signal_ids and ex.get("trade_id") not in trade_ids:
+            rows.append({
+                "severity": "CRITICAL",
+                "signal_id": ex.get("signal_id", ""),
+                "trade_id": ex.get("trade_id", ""),
+                "side": execution_side(ex),
+                "signal_entry": "MISSING",
+                "signal_px": None,
+                "topstep_entry": fmt_ts(ex.get("ts")),
+                "topstep_px": ex.get("executed_price"),
+                "slippage": None,
+                "drift_type": "EXTRA_ENTRY_EXECUTION",
+                "note": "Topstep MARKET entry has no matching signal entry",
+            })
+    return rows
+
+
+def signal_entry_vs_ui(signals: list[dict], ui_trades: list[dict]) -> list[dict]:
+    rows = []
+    used_ui: set[int] = set()
+    for sig in [s for s in signals if is_entry_signal(s)]:
+        ui_i, ui = match_ui_entry(sig["side"], sig["ts"], ui_trades, used_ui)
+        if ui_i is not None:
+            used_ui.add(ui_i)
+        if ui is None:
+            overlap = overlapping_ui_trade(sig["side"], sig["ts"], ui_trades)
+            if overlap:
+                note = (
+                    "UI theoretical was already in same-side trade "
+                    f"{fmt_ts(overlap.get('entry_dt'))}->{fmt_ts(overlap.get('exit_dt')) or 'open'}"
+                )
+                drift_type = "UI_ALREADY_IN_POSITION"
+                ui_entry = fmt_ts(overlap.get("entry_dt"))
+                ui_exit = fmt_ts(overlap.get("exit_dt")) if overlap.get("exit_dt") is not None else ""
+            else:
+                note = f"no UI theoretical entry within {int(ENTRY_TOLERANCE.total_seconds() // 60)}min"
+                drift_type = "MISSING_UI_ENTRY"
+                ui_entry = "MISSING"
+                ui_exit = ""
+            rows.append({
+                "severity": "CRITICAL",
+                "signal_id": sig["signal_id"],
+                "trade_id": sig["trade_id"],
+                "side": sig["side"],
+                "signal_entry": fmt_ts(sig["ts"]),
+                "signal_px": sig["price"],
+                "ui_entry": ui_entry,
+                "ui_exit": ui_exit,
+                "ui_status": overlap.get("status", "") if overlap else "",
+                "entry_delta_min": None,
+                "entry_px_delta": None,
+                "drift_type": drift_type,
+                "note": note,
+            })
+            continue
+        rows.append({
+            "severity": "PASS",
+            "signal_id": sig["signal_id"],
+            "trade_id": sig["trade_id"],
+            "side": sig["side"],
+            "signal_entry": fmt_ts(sig["ts"]),
+            "signal_px": sig["price"],
+            "ui_entry": fmt_ts(ui["entry_dt"]),
+            "ui_exit": fmt_ts(ui["exit_dt"]) if ui.get("exit_dt") is not None else "",
+            "ui_status": ui.get("status", "CLOSED"),
+            "entry_delta_min": (sig["ts"] - ui["entry_dt"]).total_seconds() / 60.0,
+            "entry_px_delta": sig["price"] - float(ui.get("entry_price", 0.0)),
+            "drift_type": "",
+            "note": "UI entry matched",
+        })
+    return rows
 
 
 def build_signal_trades(signals: list[dict]) -> list[dict]:
@@ -481,7 +689,15 @@ def filter_inputs(signals, executions, ui_trades, start, end):
     executions_f = [e for e in executions if in_window(e.get("ts"), start, end)]
     ui_f = [
         t for t in ui_trades
-        if in_window(t.get("entry_dt"), start, end) or in_window(t.get("exit_dt"), start, end)
+        if (
+            in_window(t.get("entry_dt"), start, end)
+            or in_window(t.get("exit_dt"), start, end)
+            or (
+                t.get("entry_dt") is not None
+                and t.get("entry_dt") < end
+                and (t.get("exit_dt") is None or t.get("exit_dt") >= start)
+            )
+        )
     ]
     return signals_f, executions_f, ui_f
 
@@ -490,11 +706,11 @@ def build_parity_report(date_s: str | None = None, tz_name: str = "Asia/Jakarta"
     day, start, end = date_window(date_s, tz_name)
     signals, executions, ui_trades = filter_inputs(load_signals(), load_executions(), load_ui_trades(), start, end)
 
-    signal_trades = build_signal_trades(signals)
-    exec_trades = build_execution_trades(executions)
-    svt = signal_vs_topstep(signals, executions)
-    svu = signal_vs_ui(signal_trades, ui_trades, exec_trades)
-    tvu = topstep_vs_ui(exec_trades, ui_trades)
+    signal_entries = [s for s in signals if is_entry_signal(s)]
+    topstep_entries = [e for e in executions if is_market_entry(e)]
+    ui_entries = [t for t in ui_trades if in_window(t.get("entry_dt"), start, end)]
+    execution_sync = signal_entry_vs_topstep(signals, executions)
+    logic_sync = signal_entry_vs_ui(signals, ui_trades)
 
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -507,38 +723,42 @@ def build_parity_report(date_s: str | None = None, tz_name: str = "Asia/Jakarta"
             "ui_theoretical": str(UI_PATH),
         },
         "summary": {
-            "signals": len(signals),
-            "executions": len(executions),
-            "ui_theoretical_trades": len(ui_trades),
-            "critical": sum(1 for rows in (svt, svu, tvu) for r in rows if r.get("severity") == "CRITICAL"),
+            "signals": len(signal_entries),
+            "executions": len(topstep_entries),
+            "ui_theoretical_trades": len(ui_entries),
+            "signal_entries": len(signal_entries),
+            "topstep_entry_events": len(topstep_entries),
+            "ui_entry_events": len(ui_entries),
+            "critical": sum(1 for rows in (execution_sync, logic_sync) for r in rows if r.get("severity") == "CRITICAL"),
         },
-        "signal_vs_topstep": svt,
-        "signal_vs_ui_theoretical": svu,
-        "topstep_vs_ui_theoretical": tvu,
+        "signal_entry_vs_topstep_entry": execution_sync,
+        "signal_entry_vs_ui_entry": logic_sync,
+        # Backward-compatible names for older consumers. These now intentionally
+        # represent entry-only parity, not lifecycle/exit parity.
+        "signal_vs_topstep": execution_sync,
+        "signal_vs_ui_theoretical": logic_sync,
+        "topstep_vs_ui_theoretical": [],
     }
 
 
 def render_markdown_report(report: dict) -> str:
     start = report["window_utc"]["start"]
     end = report["window_utc"]["end"]
-    svt = report["signal_vs_topstep"]
-    svu = report["signal_vs_ui_theoretical"]
-    tvu = report["topstep_vs_ui_theoretical"]
+    execution_sync = report["signal_entry_vs_topstep_entry"]
+    logic_sync = report["signal_entry_vs_ui_entry"]
     md = [
         f"# Super Structure Parity {report['date']} ({report['timezone']})",
         "",
         f"Window UTC: `{start}` -> `{end}`",
         "",
-        "UI rows are theoretical backtest rows from the TopstepX buffer snapshot; they are not execution truth.",
+        "Scope: entry-only drift. Topstep is checked only for entry fills; UI is checked only for theoretical strategy entries.",
+        "Manual closes and theoretical exits are context, not critical parity failures.",
         "",
-        "## Signal vs Topstep",
-        markdown_table(svt, ["severity", "signal", "signal_ts", "signal_px", "execution", "exec_ts", "exec_px", "slippage", "note"]),
+        "## Signal Entry vs Topstep Entry",
+        markdown_table(execution_sync, ["severity", "side", "signal_entry", "signal_px", "topstep_entry", "topstep_px", "slippage", "drift_type", "note"]),
         "",
-        "## Signal vs UI Theoretical",
-        markdown_table(svu, ["severity", "side", "signal_entry", "ui_entry", "entry_delta_min", "exit_delta_min", "entry_px_delta", "exit_px_delta", "pnl_delta", "note"]),
-        "",
-        "## Topstep vs UI Theoretical",
-        markdown_table(tvu, ["severity", "side", "actual_entry", "ui_entry", "entry_delta_min", "exit_delta_min", "entry_px_delta", "exit_px_delta", "pnl_delta", "note"]),
+        "## Signal Entry vs UI Entry",
+        markdown_table(logic_sync, ["severity", "side", "signal_entry", "signal_px", "ui_entry", "ui_exit", "ui_status", "entry_delta_min", "entry_px_delta", "drift_type", "note"]),
         "",
     ]
     return "\n".join(md)
@@ -559,18 +779,15 @@ def _short_row(row: dict, section: str) -> str:
     note = str(row.get("note", ""))
     if section == "Signal vs Topstep":
         return (
-            f"- {row.get('signal', '')} `{row.get('signal_ts', '')}` "
-            f"@ `{fmt_num(row.get('signal_px'), 1)}` -> {row.get('execution', '')}: {note}"
+            f"- {row.get('side', '')} signal `{row.get('signal_entry', '')}` "
+            f"vs Topstep `{row.get('topstep_entry', '')}`: {row.get('drift_type', '')} {note}"
         )
     if section == "Signal vs UI":
         return (
             f"- {row.get('side', '')} signal `{row.get('signal_entry', '')}` "
-            f"vs UI `{row.get('ui_entry', '')}`: {note}"
+            f"vs UI `{row.get('ui_entry', '')}`: {row.get('drift_type', '')} {note}"
         )
-    return (
-        f"- {row.get('side', '')} actual `{row.get('actual_entry', '')}` "
-        f"vs UI `{row.get('ui_entry', '')}`: {note}"
-    )
+    return f"- {note}"
 
 
 def _time_part(value: str) -> str:
@@ -596,27 +813,24 @@ def _fit(value: str, width: int) -> str:
 
 
 def comparison_table_for_telegram(report: dict) -> str:
-    svu = report["signal_vs_ui_theoretical"]
-    tvu_by_trade = {
+    logic_by_trade = {
         row.get("trade_id", ""): row
-        for row in report["topstep_vs_ui_theoretical"]
+        for row in report["signal_entry_vs_ui_entry"]
     }
+    execution_sync = report["signal_entry_vs_topstep_entry"]
     rows = []
-    for row in svu:
-        actual = tvu_by_trade.get(row.get("trade_id", ""), {})
+    for row in execution_sync:
+        logic = logic_by_trade.get(row.get("trade_id", ""), {})
         side = "L" if row.get("side") == "Long" else ("S" if row.get("side") == "Short" else "?")
-        status = "OK" if row.get("severity") == "PASS" and actual.get("severity", "PASS") == "PASS" else "CRIT"
-        note = ""
-        combined_note = f"{row.get('note', '')} {actual.get('note', '')}"
-        if "manually closed" in combined_note:
-            note = "manual"
-        elif status != "OK":
-            note = "check"
+        exec_ok = row.get("severity") == "PASS"
+        logic_ok = logic.get("severity") == "PASS"
+        status = "OK" if exec_ok and logic_ok else "CRIT"
+        note = row.get("drift_type") or logic.get("drift_type") or ""
         rows.append({
             "side": side,
-            "signal": _span(row.get("signal_entry", ""), row.get("signal_exit", "")),
-            "topstep": _span(actual.get("actual_entry", ""), actual.get("actual_exit", "")),
-            "ui": _span(row.get("ui_entry", ""), row.get("ui_exit", "")),
+            "signal": _time_part(row.get("signal_entry", "")),
+            "topstep": _time_part(row.get("topstep_entry", "")),
+            "ui": _time_part(logic.get("ui_entry", "")),
             "status": status,
             "note": note,
         })
@@ -625,15 +839,15 @@ def comparison_table_for_telegram(report: dict) -> str:
         return "No matched trade rows."
 
     lines = [
-        "Side Signal        Topstep       UI            St  Note",
-        "---- ------------- ------------- ------------- --- ------",
+        "Side Signal   Topstep  UI       St  Drift",
+        "---- -------- -------- -------- --- --------------------",
     ]
     for row in rows[:10]:
         lines.append(
             f"{_fit(row['side'], 4)} "
-            f"{_fit(row['signal'], 13)} "
-            f"{_fit(row['topstep'], 13)} "
-            f"{_fit(row['ui'], 13)} "
+            f"{_fit(row['signal'], 8)} "
+            f"{_fit(row['topstep'], 8)} "
+            f"{_fit(row['ui'], 8)} "
             f"{_fit(row['status'], 3)} "
             f"{row['note']}"
         )
@@ -652,10 +866,10 @@ def format_telegram_report(report: dict, max_critical_rows: int = 8) -> str:
         f"TZ: `{report['timezone']}`",
         "",
         f"Status: *{status}*",
-        f"Signals: `{summary.get('signals', 0)}` | Executions: `{summary.get('executions', 0)}` | UI theoretical: `{summary.get('ui_theoretical_trades', 0)}`",
+        f"Signal entries: `{summary.get('signal_entries', 0)}` | Topstep entries: `{summary.get('topstep_entry_events', 0)}` | UI entries: `{summary.get('ui_entry_events', 0)}`",
         f"Critical rows: `{critical}`",
         "",
-        "_UI = theoretical backtest from TopstepX buffer snapshot, not execution truth._",
+        "_Entry-only parity: Signal vs UI for logic; Signal vs Topstep for fills._",
         "",
         "*Comparison*",
         "```",
@@ -667,7 +881,6 @@ def format_telegram_report(report: dict, max_critical_rows: int = 8) -> str:
         sections = [
             ("Signal vs Topstep", report["signal_vs_topstep"]),
             ("Signal vs UI", report["signal_vs_ui_theoretical"]),
-            ("Topstep vs UI", report["topstep_vs_ui_theoretical"]),
         ]
         shown = 0
         for section, rows in sections:
