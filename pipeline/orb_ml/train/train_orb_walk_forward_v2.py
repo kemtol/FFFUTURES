@@ -21,7 +21,7 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
-BASE = Path(__file__).resolve().parent.parent.parent
+BASE = Path(__file__).resolve().parent.parent.parent.parent
 PIPELINE = BASE / "pipeline"
 for p in [str(BASE), str(PIPELINE)]:
     if p not in sys.path:
@@ -32,7 +32,7 @@ from analysis.topstep_sim import (
     apply_policy,
     map_to_topstep_trade_day,
 )
-from pipeline.feature.modules.loader import load_features_from_modules
+from pipeline.orb_ml.features.modules.loader import load_features_from_modules
 
 # ── paths ─────────────────────────────────────────────────────────────────────
 DM_PATH = BASE / "data" / "Level_2_Datamart" / "training_datamart_orb.parquet"

@@ -144,15 +144,15 @@ Sweep results (CSV):
 
 Scripts:
 
-- `pipeline/train/train_orb_reversal.py`
-- `pipeline/train/train_orb_continuation.py`
-- `pipeline/analysis/eval_holdout_orb.py`
-- `pipeline/analysis/eval_policy_switch_orb.py`
+- `pipeline/orb_ml/train/train_orb_reversal.py`
+- `pipeline/orb_ml/train/train_orb_continuation.py`
+- `pipeline/orb_ml/analysis/eval_holdout_orb.py`
+- `pipeline/orb_ml/analysis/eval_policy_switch_orb.py`
 - `pipeline/analysis/plot_policy_pnl_state.py`
 - `pipeline/analysis/topstep_pass_engine.py`
 - `pipeline/analysis/topstep_sim.py` — shared Topstep simulator module
 - `pipeline/analysis/test_refined_sim.py` — refined simulator comparison test
-- `pipeline/analysis/objective_sweep_orb_v4.py` — v4 sweep with refined simulator
+- `pipeline/orb_ml/analysis/objective_sweep_orb_v4.py` — v4 sweep with refined simulator
 
 ## ORB_v1.0 Results
 
@@ -341,8 +341,8 @@ Only after an objective/horizon shows promise:
 
 All features are now independent parquet modules in [`data/Level_1_Features/modules/`](data/Level_1_Features/modules/):
 - **Grain key**: `(date, session, orb_tf, breakout_ts)` — breakout-event level
-- **Loader**: [`pipeline/feature/modules/loader.py`](pipeline/feature/modules/loader.py) auto-joins all `*_features.parquet` via LEFT JOIN
-- **Template**: [`pipeline/feature/modules/_TEMPLATE_generate_feature_module.py`](pipeline/feature/modules/_TEMPLATE_generate_feature_module.py) for creating new modules
+- **Loader**: [`pipeline/orb_ml/features/modules/loader.py`](pipeline/orb_ml/features/modules/loader.py) auto-joins all `*_features.parquet` via LEFT JOIN
+- **Template**: [`pipeline/orb_ml/features/modules/_TEMPLATE_generate_feature_module.py`](pipeline/orb_ml/features/modules/_TEMPLATE_generate_feature_module.py) for creating new modules
 - **Scalability**: Add a new feature family by creating a generator → run it → re-sweep. No pipeline changes needed.
 
 | v5 (monolithic) | v6 (modular) |
@@ -352,13 +352,13 @@ All features are now independent parquet modules in [`data/Level_1_Features/modu
 | Adding features requires modifying sweep script | Adding features = new module generator + re-run |
 
 Active modules (v6+ — **7 modules, 42 total features**):
-- [`orb_context_features`](pipeline/feature/modules/generate_orb_context_features.py) — 7 features: market context at breakout time (VWAP, ADX, EMA slope, day-of-week, etc.)
-- [`scale_invariant_features`](pipeline/feature/modules/generate_scale_invariant_features.py) — 7 features: ratios, squares, flags robust to volatility scaling
-- [`volatility_normalized_features`](pipeline/feature/modules/generate_volatility_normalized_features.py) — 5 features: rolling percentile ranks and z-scores of ATR14, breakout_strength, orb_range (stationary across volatility regimes)
-- [`pre_breakout_profile_features`](pipeline/feature/modules/generate_pre_breakout_profile_features.py) — 5 features: pre-breakout candle pattern signals (compression ratio, drift/ATR, bullish ratio, inside bar flag, last candle range)
-- [`session_momentum_features`](pipeline/feature/modules/generate_session_momentum_features.py) — 4 features: first 30-min range/ATR, direction/ATR, pre-breakout volume ratio, volume z-score
-- [`interaction_features`](pipeline/feature/modules/generate_interaction_features.py) — 5 features: interaction terms (ATR×ADX, strength×range, |VWAP|×ATR, ADX×ORB/ATR, strength×session)
-- [`macro_features`](pipeline/feature/modules/generate_macro_features.py) — 4 features: SPX regime (200-day MA), DXY trend (50-day MA), US10Y abs change, Oil volatility (abs return)
+- [`orb_context_features`](pipeline/orb_ml/features/modules/generate_orb_context_features.py) — 7 features: market context at breakout time (VWAP, ADX, EMA slope, day-of-week, etc.)
+- [`scale_invariant_features`](pipeline/orb_ml/features/modules/generate_scale_invariant_features.py) — 7 features: ratios, squares, flags robust to volatility scaling
+- [`volatility_normalized_features`](pipeline/orb_ml/features/modules/generate_volatility_normalized_features.py) — 5 features: rolling percentile ranks and z-scores of ATR14, breakout_strength, orb_range (stationary across volatility regimes)
+- [`pre_breakout_profile_features`](pipeline/orb_ml/features/modules/generate_pre_breakout_profile_features.py) — 5 features: pre-breakout candle pattern signals (compression ratio, drift/ATR, bullish ratio, inside bar flag, last candle range)
+- [`session_momentum_features`](pipeline/orb_ml/features/modules/generate_session_momentum_features.py) — 4 features: first 30-min range/ATR, direction/ATR, pre-breakout volume ratio, volume z-score
+- [`interaction_features`](pipeline/orb_ml/features/modules/generate_interaction_features.py) — 5 features: interaction terms (ATR×ADX, strength×range, |VWAP|×ATR, ADX×ORB/ATR, strength×session)
+- [`macro_features`](pipeline/orb_ml/features/modules/generate_macro_features.py) — 4 features: SPX regime (200-day MA), DXY trend (50-day MA), US10Y abs change, Oil volatility (abs return)
 
 ### Priority 5: Inference
 
@@ -373,19 +373,19 @@ Inference should wait until a Topstep-suitable edge exists.
 Train continuation model:
 
 ```bash
-python3 pipeline/train/train_orb_continuation.py
+python3 pipeline/orb_ml/train/train_orb_continuation.py
 ```
 
 Evaluate reversal holdout:
 
 ```bash
-python3 pipeline/analysis/eval_holdout_orb.py
+python3 pipeline/orb_ml/analysis/eval_holdout_orb.py
 ```
 
 Evaluate dynamic rev/cont/skip policy:
 
 ```bash
-python3 pipeline/analysis/eval_policy_switch_orb.py
+python3 pipeline/orb_ml/analysis/eval_policy_switch_orb.py
 ```
 
 Plot current PnL state:
@@ -409,28 +409,28 @@ python3 pipeline/analysis/test_refined_sim.py
 Run v4 objective sweep (refined simulator):
 
 ```bash
-python3 pipeline/analysis/objective_sweep_orb_v4.py
+python3 pipeline/orb_ml/analysis/objective_sweep_orb_v4.py
 ```
 
 Run v5 objective sweep (recent-regime hypothesis test):
 
 ```bash
-python3 pipeline/analysis/objective_sweep_orb_v5.py
+python3 pipeline/orb_ml/analysis/objective_sweep_orb_v5.py
 ```
 
 Run v6 objective sweep (modular feature architecture):
 
 ```bash
-python3 pipeline/analysis/objective_sweep_orb_v6.py
+python3 pipeline/orb_ml/analysis/objective_sweep_orb_v6.py
 ```
 
 Generate feature modules (standalone — run before sweep if modules are missing):
 
 ```bash
 # All feature modules
-python3 pipeline/feature/modules/generate_orb_context_features.py
-python3 pipeline/feature/modules/generate_scale_invariant_features.py
-python3 pipeline/feature/modules/generate_volatility_normalized_features.py
+python3 pipeline/orb_ml/features/modules/generate_orb_context_features.py
+python3 pipeline/orb_ml/features/modules/generate_scale_invariant_features.py
+python3 pipeline/orb_ml/features/modules/generate_volatility_normalized_features.py
 ```
 
 ## Agent Handoff Notes
@@ -453,7 +453,7 @@ python3 pipeline/feature/modules/generate_volatility_normalized_features.py
 
 ### v6+ Results (2026-04-28): Volatility-Normalized Features
 
-Adding [`volatility_normalized_features`](pipeline/feature/modules/generate_volatility_normalized_features.py) (5 features: rolling percentile ranks and z-scores) to the v6 modular sweep produced:
+Adding [`volatility_normalized_features`](pipeline/orb_ml/features/modules/generate_volatility_normalized_features.py) (5 features: rolling percentile ranks and z-scores) to the v6 modular sweep produced:
 
 | Target | Change vs Baseline (2-module) | Key Finding |
 |--------|:----------------------------:|-------------|
@@ -467,7 +467,7 @@ Adding [`volatility_normalized_features`](pipeline/feature/modules/generate_vola
 
 ### v6+ Cycle 1 Results (2026-04-28): Pre-Breakout Profile Features
 
-Adding [`pre_breakout_profile_features`](pipeline/feature/modules/generate_pre_breakout_profile_features.py) (5 features from 4×15m pre-breakout candles) to the 3-module baseline produced a **breakthrough**:
+Adding [`pre_breakout_profile_features`](pipeline/orb_ml/features/modules/generate_pre_breakout_profile_features.py) (5 features from 4×15m pre-breakout candles) to the 3-module baseline produced a **breakthrough**:
 
 | Target | 3-Module → 4-Module | Δ Score | Δ Pass | Δ Fail MLL | Δ 2026 Pass |
 |--------|:-------------------:|:-------:|:------:|:----------:|:-----------:|
@@ -483,7 +483,7 @@ The pre-breakout "coiled spring" signal (compression + drift + inside bar) is th
 
 ### v6+ Cycle 2 Results (2026-04-28): Session Momentum Features
 
-Adding [`session_momentum_features`](pipeline/feature/modules/generate_session_momentum_features.py) (4 features from 1m OHLCV: first-30-min range/ATR, direction/ATR, pre-breakout volume ratio, pre-breakout volume z-score) to the 4-module baseline produced mixed but powerful results:
+Adding [`session_momentum_features`](pipeline/orb_ml/features/modules/generate_session_momentum_features.py) (4 features from 1m OHLCV: first-30-min range/ATR, direction/ATR, pre-breakout volume ratio, pre-breakout volume z-score) to the 4-module baseline produced mixed but powerful results:
 
 | Target | 4-Module → 5-Module Score | Δ Pass | Δ 2026 Pass | Verdict |
 |--------|:-------------------------:|:------:|:-----------:|:-------:|
@@ -498,7 +498,7 @@ Adding [`session_momentum_features`](pipeline/feature/modules/generate_session_m
 
 ### v6+ Cycle 3 Results (2026-04-28): Interaction Features
 
-Adding [`interaction_features`](pipeline/feature/modules/generate_interaction_features.py) (5 interaction terms from breakout_events × market_context: ATR×ADX, strength×range, |VWAP dist|×ATR, ADX×ORB/ATR, strength×session) to the 5-module baseline:
+Adding [`interaction_features`](pipeline/orb_ml/features/modules/generate_interaction_features.py) (5 interaction terms from breakout_events × market_context: ATR×ADX, strength×range, |VWAP dist|×ATR, ADX×ORB/ATR, strength×session) to the 5-module baseline:
 
 | Target | 5-Module → 6-Module Score | Δ Score | Δ 2026 Pass | Verdict |
 |--------|:-------------------------:|:-------:|:-----------:|:-------:|
@@ -517,7 +517,7 @@ Adding [`interaction_features`](pipeline/feature/modules/generate_interaction_fe
 
 ### v6+ Cycle 4 Results (2026-04-28): Macro Features
 
-Adding [`macro_features`](pipeline/feature/modules/generate_macro_features.py) (4 features from macro_data.parquet: SPX 200-day regime, DXY trend, US10Y abs change, Oil volatility) to the 6-module baseline:
+Adding [`macro_features`](pipeline/orb_ml/features/modules/generate_macro_features.py) (4 features from macro_data.parquet: SPX 200-day regime, DXY trend, US10Y abs change, Oil volatility) to the 6-module baseline:
 
 **Hypothesis**: ORB breakout outcomes are systematically affected by macro regime. Bull equity + weak USD + stable yields + low oil vol = cleaner trend environment.
 

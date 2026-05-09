@@ -14,27 +14,27 @@ No build system, no test framework, no CI. All scripts run with `python3` from t
 
 ```bash
 # Create a new feature module from template
-cp pipeline/feature/modules/_TEMPLATE_generate_feature_module.py \
-   pipeline/feature/modules/generate_{family}_features.py
+cp pipeline/orb_ml/features/modules/_TEMPLATE_generate_feature_module.py \
+   pipeline/orb_ml/features/modules/generate_{family}_features.py
 
 # Dry-run before writing
-python3 pipeline/feature/modules/generate_{family}_features.py --dry-run
+python3 pipeline/orb_ml/features/modules/generate_{family}_features.py --dry-run
 
 # Generate parquet
-python3 pipeline/feature/modules/generate_{family}_features.py [--force]
+python3 pipeline/orb_ml/features/modules/generate_{family}_features.py [--force]
 
 # Run v6 sweep (auto-discovers all modules in data/Level_1_Features/modules/)
-python3 pipeline/analysis/objective_sweep_orb_v6.py
+python3 pipeline/orb_ml/analysis/objective_sweep_orb_v6.py
 ```
 
 ### Training & Evaluation
 
 ```bash
-python3 pipeline/train/train_orb_reversal.py
-python3 pipeline/train/train_orb_continuation.py
-python3 pipeline/train/train_orb_walk_forward_v2.py   # Walk-forward (all 42 features)
-python3 pipeline/analysis/eval_holdout_orb.py
-python3 pipeline/analysis/eval_policy_switch_orb.py
+python3 pipeline/orb_ml/train/train_orb_reversal.py
+python3 pipeline/orb_ml/train/train_orb_continuation.py
+python3 pipeline/orb_ml/train/train_orb_walk_forward_v2.py   # Walk-forward (all 42 features)
+python3 pipeline/orb_ml/analysis/eval_holdout_orb.py
+python3 pipeline/orb_ml/analysis/eval_policy_switch_orb.py
 python3 pipeline/analysis/eval_topstep_pass_v2.py     # Topstep 50K pass-rate (v2.0 models)
 python3 pipeline/analysis/test_refined_sim.py
 ```
@@ -44,10 +44,10 @@ python3 pipeline/analysis/test_refined_sim.py
 ```bash
 bash pipeline/run/run_fetch_mgc.sh
 python3 pipeline/fetch/fetch_macro_data.py
-python3 pipeline/feature/build_orb_ranges.py
-python3 pipeline/feature/build_breakout_events.py
-python3 pipeline/feature/build_market_context.py
-python3 pipeline/feature/build_labels.py
+python3 pipeline/orb_ml/features/build_orb_ranges.py
+python3 pipeline/orb_ml/features/build_breakout_events.py
+python3 pipeline/orb_ml/features/build_market_context.py
+python3 pipeline/orb_ml/features/build_labels.py
 # Then regenerate all feature modules
 ```
 
@@ -65,10 +65,10 @@ python3 pipeline/feature/build_labels.py
 
 ### Pipeline
 
-- **`pipeline/feature/modules/`** — Feature generators (standalone CLIs) + `loader.py` (auto-joins all modules by filename sort) + `_TEMPLATE_generate_feature_module.py`
+- **`pipeline/orb_ml/features/modules/`** — Feature generators (standalone CLIs) + `loader.py` (auto-joins all modules by filename sort) + `_TEMPLATE_generate_feature_module.py`
 - **`pipeline/analysis/topstep_sim.py`** — Shared Topstep simulator module. The baseline for all simulation work.
-- **`pipeline/analysis/objective_sweep_orb_v6.py`** — Active sweep runner. Trains rev+cont LGBM models per label, simulates Topstep, reports pass/fail scores.
-- **`pipeline/train/`** — LGBM trainers (reversal, continuation, walk-forward v2)
+- **`pipeline/orb_ml/analysis/objective_sweep_orb_v6.py`** — Active sweep runner. Trains rev+cont LGBM models per label, simulates Topstep, reports pass/fail scores.
+- **`pipeline/orb_ml/train/`** — LGBM trainers (reversal, continuation, walk-forward v2)
 - **`pipeline/live/`** — Live inference daemon (not in research loop; see calibration state in `RETROSPECTIVE.md`)
 
 ### Models

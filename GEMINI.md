@@ -24,11 +24,11 @@ The project uses script-based execution from the project root.
 ### Common Research Workflow (Track A)
 ```bash
 # Generate a new feature module from template
-cp pipeline/feature/modules/_TEMPLATE_generate_feature_module.py pipeline/feature/modules/generate_NEW_features.py
-python3 pipeline/feature/modules/generate_NEW_features.py --force
+cp pipeline/orb_ml/features/modules/_TEMPLATE_generate_feature_module.py pipeline/orb_ml/features/modules/generate_NEW_features.py
+python3 pipeline/orb_ml/features/modules/generate_NEW_features.py --force
 
 # Run objective sweep (Train + Sim)
-python3 pipeline/analysis/objective_sweep_orb_v6.py
+python3 pipeline/orb_ml/analysis/objective_sweep_orb_v6.py
 ```
 
 ### Live Trading Ops (Track B)

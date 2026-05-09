@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT  = Path(__file__).parent.parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent.parent
 DB_1M = ROOT / "data/Level_0_Raw/MGC_1m.db"
 BO_IN = ROOT / "data/Level_1_Features/breakout_events.parquet"
 OUT   = ROOT / "data/Level_2_Datamart/training_datamart_orb.parquet"

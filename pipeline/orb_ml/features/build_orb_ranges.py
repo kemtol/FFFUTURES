@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pandas as pd
 
-ROOT = Path(__file__).parent.parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent.parent
 DB_5M  = ROOT / "data/Level_0_Raw/MGC_5m.db"
 DB_15M = ROOT / "data/Level_0_Raw/MGC_15m.db"
 OUT    = ROOT / "data/Level_1_Features/orb_ranges.parquet"

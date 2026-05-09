@@ -45,7 +45,7 @@ import pandas as pd
 MODULE_NAME = "new_family"  # ← Your feature family name (no spaces, snake_case)
 # ═══════════════════════════════════════════════════════════════════════
 
-ROOT = Path(__file__).resolve().parent.parent.parent.parent  # futures/
+ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
 DATA_DIR = ROOT / "data"
 FEATURES_DIR = DATA_DIR / "Level_1_Features"
 MODULES_DIR = FEATURES_DIR / "modules"

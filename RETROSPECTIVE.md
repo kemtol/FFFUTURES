@@ -229,7 +229,7 @@ breakout_side ✅  pre_bo_* ✅  vol_norm ✅  adx ✅  vwap ✅  macro ✅
 
 ## Fix Plan (Verified Against Source Code + Calibration Data)
 
-Each fix below has been verified by reading the actual code in both batch (`pipeline/feature/...`) and live (`pipeline/live/feature_builder.py`), plus the per-feature delta data from `model/CALIBRATION/feature_report.csv` (541 events).
+Each fix below has been verified by reading the actual code in both batch (`pipeline/orb_ml/features/...`) and live (`pipeline/live/feature_builder.py`), plus the per-feature delta data from `model/CALIBRATION/feature_report.csv` (541 events).
 
 ### P0 — Fix Now (Daemon Crashing + 1-Line Wins)
 

@@ -15,7 +15,7 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parent.parent.parent.parent
 DM_PATH = ROOT / "data/Level_2_Datamart/training_datamart_orb.parquet"
 MODEL_DIR = ROOT / "model/ORB_v1.0"
 MODEL_PATH = MODEL_DIR / "lgbm_rev_1r2_120m.txt"

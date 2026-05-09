@@ -317,39 +317,39 @@ python3 pipeline/analysis/sweep_fvg.py --phase 2 # phase 2 (refined)
 
 ```bash
 # Create new module from template
-cp pipeline/feature/modules/_TEMPLATE_generate_feature_module.py \
-   pipeline/feature/modules/generate_{family}_features.py
+cp pipeline/orb_ml/features/modules/_TEMPLATE_generate_feature_module.py \
+   pipeline/orb_ml/features/modules/generate_{family}_features.py
 
 # Dry-run (verifies rows, NaN%, conflicts before writing)
-python3 pipeline/feature/modules/generate_{family}_features.py --dry-run
+python3 pipeline/orb_ml/features/modules/generate_{family}_features.py --dry-run
 
 # Generate parquet
-python3 pipeline/feature/modules/generate_{family}_features.py [--force]
+python3 pipeline/orb_ml/features/modules/generate_{family}_features.py [--force]
 
 # Run active sweep (v6 modular — auto-discovers all modules)
-python3 pipeline/analysis/objective_sweep_orb_v6.py
+python3 pipeline/orb_ml/analysis/objective_sweep_orb_v6.py
 ```
 
 ### Regenerate ORB feature modules
 
 ```bash
-python3 pipeline/feature/modules/generate_orb_context_features.py
-python3 pipeline/feature/modules/generate_scale_invariant_features.py
-python3 pipeline/feature/modules/generate_volatility_normalized_features.py
-python3 pipeline/feature/modules/generate_pre_breakout_profile_features.py
-python3 pipeline/feature/modules/generate_session_momentum_features.py
-python3 pipeline/feature/modules/generate_interaction_features.py
-python3 pipeline/feature/modules/generate_macro_features.py
+python3 pipeline/orb_ml/features/modules/generate_orb_context_features.py
+python3 pipeline/orb_ml/features/modules/generate_scale_invariant_features.py
+python3 pipeline/orb_ml/features/modules/generate_volatility_normalized_features.py
+python3 pipeline/orb_ml/features/modules/generate_pre_breakout_profile_features.py
+python3 pipeline/orb_ml/features/modules/generate_session_momentum_features.py
+python3 pipeline/orb_ml/features/modules/generate_interaction_features.py
+python3 pipeline/orb_ml/features/modules/generate_macro_features.py
 ```
 
 ### Training & Evaluation (ORB/ML)
 
 ```bash
-python3 pipeline/train/train_orb_reversal.py
-python3 pipeline/train/train_orb_continuation.py
-python3 pipeline/train/train_orb_walk_forward_v2.py
-python3 pipeline/analysis/eval_holdout_orb.py
-python3 pipeline/analysis/eval_policy_switch_orb.py
+python3 pipeline/orb_ml/train/train_orb_reversal.py
+python3 pipeline/orb_ml/train/train_orb_continuation.py
+python3 pipeline/orb_ml/train/train_orb_walk_forward_v2.py
+python3 pipeline/orb_ml/analysis/eval_holdout_orb.py
+python3 pipeline/orb_ml/analysis/eval_policy_switch_orb.py
 python3 pipeline/analysis/plot_policy_pnl_state.py
 python3 pipeline/analysis/test_refined_sim.py
 python3 pipeline/analysis/eval_topstep_pass_v2.py
@@ -360,10 +360,10 @@ python3 pipeline/analysis/eval_topstep_pass_v2.py
 ```bash
 bash pipeline/run/run_fetch_mgc.sh
 python3 pipeline/fetch/fetch_macro_data.py
-python3 pipeline/feature/build_orb_ranges.py
-python3 pipeline/feature/build_breakout_events.py
-python3 pipeline/feature/build_market_context.py
-python3 pipeline/feature/build_labels.py
+python3 pipeline/orb_ml/features/build_orb_ranges.py
+python3 pipeline/orb_ml/features/build_breakout_events.py
+python3 pipeline/orb_ml/features/build_market_context.py
+python3 pipeline/orb_ml/features/build_labels.py
 ```
 
 ## Scoring Metric (ORB/ML)

@@ -9,11 +9,11 @@ The current pipeline writes **everything** into a monolithic [`training_datamart
 
 - Core identifiers (date, session, orb_tf, breakout_ts, side)
 - Labels (10 binary target columns)
-- Context features (7 feature columns from [`build_market_context.py`](../pipeline/feature/build_market_context.py))
+- Context features (7 feature columns from [`build_market_context.py`](../pipeline/orb_ml/features/build_market_context.py))
 - Scale-invariant features (computed **inline in each sweep script**, duplicated across v2-v5)
 
 To add a new feature (e.g., `breakout_candle_vol_ratio`), you must:
-1. Modify [`build_market_context.py`](../pipeline/feature/build_market_context.py)
+1. Modify [`build_market_context.py`](../pipeline/orb_ml/features/build_market_context.py)
 2. Rebuild the datamart from scratch
 3. Or patch it — error-prone and slow
 
@@ -53,7 +53,7 @@ data/
 └── Level_2_Datamart/
     └── training_datamart_orb.parquet  (core only: identifiers + labels)
 
-pipeline/feature/
+pipeline/orb_ml/features/
 ├── build_orb_ranges.py         (unchanged)
 ├── build_breakout_events.py    (unchanged)
 ├── build_market_context.py     (unchanged — still patches datamart for backward compat)
@@ -85,7 +85,7 @@ pipeline/analysis/
 
 ## Step-by-Step Implementation
 
-### ✅ Step 1: Create `pipeline/feature/modules/loader.py`
+### ✅ Step 1: Create `pipeline/orb_ml/features/modules/loader.py`
 
 A shared function that all modular sweep/training scripts call:
 
@@ -122,10 +122,10 @@ def load_features_from_modules(modules_dir: Path, core_df: pd.DataFrame) -> pd.D
 ```
 
 **Files created:**
-- [`pipeline/feature/modules/__init__.py`](../pipeline/feature/modules/__init__.py) — empty
-- [`pipeline/feature/modules/loader.py`](../pipeline/feature/modules/loader.py) — `load_features_from_modules()`
+- [`pipeline/orb_ml/features/modules/__init__.py`](../pipeline/orb_ml/features/modules/__init__.py) — empty
+- [`pipeline/orb_ml/features/modules/loader.py`](../pipeline/orb_ml/features/modules/loader.py) — `load_features_from_modules()`
 
-### ✅ Step 2: Create `pipeline/feature/modules/_TEMPLATE_generate_feature_module.py`
+### ✅ Step 2: Create `pipeline/orb_ml/features/modules/_TEMPLATE_generate_feature_module.py`
 
 Adapted from the idx template. Key differences:
 
@@ -137,7 +137,7 @@ Adapted from the idx template. Key differences:
 | Data load | `load_sources()` returns dict of DataFrames | Same pattern, different sources |
 
 **Files created:**
-- [`pipeline/feature/modules/_TEMPLATE_generate_feature_module.py`](../pipeline/feature/modules/_TEMPLATE_generate_feature_module.py)
+- [`pipeline/orb_ml/features/modules/_TEMPLATE_generate_feature_module.py`](../pipeline/orb_ml/features/modules/_TEMPLATE_generate_feature_module.py)
   - `MODULE_NAME`, `GRAIN` config at top
   - `load_sources()` — breakout_events + SQLite DBs
   - `build_features(sources)` — implement feature logic
@@ -147,7 +147,7 @@ Adapted from the idx template. Key differences:
 ### ✅ Step 3: Create `generate_orb_context_features.py`
 
 **Reads:** [`breakout_events.parquet`](../data/Level_1_Features/breakout_events.parquet) + 1m/15m SQLite DBs  
-**Computes:** Same 7 features as [`build_market_context.py`](../pipeline/feature/build_market_context.py) lines 176-188:
+**Computes:** Same 7 features as [`build_market_context.py`](../pipeline/orb_ml/features/build_market_context.py) lines 176-188:
 - `orb_range_atr_ratio`, `day_of_week`, `time_in_session_min`
 - `vwap_at_breakout`, `price_vs_vwap_pct`
 - `adx_14_15m`, `ema_slope_1h`
@@ -156,12 +156,12 @@ Adapted from the idx template. Key differences:
 **Grain:** `(date, session, orb_tf, breakout_ts)`
 
 **Files created:**
-- [`pipeline/feature/modules/generate_orb_context_features.py`](../pipeline/feature/modules/generate_orb_context_features.py)
+- [`pipeline/orb_ml/features/modules/generate_orb_context_features.py`](../pipeline/orb_ml/features/modules/generate_orb_context_features.py)
 
 ### ✅ Step 4: Create `generate_scale_invariant_features.py`
 
 **Reads:** [`breakout_events.parquet`](../data/Level_1_Features/breakout_events.parquet) (has `breakout_strength`, `atr14_at_entry`, `orb_range`)  
-**Computes:** Same 7 features currently in [`add_scale_invariant_features()`](../pipeline/analysis/objective_sweep_orb_v5.py#L120-L130):
+**Computes:** Same 7 features currently in [`add_scale_invariant_features()`](../pipeline/orb_ml/analysis/objective_sweep_orb_v5.py#L120-L130):
 - `breakout_strength_atr_ratio`, `atr14_sq`, `breakout_strength_sq`
 - `price_vs_vwap_pct_abs`, `orb_range_sq`, `adx_50_flag`, `breakout_strength_vs_orb`
 
@@ -169,14 +169,14 @@ Adapted from the idx template. Key differences:
 **Grain:** `(date, session, orb_tf, breakout_ts)`
 
 **Files created:**
-- [`pipeline/feature/modules/generate_scale_invariant_features.py`](../pipeline/feature/modules/generate_scale_invariant_features.py)
+- [`pipeline/orb_ml/features/modules/generate_scale_invariant_features.py`](../pipeline/orb_ml/features/modules/generate_scale_invariant_features.py)
 
 ### ✅ Step 5: Run module generators
 
 ```bash
 cd /home-ssd/mkemalw/Projects/MMMACHINE/futures
-python pipeline/feature/modules/generate_orb_context_features.py
-python pipeline/feature/modules/generate_scale_invariant_features.py
+python pipeline/orb_ml/features/modules/generate_orb_context_features.py
+python pipeline/orb_ml/features/modules/generate_scale_invariant_features.py
 ```
 
 Output files now exist in `data/Level_1_Features/modules/` with 7 modules.
@@ -204,12 +204,12 @@ CORE_COLS = [
 ```
 
 **Files created:**
-- [`pipeline/analysis/objective_sweep_orb_v6.py`](../pipeline/analysis/objective_sweep_orb_v6.py)
+- [`pipeline/orb_ml/analysis/objective_sweep_orb_v6.py`](../pipeline/orb_ml/analysis/objective_sweep_orb_v6.py)
 
 ### ✅ Step 7: Verify modular loading
 
 ```bash
-python pipeline/analysis/objective_sweep_orb_v6.py
+python pipeline/orb_ml/analysis/objective_sweep_orb_v6.py
 ```
 
 ### ✅ Step 8: Update documentation

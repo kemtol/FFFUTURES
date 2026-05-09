@@ -2,7 +2,7 @@
 
 Usage::
 
-    from pipeline.feature.modules.loader import load_features_from_modules
+    from pipeline.orb_ml.features.modules.loader import load_features_from_modules
 
     core_df = pd.read_parquet("training_datamart_orb.parquet", columns=CORE_COLS)
     df = load_features_from_modules(Path("data/Level_1_Features/modules"), core_df)

@@ -1,44 +1,45 @@
 """
-Objective Sweep v5 — Recent Regime Only (2024-2025 Training, 2026 Test).
+Objective Sweep v6 — Modular Feature Architecture.
 
-Hypothesis: Gold regime changed dramatically in 2024+ (price tripled, ATR 4.6×).
-Training on 2010-2023 low-vol data hurts model generalization to 2026.
+Key changes from v5:
+- Features loaded from ``data/Level_1_Features/modules/`` via ``load_features_from_modules()``
+- No inline ``add_scale_invariant_features()`` — those are now a module
+- Feature list is auto-derived: core feature columns + module columns
+- Adding new features = adding a new module parquet, not changing sweep code
 
-This script trains ONLY on recent data (2024-2025) and tests on 2026.
-Same features and simulator as v4.
+Same sweep logic, Topstep simulator, and report format as v5.
 """
 
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
-# Ensure pipeline is importable
-BASE = Path(__file__).resolve().parent.parent.parent
+# Ensure pipeline and project root are importable
+BASE = Path(__file__).resolve().parent.parent.parent.parent
 PIPELINE = BASE / "pipeline"
-if str(PIPELINE) not in sys.path:
-    sys.path.insert(0, str(PIPELINE))
+for p in [str(BASE), str(PIPELINE)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 from analysis.topstep_sim import (
     PolicyParams,
-    apply_policy,
     build_param_grid,
     by_year_eval,
-    go_no_go,
     map_to_topstep_trade_day,
-    md_table,
     score_policy_on_events,
 )
+from pipeline.orb_ml.features.modules.loader import load_features_from_modules
 
 # ── paths ────────────────────────────────────────────────────────────────────
 
 DM_PATH = BASE / "data" / "Level_2_Datamart" / "training_datamart_orb.parquet"
-OUT_DIR = BASE / "model" / "SWEEP_v5"
+MODULES_DIR = BASE / "data" / "Level_1_Features" / "modules"
+OUT_DIR = BASE / "model" / "SWEEP_v6"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── label schema ─────────────────────────────────────────────────────────────
@@ -56,51 +57,51 @@ LABELS: list[tuple[str, float]] = [
     ("y_1r4_close60m", 4.0),
 ]
 
-# ── v3 feature sets ──────────────────────────────────────────────────────────
+# ── data model ────────────────────────────────────────────────────────────────
 
-V2_FEATURES = [
-    "orb_range_atr_ratio",
+# Core columns loaded from the datamart — identifiers, labels, and raw metadata.
+# Feature columns come EXCLUSIVELY from modules/*_features.parquet.
+CORE_COLS = [
+    # Identifiers
+    "date", "session", "orb_tf", "breakout_ts", "breakout_side", "side",
+    # Raw metadata (some also used as features)
+    "entry_price", "orb_range", "atr14_at_entry", "sl_dist", "breakout_strength",
+    "session_close_ts",
+    # Labels (10 binary targets)
+    "y_1r2_60m", "y_1r4_60m", "y_1r2_120m", "y_1r4_120m",
+    "y_1r2_180m", "y_1r4_180m", "y_1r2_240m", "y_1r4_240m",
+    "y_1r2_close60m", "y_1r4_close60m",
+]
+
+# Columns from CORE_COLS that are used directly as model features
+# (rather than as merge keys or labels).
+CORE_FEATURES = [
     "breakout_strength",
     "atr14_at_entry",
-    "price_vs_vwap_pct",
-    "adx_14_15m",
-    "ema_slope_1h",
-    "day_of_week",
-    "time_in_session_min",
-    "orb_tf",
-    "session",
-    "breakout_side",
+    "orb_tf",         # one-hot encoded
+    "session",        # one-hot encoded
+    "breakout_side",  # boolean-ized
 ]
 
-V3_NEW_FEATURES = [
-    "breakout_strength_atr_ratio",   # breakout_strength / atr14_at_entry
-    "atr14_sq",                       # atr14_at_entry ** 2
-    "breakout_strength_sq",           # breakout_strength ** 2
-    "price_vs_vwap_pct_abs",          # abs(price_vs_vwap_pct)
-    "orb_range_sq",                   # orb_range ** 2
-    "adx_50_flag",                    # 1 if adx > 50
-    "breakout_strength_vs_orb",       # breakout_strength / orb_range
-]
+# Module grain key (breakout-event level)
+EVENT_KEY = ["date", "session", "orb_tf", "breakout_ts"]
 
-ALL_FEATURES = V2_FEATURES + V3_NEW_FEATURES
+# Merge key for rev/cont event frame
+MERGE_KEY = ["date", "breakout_ts", "breakout_side"]
 
-EVENT_KEY = ["date", "breakout_ts", "breakout_side"]
+# ── sweep config ─────────────────────────────────────────────────────────────
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# KEY CHANGE FROM v4: Train on 2024-2025, test on last 100 trading days of 2026
-# ═══════════════════════════════════════════════════════════════════════════════
-
-TRAIN_TO = "2025-11-30"           # Train on 2024 + Nov 2025 (stop before holdout)
-CALIB_FROM = "2025-07-01"         # Calibrate on 2025-H1 (Jul-Nov 2025)
-CALIB_TO = "2025-11-30"           # End before holdout starts
-HOLDOUT_FROM = "2025-12-01"       # Test on ~last 100 trading days (Dec 2025 + 2026)
+TRAIN_TO = "2025-11-30"
+CALIB_FROM = "2025-07-01"
+CALIB_TO = "2025-11-30"
+HOLDOUT_FROM = "2025-12-01"
 
 LGBM_PARAMS = {
     "objective":        "binary",
     "metric":           "auc",
     "learning_rate":    0.05,
     "num_leaves":       31,
-    "min_data_in_leaf": 20,         # Reduced since we have less data
+    "min_data_in_leaf": 20,
     "feature_fraction": 0.8,
     "bagging_fraction": 0.8,
     "bagging_freq":     5,
@@ -109,32 +110,20 @@ LGBM_PARAMS = {
     "verbose":         -1,
     "n_jobs":          -1,
 }
-NUM_ROUNDS = 500                   # Test: apakah lebih banyak rounds membantu 2026?
-EARLY_STOP = 30                    # Slightly more patience
+NUM_ROUNDS = 500
+EARLY_STOP = 30
 
 PARAM_GRID = build_param_grid()
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
-def add_scale_invariant_features(df: pd.DataFrame) -> pd.DataFrame:
-    eps = 1e-8
-    df = df.copy()
-    df["breakout_strength_atr_ratio"] = df["breakout_strength"] / (df["atr14_at_entry"] + eps)
-    df["atr14_sq"] = df["atr14_at_entry"] ** 2
-    df["breakout_strength_sq"] = df["breakout_strength"] ** 2
-    df["orb_range_sq"] = df["orb_range"] ** 2
-    df["price_vs_vwap_pct_abs"] = df["price_vs_vwap_pct"].abs()
-    df["adx_50_flag"] = (df["adx_14_15m"] > 50).astype(int)
-    df["breakout_strength_vs_orb"] = df["breakout_strength"] / (df["orb_range"] + eps)
-    return df
-
 
 def compute_weights(yr_series: pd.Series) -> np.ndarray:
-    """Exponential decay weights — half-life 1 year (shorter since recent data only)."""
+    """Exponential decay weights — half-life 1 year."""
     years = yr_series.astype(int).to_numpy()
     latest = years.max()
-    half_life = 1.0  # shorter for recent-regime-only training
+    half_life = 1.0
     w = np.exp(-np.log(2) * (latest - years) / half_life)
     return w + 0.01
 
@@ -156,7 +145,7 @@ def _numeric_features(df: pd.DataFrame, features: list[str]) -> list[str]:
 
 
 def train_model(df: pd.DataFrame, target: str, features: list[str]) -> lgb.Booster:
-    """Train LGBM with train/val split + early stopping (recent regime only)."""
+    """Train LGBM with train/val split + early stopping."""
     train_df = df[df["date"] <= TRAIN_TO].copy()
     val_df = df[(df["date"] >= CALIB_FROM) & (df["date"] <= CALIB_TO)].copy()
 
@@ -205,7 +194,7 @@ def build_event_frame(
     cont_s["prob_cont"] = cont_model.predict(cont_s[num_feats])
     cont_s["y_cont"] = cont_s[target]
 
-    merge_on = EVENT_KEY + ["year",
+    merge_on = MERGE_KEY + ["year",
                             "orb_range", "breakout_strength", "atr14_at_entry",
                             "price_vs_vwap_pct", "adx_14_15m", "ema_slope_1h"]
     events = rev_s[merge_on + ["prob_rev", "y_rev"]].merge(
@@ -244,22 +233,35 @@ def year_table(df: pd.DataFrame, title: str) -> str:
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     print("=" * 65)
-    print("  Objective Sweep v5 — Recent Regime Only (2024-2025 Train, 2026 Test)")
+    print("  Objective Sweep v6 — Modular Feature Architecture")
     print("=" * 65)
 
-    # ── 1. Load datamart ──────────────────────────────────────────────
-    print("\n1. Loading datamart...")
-    dm = pd.read_parquet(DM_PATH).copy()
+    # ── 1. Load datamart (core columns only) ─────────────────────────
+    print("\n1. Loading datamart (core columns only)...")
+    dm = pd.read_parquet(DM_PATH, columns=CORE_COLS).copy()
+    print(f"   Shape: {dm.shape}, Date: {dm['date'].min()} → {dm['date'].max()}")
+
+    # ── 2. Load feature modules ──────────────────────────────────────
+    print("\n2. Loading feature modules...")
+    dm = load_features_from_modules(MODULES_DIR, dm)
+    print(f"   Shape after modules: {dm.shape}")
+
+    # Convert date to datetime after modules (modules keep date as object)
     dm["date"] = pd.to_datetime(dm["date"])
     dm["year"] = dm["date"].dt.year
-    print(f"   Shape: {dm.shape}, Date: {dm['date'].min():%Y-%m-%d} → {dm['date'].max():%Y-%m-%d}")
 
-    # ── 2. Add scale-invariant features ───────────────────────────────
-    print("\n2. Adding scale-invariant features...")
-    dm = add_scale_invariant_features(dm)
-    print(f"   Features: {len(ALL_FEATURES)} ({len(V2_FEATURES)} baseline + {len(V3_NEW_FEATURES)} scale-inv)")
+    # ── 3. Derive feature list ───────────────────────────────────────
+    # Features = core numeric columns + all module columns (excluding EVENT_KEY)
+    EXCLUDED_COLS = set(EVENT_KEY) | {"year"}  # derived or non-feature cols
+    module_cols = sorted(
+        set(dm.columns) - set(CORE_COLS) - EXCLUDED_COLS
+    )
+    ALL_FEATURES = CORE_FEATURES + module_cols
+    print(f"\n3. Feature list ({len(ALL_FEATURES)} total):")
+    print(f"   Core ({len(CORE_FEATURES)}): {CORE_FEATURES}")
+    print(f"   Module ({len(module_cols)}): {module_cols}")
 
-    # ── 3. Iterate over labels ────────────────────────────────────────
+    # ── 4. Iterate over labels ────────────────────────────────────────
     summary_rows: list[dict] = []
 
     for target, rr in LABELS:
@@ -273,8 +275,9 @@ def main() -> None:
             print(f"   SKIP — label missing or all-NaN")
             continue
 
-        # ── 4. Train models (recent regime only) ──────────────────────
-        print(f"   Training rev model (2024-{TRAIN_TO} train, {CALIB_FROM}..{CALIB_TO} val)...", end=" ", flush=True)
+        # ── 5. Train models ──────────────────────────────────────────
+        print(f"   Training rev model ({TRAIN_TO} train, {CALIB_FROM}..{CALIB_TO} val)...",
+              end=" ", flush=True)
         try:
             rev_model = train_model(rev_df, target, ALL_FEATURES)
             print(f"best_iter={rev_model.best_iteration}")
@@ -282,7 +285,8 @@ def main() -> None:
             print(f"FAILED: {e}")
             continue
 
-        print(f"   Training cont model (2024-{TRAIN_TO} train, {CALIB_FROM}..{CALIB_TO} val)...", end=" ", flush=True)
+        print(f"   Training cont model ({TRAIN_TO} train, {CALIB_FROM}..{CALIB_TO} val)...",
+              end=" ", flush=True)
         try:
             cont_model = train_model(cont_df, target, ALL_FEATURES)
             print(f"best_iter={cont_model.best_iteration}")
@@ -290,12 +294,11 @@ def main() -> None:
             print(f"FAILED: {e}")
             continue
 
-        # ── 5. Build event frame ──────────────────────────────────────
-        events = build_event_frame(rev_df, cont_df, rev_model, cont_model, ALL_FEATURES, target)
+        # ── 6. Build event frame ──────────────────────────────────────
+        events = build_event_frame(rev_df, cont_df, rev_model, cont_model,
+                                   ALL_FEATURES, target)
 
-        # Holdout = last ~100 trading days (Dec 2025 + 2026)
         holdout = events[events["date"] >= HOLDOUT_FROM].copy()
-        # Calibration for policy: use CALIB_FROM..CALIB_TO
         calib = events[(events["date"] >= CALIB_FROM) & (events["date"] <= CALIB_TO)].copy()
 
         if len(holdout) < 50:
@@ -312,12 +315,12 @@ def main() -> None:
               f"wr_rev={wr_rev:.3f}(exp={exp_rev:+.3f}R), "
               f"wr_cont={wr_cont:.3f}(exp={exp_cont:+.3f}R)")
 
-        # ── 6. Sweep param grid (refined simulator) ────────────────────
+        # ── 7. Sweep param grid ────────────────────────────────────────
         best_score = -999.0
         best_params: PolicyParams | None = None
         best_result: dict = {}
 
-        print(f"   Sweeping {len(PARAM_GRID)} param combos (v5 recent regime)...", end=" ", flush=True)
+        print(f"   Sweeping {len(PARAM_GRID)} param combos...", end=" ", flush=True)
         for p in PARAM_GRID:
             result = score_policy_on_events(holdout, calib, p, rr)
             if result["score"] > best_score:
@@ -329,7 +332,7 @@ def main() -> None:
 
         yr_res = by_year_eval(holdout, calib, best_params, rr)
 
-        # ── 7. Record summary ─────────────────────────────────────────
+        # ── 8. Record summary ─────────────────────────────────────────
         row = {
             "target": target,
             "rr": rr,
@@ -346,7 +349,6 @@ def main() -> None:
             "risk_per_r_usd": best_params.risk_per_r_usd,
             "daily_profit_cap": best_params.daily_profit_cap_usd,
         }
-        # Add per-year pass/fail
         for yr in sorted(yr_res.keys()):
             row[f"pass_{yr}"] = yr_res[yr]["pass_rate"]
             row[f"fail_mll_{yr}"] = yr_res[yr]["fail_mll_rate"]
@@ -361,7 +363,7 @@ def main() -> None:
               f"rev_adx={best_params.rev_adx_min}, cont_adx={best_params.cont_adx_max}, "
               f"risk=${best_params.risk_per_r_usd:.0f}, cap=${best_params.daily_profit_cap_usd:.0f}")
 
-    # ── 8. Write results ──────────────────────────────────────────────
+    # ── 9. Write results ──────────────────────────────────────────────
     if not summary_rows:
         print("\n❌ No labels processed.")
         return
@@ -369,18 +371,16 @@ def main() -> None:
     sdf = pd.DataFrame(summary_rows)
     sdf = sdf.sort_values("score", ascending=False).reset_index(drop=True)
 
-    # Save CSV
     csv_path = OUT_DIR / "OBJECTIVE_SWEEP_RESULTS.csv"
     sdf.to_csv(csv_path, index=False)
     print(f"\n✅ Results saved to {csv_path}")
 
-    # ── 9. Write report ────────────────────────────────────────────────
+    # ── 10. Write report ────────────────────────────────────────────────
     year_cols_pass = sorted([c for c in sdf.columns if c.startswith("pass_")])
     year_cols_mll = sorted([c for c in sdf.columns if c.startswith("fail_mll_")])
     year_cols_pnl = sorted([c for c in sdf.columns if c.startswith("pnl_")])
 
     def table(cols: list[str]) -> str:
-        """Render a summary table for the given columns."""
         display_cols = ["target"] + cols
         lines = ["| " + " | ".join(display_cols) + " |"]
         lines.append("|" + "|".join(["---"] * len(display_cols)) + "|")
@@ -401,65 +401,53 @@ def main() -> None:
         return "\n".join(lines)
 
     report_lines = [
-        "# Objective Sweep v5 — Recent Regime Training Only",
+        "# Objective Sweep v6 — Modular Feature Architecture",
         "",
-        "## Key Hypothesis",
+        "## Key Changes from v5",
         "",
-        "Gold regime changed dramatically from 2024 onward:",
-        "- Price tripled (~$1,800 → ~$3,000+)",
-        "- ATR14 exploded from $0.76 (training) to $3.53 (2026) — **4.6×**",
-        "- Training on 2010-2023 low-vol data HURTS generalization to 2026",
-        "",
-        "**This sweep trains ONLY on 2024 data, calibrates on 2025-H1, and tests on 2025-H2 + 2026.**",
-        "",
-        "## Key Changes from v4",
-        "",
-        f"| Aspect | v4 | v5 |",
-        f"|--------|:--:|:--:|",
-        f"| Train data | 2010 → 2023-12-31 (14 years) | **2024-01-01 → 2024-12-31 (1 year)** |",
-        f"| Calibration | 2020 → 2023 (4 years) | **2025-H1 (6 months)** |",
-        f"| Holdout | 2024+ | **2025-H2 + 2026** |",
-        "| Half-life decay | 2 years | **1 year** |",
-        "| Min data in leaf | 50 | **20** |",
-        "| Num boost rounds | 300 | **200** |",
+        "| Aspect | v5 | v6 |",
+        "|--------|:--:|:--:|",
+        "| Feature source | Hardcoded in script | **Modules from `data/Level_1_Features/modules/`** |",
+        "| Scale-invariant features | Inline `add_scale_invariant_features()` | **`scale_invariant_features` module** |",
+        "| Context features | From datamart (patched by `build_market_context.py`) | **`orb_context_features` module** |",
+        "| Adding new features | Modify `build_market_context.py` + rebuild datamart | **Create new module generator → run → re-sweep** |",
+        "| Feature list | `V2_FEATURES` + `V3_NEW_FEATURES` hardcoded | **Auto-derived: core + module columns** |",
         "",
         "## Summary",
         "",
         f"| Metric | Value |",
         f"|--------|-------|",
         f"| Labels evaluated | {len(sdf)} |",
-        f"| Training data | 2024 (1 year of high-vol regime) |",
-        f"| Calibration | 2025-H1 |",
-        f"| Holdout | 2025-H2 + 2026 |",
+        f"| Training data | {TRAIN_TO} (recent regime) |",
+        f"| Calibration | {CALIB_FROM} → {CALIB_TO} |",
+        f"| Holdout | {HOLDOUT_FROM}+ |",
         f"| Param grid | {len(PARAM_GRID)} combinations |",
         f"| Simulator | Refined (CT trade day + $3 commission) |",
+        f"| Feature modules | {len(list(MODULES_DIR.glob('*_features.parquet')))} |",
         "",
-        "## Ranked Results (v5 — best params per label)",
+        "## Ranked Results (v6 — best params per label)",
         "",
     ]
 
-    # Score table
-    score_cols = ["rr", "score", "pass_rate", "fail_mll_rate", "median_end_pnl", "avg_trades", "windows"]
+    score_cols = ["rr", "score", "pass_rate", "fail_mll_rate",
+                  "median_end_pnl", "avg_trades", "windows"]
     report_lines.append(table(score_cols))
     report_lines.append("")
 
-    # Yearly pass rate
     if year_cols_pass:
-        report_lines.append("## Yearly Pass Rate by Label (v5)")
+        report_lines.append("## Yearly Pass Rate by Label (v6)")
         report_lines.append("")
         report_lines.append(table(year_cols_pass))
         report_lines.append("")
 
-    # Yearly fail MLL
     if year_cols_mll:
-        report_lines.append("## Yearly Fail MLL Rate by Label (v5)")
+        report_lines.append("## Yearly Fail MLL Rate by Label (v6)")
         report_lines.append("")
         report_lines.append(table(year_cols_mll))
         report_lines.append("")
 
-    # Yearly median PnL
     if year_cols_pnl:
-        report_lines.append("## Yearly Median PnL by Label (v5)")
+        report_lines.append("## Yearly Median PnL by Label (v6)")
         report_lines.append("")
         report_lines.append(table(year_cols_pnl))
         report_lines.append("")
@@ -471,23 +459,21 @@ def main() -> None:
     report_lines.append(table(param_cols))
     report_lines.append("")
 
-    report_lines.append("## Notes")
+    report_lines.append("## Feature Modules Used")
     report_lines.append("")
-    report_lines.append("- Training: only 2024 data (1 year, high-vol regime)")
-    report_lines.append("- Calibration: 2025-H1 (6 months, used for early stopping)")
-    report_lines.append("- Holdout: 2025-H2 + 2026 (entirely out-of-sample from training)")
-    report_lines.append("- Exponential decay: 1-year half-life (weights 2024-H2 > 2024-H1)")
-    report_lines.append("- Simulator: refined (CT trade day + $3 commission, same as v4)")
-    report_lines.append("- Features: identical to v3/v4 (18 total)")
+    for fpath in sorted(MODULES_DIR.glob("*_features.parquet")):
+        mod = pd.read_parquet(fpath)
+        feats = [c for c in mod.columns if c not in EVENT_KEY]
+        report_lines.append(f"- `{fpath.name}`: {len(feats)} features — `{'`, `'.join(feats)}`")
     report_lines.append("")
 
     report_path = OUT_DIR / "OBJECTIVE_SWEEP_REPORT.md"
     report_path.write_text("\n".join(report_lines))
     print(f"✅ Report saved to {report_path}")
 
-    # ── 10. Print scoreboard ──────────────────────────────────────────
+    # ── 11. Print scoreboard ──────────────────────────────────────────
     print(f"\n{'='*65}")
-    print(f"  Scoreboard (v5 — Recent Regime Training)")
+    print(f"  Scoreboard (v6 — Modular Features)")
     print(f"{'='*65}")
     print(f"  {'Target':<20s} {'Score':>8s}  {'Pass':>6s}  {'FailMLL':>8s}  {'PnL':>8s}")
     print(f"  {'-'*20}  {'-'*8}  {'-'*6}  {'-'*8}  {'-'*8}")

@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 # Allow running from project root (mirrors v6's sys.path setup)
-BASE = Path(__file__).resolve().parent.parent.parent
+BASE = Path(__file__).resolve().parent.parent.parent.parent
 PIPELINE = BASE / "pipeline"
 for p in [str(BASE), str(PIPELINE)]:
     if p not in sys.path:
@@ -56,7 +56,7 @@ from analysis.topstep_sim import (
     map_to_topstep_trade_day,
     score_policy_on_events,
 )
-from pipeline.feature.modules.loader import load_features_from_modules
+from pipeline.orb_ml.features.modules.loader import load_features_from_modules
 
 # ── custom output dir (separate from baseline v6) ─────────────────────────────
 

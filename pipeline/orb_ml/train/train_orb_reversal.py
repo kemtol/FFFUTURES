@@ -36,7 +36,7 @@ from sklearn.metrics import roc_auc_score
 
 warnings.filterwarnings("ignore")
 
-ROOT     = Path(__file__).parent.parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent.parent
 DM_PATH  = ROOT / "data/Level_2_Datamart/training_datamart_orb.parquet"
 MODEL_BASE = ROOT / "model"
 

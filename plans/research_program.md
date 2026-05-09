@@ -181,13 +181,13 @@ python3 generate_{family}_features.py
 # Move NEW module parquet OUT of modules dir
 mv data/Level_1_Features/modules/{family}_features.parquet /tmp/
 # Run v6 sweep → baseline results
-python3 pipeline/analysis/objective_sweep_orb_v6.py
+python3 pipeline/orb_ml/analysis/objective_sweep_orb_v6.py
 cp model/SWEEP_v6/OBJECTIVE_SWEEP_RESULTS.csv /tmp/{family}_BASELINE.csv
 # Restore NEW module
 mv /tmp/{family}_features.parquet data/Level_1_Features/modules/
 
 # ── Step B: Run with new module ──
-python3 pipeline/analysis/objective_sweep_orb_v6.py
+python3 pipeline/orb_ml/analysis/objective_sweep_orb_v6.py
 # Results overwrite OBJECTIVE_SWEEP_RESULTS.csv
 
 # ── Step C: Compare ──
@@ -230,25 +230,25 @@ Higher rev_q (0.85-0.95) reduces fail-MLL 20-35pp but insufficient for GO/NO-GO.
 
 ### ✅ Cycle 1: Pre-Breakout Volatility Profile — KEPT
 
-Implemented as [`pre_breakout_profile_features`](../pipeline/feature/modules/generate_pre_breakout_profile_features.py) (5 features from 4×15m pre-breakout candles).
+Implemented as [`pre_breakout_profile_features`](../pipeline/orb_ml/features/modules/generate_pre_breakout_profile_features.py) (5 features from 4×15m pre-breakout candles).
 
 **Results**: All 10 targets improved. 2R targets revived from 0% to 27.7-49.4% pass. 4R targets flipped from negative scores to positive. 2026 pass rates 34-70%.
 
 ### ✅ Cycle 2: Session Momentum — KEPT (2026-04-28)
 
-Implemented as [`session_momentum_features`](../pipeline/feature/modules/generate_session_momentum_features.py) (4 features from 1m OHLCV).
+Implemented as [`session_momentum_features`](../pipeline/orb_ml/features/modules/generate_session_momentum_features.py) (4 features from 1m OHLCV).
 
 **Results**: y_1r4_180m reached 93.4% pass in 2026 ($4,089 PnL) — single best result ever. 6/10 targets improved, 3 regressed. KEPT over strict criteria due to magnitude of wins.
 
 ### ✅ Cycle 3: Interaction Features — KEPT (2026-04-28)
 
-Implemented as [`interaction_features`](../pipeline/feature/modules/generate_interaction_features.py) (5 features from breakout_events × market_context).
+Implemented as [`interaction_features`](../pipeline/orb_ml/features/modules/generate_interaction_features.py) (5 features from breakout_events × market_context).
 
 **Results**: 4/10 targets improved substantially (especially short-duration: y_1r2_120m +0.5060, y_1r4_60m +0.1205). Long-duration targets regressed (y_1r4_180m -0.3614). KEPT — interaction terms add meaningful signal for short holds with zero data cost.
 
 ### ✅ Cycle 4: Macro Features — KEPT (2026-04-28)
 
-Implemented as [`macro_features`](../pipeline/feature/modules/generate_macro_features.py) (4 features from macro_data.parquet: SPX regime, DXY trend, US10Y change, Oil volatility).
+Implemented as [`macro_features`](../pipeline/orb_ml/features/modules/generate_macro_features.py) (4 features from macro_data.parquet: SPX regime, DXY trend, US10Y change, Oil volatility).
 
 **Results**: 4/10 targets improved (y_1r4_240m +0.2530, y_1r4_close60m +0.1446, y_1r2_60m +0.1325, y_1r4_120m +0.1084). Net Δ score +0.1928. **Complementary pattern to interaction features**: macro helps LONG durations, interaction helps SHORT durations. Key wins: y_1r4_close60m 73.8% 2026 pass ($3,098 PnL), y_1r4_240m 54.1% 2026 pass (+23pp). KEPT.
 
@@ -313,17 +313,17 @@ Live daemon running on TopstepX eval account:
 
 ```bash
 # Create new module (copy template)
-cp pipeline/feature/modules/_TEMPLATE_generate_feature_module.py \
-   pipeline/feature/modules/generate_{family}_features.py
+cp pipeline/orb_ml/features/modules/_TEMPLATE_generate_feature_module.py \
+   pipeline/orb_ml/features/modules/generate_{family}_features.py
 
 # Dry-run
-python3 pipeline/feature/modules/generate_{family}_features.py --dry-run
+python3 pipeline/orb_ml/features/modules/generate_{family}_features.py --dry-run
 
 # Generate (with force if conflicts are intentional)
-python3 pipeline/feature/modules/generate_{family}_features.py [--force]
+python3 pipeline/orb_ml/features/modules/generate_{family}_features.py [--force]
 
 # Run sweep
-python3 pipeline/analysis/objective_sweep_orb_v6.py
+python3 pipeline/orb_ml/analysis/objective_sweep_orb_v6.py
 
 # Read results
 cat model/SWEEP_v6/OBJECTIVE_SWEEP_RESULTS.csv

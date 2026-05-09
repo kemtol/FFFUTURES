@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parent.parent.parent.parent
 DM_PATH = ROOT / "data/Level_2_Datamart/training_datamart_orb.parquet"
 OUT_DIR = ROOT / "model/ORB_v1.0"
 
