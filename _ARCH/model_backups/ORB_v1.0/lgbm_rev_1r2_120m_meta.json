@@ -1,0 +1,261 @@
+{
+  "version": "1.0",
+  "target": "y_1r2_120m",
+  "side": "rev",
+  "holdout_from": "2024-01-01",
+  "half_life_years": 2,
+  "features": [
+    "orb_range_atr_ratio",
+    "breakout_strength",
+    "atr14_at_entry",
+    "price_vs_vwap_pct",
+    "adx_14_15m",
+    "ema_slope_1h",
+    "day_of_week",
+    "time_in_session_min",
+    "orb_tf",
+    "session",
+    "breakout_side"
+  ],
+  "n_train": 28884,
+  "cv_folds": 23,
+  "cv_mean_auc": 0.6234,
+  "cv_mean_wr_top40": 0.518,
+  "cv_mean_exp_net": 0.485,
+  "feature_importance_gain": {
+    "price_vs_vwap_pct": 9285.581803292036,
+    "orb_range_atr_ratio": 6894.5680603682995,
+    "atr14_at_entry": 6744.883940398693,
+    "adx_14_15m": 6683.355056464672,
+    "breakout_strength": 3850.374931514263,
+    "time_in_session_min": 3490.312451571226,
+    "day_of_week": 1512.3103872537613,
+    "session": 880.572383761406,
+    "ema_slope_1h": 730.0949858129025,
+    "breakout_side": 350.1158309876919,
+    "orb_tf": 215.5027282834053
+  },
+  "fold_results": [
+    {
+      "fold": 1,
+      "period": "2012-10-04 \u2192 2013-04-03",
+      "n_val": 985,
+      "auc": 0.603,
+      "wr_all": 0.401,
+      "wr_top40pct": 0.472,
+      "exp_net_top40": 0.346
+    },
+    {
+      "fold": 2,
+      "period": "2013-04-04 \u2192 2013-10-03",
+      "n_val": 1085,
+      "auc": 0.586,
+      "wr_all": 0.35,
+      "wr_top40pct": 0.432,
+      "exp_net_top40": 0.226
+    },
+    {
+      "fold": 3,
+      "period": "2013-10-04 \u2192 2014-04-03",
+      "n_val": 1016,
+      "auc": 0.5097,
+      "wr_all": 0.378,
+      "wr_top40pct": 0.38,
+      "exp_net_top40": 0.07
+    },
+    {
+      "fold": 4,
+      "period": "2014-04-04 \u2192 2014-10-03",
+      "n_val": 998,
+      "auc": 0.5994,
+      "wr_all": 0.347,
+      "wr_top40pct": 0.439,
+      "exp_net_top40": 0.246
+    },
+    {
+      "fold": 5,
+      "period": "2014-10-06 \u2192 2015-04-02",
+      "n_val": 1035,
+      "auc": 0.5955,
+      "wr_all": 0.399,
+      "wr_top40pct": 0.47,
+      "exp_net_top40": 0.339
+    },
+    {
+      "fold": 6,
+      "period": "2015-04-06 \u2192 2015-10-02",
+      "n_val": 1074,
+      "auc": 0.5877,
+      "wr_all": 0.394,
+      "wr_top40pct": 0.455,
+      "exp_net_top40": 0.294
+    },
+    {
+      "fold": 7,
+      "period": "2015-10-05 \u2192 2016-04-01",
+      "n_val": 1103,
+      "auc": 0.5662,
+      "wr_all": 0.391,
+      "wr_top40pct": 0.432,
+      "exp_net_top40": 0.227
+    },
+    {
+      "fold": 8,
+      "period": "2016-04-04 \u2192 2016-10-03",
+      "n_val": 1150,
+      "auc": 0.5739,
+      "wr_all": 0.473,
+      "wr_top40pct": 0.548,
+      "exp_net_top40": 0.573
+    },
+    {
+      "fold": 9,
+      "period": "2016-10-04 \u2192 2017-04-03",
+      "n_val": 1130,
+      "auc": 0.6167,
+      "wr_all": 0.529,
+      "wr_top40pct": 0.655,
+      "exp_net_top40": 0.895
+    },
+    {
+      "fold": 10,
+      "period": "2017-04-04 \u2192 2017-10-03",
+      "n_val": 1133,
+      "auc": 0.7947,
+      "wr_all": 0.706,
+      "wr_top40pct": 0.896,
+      "exp_net_top40": 1.619
+    },
+    {
+      "fold": 11,
+      "period": "2017-10-04 \u2192 2018-04-03",
+      "n_val": 1129,
+      "auc": 0.847,
+      "wr_all": 0.651,
+      "wr_top40pct": 0.925,
+      "exp_net_top40": 1.704
+    },
+    {
+      "fold": 12,
+      "period": "2018-04-04 \u2192 2018-10-03",
+      "n_val": 1156,
+      "auc": 0.8754,
+      "wr_all": 0.697,
+      "wr_top40pct": 0.978,
+      "exp_net_top40": 1.865
+    },
+    {
+      "fold": 13,
+      "period": "2018-10-04 \u2192 2019-04-03",
+      "n_val": 1122,
+      "auc": 0.6947,
+      "wr_all": 0.499,
+      "wr_top40pct": 0.636,
+      "exp_net_top40": 0.839
+    },
+    {
+      "fold": 14,
+      "period": "2019-04-04 \u2192 2019-10-03",
+      "n_val": 1144,
+      "auc": 0.6475,
+      "wr_all": 0.398,
+      "wr_top40pct": 0.52,
+      "exp_net_top40": 0.489
+    },
+    {
+      "fold": 15,
+      "period": "2019-10-04 \u2192 2020-04-03",
+      "n_val": 1127,
+      "auc": 0.5707,
+      "wr_all": 0.367,
+      "wr_top40pct": 0.418,
+      "exp_net_top40": 0.184
+    },
+    {
+      "fold": 16,
+      "period": "2020-04-06 \u2192 2020-10-02",
+      "n_val": 1152,
+      "auc": 0.5786,
+      "wr_all": 0.312,
+      "wr_top40pct": 0.35,
+      "exp_net_top40": -0.021
+    },
+    {
+      "fold": 17,
+      "period": "2020-10-05 \u2192 2021-04-01",
+      "n_val": 1126,
+      "auc": 0.5497,
+      "wr_all": 0.331,
+      "wr_top40pct": 0.369,
+      "exp_net_top40": 0.038
+    },
+    {
+      "fold": 18,
+      "period": "2021-04-05 \u2192 2021-10-01",
+      "n_val": 1145,
+      "auc": 0.5622,
+      "wr_all": 0.348,
+      "wr_top40pct": 0.397,
+      "exp_net_top40": 0.12
+    },
+    {
+      "fold": 19,
+      "period": "2021-10-04 \u2192 2022-04-01",
+      "n_val": 1143,
+      "auc": 0.5277,
+      "wr_all": 0.364,
+      "wr_top40pct": 0.377,
+      "exp_net_top40": 0.061
+    },
+    {
+      "fold": 20,
+      "period": "2022-04-04 \u2192 2022-10-03",
+      "n_val": 1153,
+      "auc": 0.6059,
+      "wr_all": 0.387,
+      "wr_top40pct": 0.484,
+      "exp_net_top40": 0.381
+    },
+    {
+      "fold": 21,
+      "period": "2022-10-04 \u2192 2023-04-03",
+      "n_val": 1126,
+      "auc": 0.5961,
+      "wr_all": 0.316,
+      "wr_top40pct": 0.401,
+      "exp_net_top40": 0.134
+    },
+    {
+      "fold": 22,
+      "period": "2023-04-04 \u2192 2023-10-03",
+      "n_val": 1139,
+      "auc": 0.6187,
+      "wr_all": 0.37,
+      "wr_top40pct": 0.452,
+      "exp_net_top40": 0.285
+    },
+    {
+      "fold": 23,
+      "period": "2023-10-04 \u2192 2023-12-29",
+      "n_val": 542,
+      "auc": 0.6315,
+      "wr_all": 0.338,
+      "wr_top40pct": 0.433,
+      "exp_net_top40": 0.23
+    }
+  ],
+  "lgbm_params": {
+    "objective": "binary",
+    "metric": "auc",
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "min_data_in_leaf": 50,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 0.8,
+    "bagging_freq": 5,
+    "lambda_l1": 0.1,
+    "lambda_l2": 0.1,
+    "verbose": -1,
+    "n_jobs": -1
+  }
+}

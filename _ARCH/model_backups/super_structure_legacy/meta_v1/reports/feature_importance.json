@@ -1,0 +1,62 @@
+[
+  {
+    "feature": "st_distance_atr",
+    "importance": 4024.780364751816
+  },
+  {
+    "feature": "dema_distance_atr",
+    "importance": 2696.548042535782
+  },
+  {
+    "feature": "efficiency_ratio",
+    "importance": 2508.497539281845
+  },
+  {
+    "feature": "entry_adx",
+    "importance": 2446.669780731201
+  },
+  {
+    "feature": "volatility_zscore",
+    "importance": 2249.978302836418
+  },
+  {
+    "feature": "atr_pct",
+    "importance": 2184.0863049030304
+  },
+  {
+    "feature": "entry_atr",
+    "importance": 2015.7089886665344
+  },
+  {
+    "feature": "cci_abs",
+    "importance": 1989.2598741054535
+  },
+  {
+    "feature": "entry_cci",
+    "importance": 1965.3777352571487
+  },
+  {
+    "feature": "hour_utc",
+    "importance": 1402.8770394325256
+  },
+  {
+    "feature": "day_of_week",
+    "importance": 512.3746192455292
+  },
+  {
+    "feature": "regime_state",
+    "importance": 45.484960079193115
+  },
+  {
+    "feature": "st_gap_ratio",
+    "importance": 33.95515966415405
+  },
+  {
+    "feature": "candle_body_atr",
+    "importance": 0.0
+  },
+  {
+    "feature": "is_st_aligned",
+    "importance": 0.0
+  }
+]

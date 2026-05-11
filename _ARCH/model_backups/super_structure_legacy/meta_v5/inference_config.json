@@ -1,0 +1,13 @@
+{
+  "version": "meta_v5_crusher",
+  "features": [
+    "entry_adx",
+    "cci_abs",
+    "st_gap_ratio",
+    "efficiency_ratio",
+    "volatility_zscore",
+    "is_st_aligned",
+    "session_cluster"
+  ],
+  "threshold": 0.5000000000000002
+}

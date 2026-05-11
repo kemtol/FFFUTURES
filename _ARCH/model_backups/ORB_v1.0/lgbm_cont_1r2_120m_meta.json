@@ -1,0 +1,260 @@
+{
+  "target": "y_1r2_120m",
+  "side": "cont",
+  "holdout_from": "2024-01-01",
+  "half_life_years": 2,
+  "features": [
+    "orb_range_atr_ratio",
+    "breakout_strength",
+    "atr14_at_entry",
+    "price_vs_vwap_pct",
+    "adx_14_15m",
+    "ema_slope_1h",
+    "day_of_week",
+    "time_in_session_min",
+    "orb_tf",
+    "session",
+    "breakout_side"
+  ],
+  "n_train": 28884,
+  "cv_folds": 23,
+  "cv_mean_auc": 0.6189,
+  "cv_mean_wr_top40": 0.36,
+  "cv_mean_exp_net": 0.011,
+  "feature_importance_gain": {
+    "adx_14_15m": 6813.648034885526,
+    "price_vs_vwap_pct": 6706.39040723443,
+    "atr14_at_entry": 6404.770934462547,
+    "orb_range_atr_ratio": 5863.071342527866,
+    "time_in_session_min": 3824.2202664613724,
+    "breakout_strength": 3142.1280284821987,
+    "day_of_week": 1690.7389457523823,
+    "ema_slope_1h": 858.307303160429,
+    "session": 731.7753255665302,
+    "breakout_side": 272.19845843315125,
+    "orb_tf": 215.95894452929497
+  },
+  "fold_results": [
+    {
+      "fold": 1,
+      "period": "2012-10-04 \u2192 2013-04-03",
+      "n_val": 985,
+      "auc": 0.6509,
+      "wr_all": 0.243,
+      "wr_top40pct": 0.338,
+      "exp_net_top40": -0.057
+    },
+    {
+      "fold": 2,
+      "period": "2013-04-04 \u2192 2013-10-03",
+      "n_val": 1085,
+      "auc": 0.566,
+      "wr_all": 0.341,
+      "wr_top40pct": 0.378,
+      "exp_net_top40": 0.064
+    },
+    {
+      "fold": 3,
+      "period": "2013-10-04 \u2192 2014-04-03",
+      "n_val": 1016,
+      "auc": 0.5841,
+      "wr_all": 0.299,
+      "wr_top40pct": 0.366,
+      "exp_net_top40": 0.029
+    },
+    {
+      "fold": 4,
+      "period": "2014-04-04 \u2192 2014-10-03",
+      "n_val": 998,
+      "auc": 0.5779,
+      "wr_all": 0.257,
+      "wr_top40pct": 0.302,
+      "exp_net_top40": -0.163
+    },
+    {
+      "fold": 5,
+      "period": "2014-10-06 \u2192 2015-04-02",
+      "n_val": 1035,
+      "auc": 0.5418,
+      "wr_all": 0.305,
+      "wr_top40pct": 0.345,
+      "exp_net_top40": -0.034
+    },
+    {
+      "fold": 6,
+      "period": "2015-04-06 \u2192 2015-10-02",
+      "n_val": 1074,
+      "auc": 0.6079,
+      "wr_all": 0.266,
+      "wr_top40pct": 0.367,
+      "exp_net_top40": 0.032
+    },
+    {
+      "fold": 7,
+      "period": "2015-10-05 \u2192 2016-04-01",
+      "n_val": 1103,
+      "auc": 0.4746,
+      "wr_all": 0.336,
+      "wr_top40pct": 0.319,
+      "exp_net_top40": -0.113
+    },
+    {
+      "fold": 8,
+      "period": "2016-04-04 \u2192 2016-10-03",
+      "n_val": 1150,
+      "auc": 0.6392,
+      "wr_all": 0.261,
+      "wr_top40pct": 0.341,
+      "exp_net_top40": -0.046
+    },
+    {
+      "fold": 9,
+      "period": "2016-10-04 \u2192 2017-04-03",
+      "n_val": 1130,
+      "auc": 0.6474,
+      "wr_all": 0.235,
+      "wr_top40pct": 0.301,
+      "exp_net_top40": -0.167
+    },
+    {
+      "fold": 10,
+      "period": "2017-04-04 \u2192 2017-10-03",
+      "n_val": 1133,
+      "auc": 0.8109,
+      "wr_all": 0.142,
+      "wr_top40pct": 0.278,
+      "exp_net_top40": -0.236
+    },
+    {
+      "fold": 11,
+      "period": "2017-10-04 \u2192 2018-04-03",
+      "n_val": 1129,
+      "auc": 0.8586,
+      "wr_all": 0.173,
+      "wr_top40pct": 0.374,
+      "exp_net_top40": 0.052
+    },
+    {
+      "fold": 12,
+      "period": "2018-04-04 \u2192 2018-10-03",
+      "n_val": 1156,
+      "auc": 0.8766,
+      "wr_all": 0.161,
+      "wr_top40pct": 0.367,
+      "exp_net_top40": 0.032
+    },
+    {
+      "fold": 13,
+      "period": "2018-10-04 \u2192 2019-04-03",
+      "n_val": 1122,
+      "auc": 0.6864,
+      "wr_all": 0.268,
+      "wr_top40pct": 0.38,
+      "exp_net_top40": 0.07
+    },
+    {
+      "fold": 14,
+      "period": "2019-04-04 \u2192 2019-10-03",
+      "n_val": 1144,
+      "auc": 0.5944,
+      "wr_all": 0.298,
+      "wr_top40pct": 0.343,
+      "exp_net_top40": -0.042
+    },
+    {
+      "fold": 15,
+      "period": "2019-10-04 \u2192 2020-04-03",
+      "n_val": 1127,
+      "auc": 0.5606,
+      "wr_all": 0.304,
+      "wr_top40pct": 0.364,
+      "exp_net_top40": 0.021
+    },
+    {
+      "fold": 16,
+      "period": "2020-04-06 \u2192 2020-10-02",
+      "n_val": 1152,
+      "auc": 0.5682,
+      "wr_all": 0.349,
+      "wr_top40pct": 0.41,
+      "exp_net_top40": 0.16
+    },
+    {
+      "fold": 17,
+      "period": "2020-10-05 \u2192 2021-04-01",
+      "n_val": 1126,
+      "auc": 0.5858,
+      "wr_all": 0.336,
+      "wr_top40pct": 0.417,
+      "exp_net_top40": 0.181
+    },
+    {
+      "fold": 18,
+      "period": "2021-04-05 \u2192 2021-10-01",
+      "n_val": 1145,
+      "auc": 0.5225,
+      "wr_all": 0.341,
+      "wr_top40pct": 0.349,
+      "exp_net_top40": -0.022
+    },
+    {
+      "fold": 19,
+      "period": "2021-10-04 \u2192 2022-04-01",
+      "n_val": 1143,
+      "auc": 0.5448,
+      "wr_all": 0.318,
+      "wr_top40pct": 0.346,
+      "exp_net_top40": -0.033
+    },
+    {
+      "fold": 20,
+      "period": "2022-04-04 \u2192 2022-10-03",
+      "n_val": 1153,
+      "auc": 0.5819,
+      "wr_all": 0.309,
+      "wr_top40pct": 0.384,
+      "exp_net_top40": 0.082
+    },
+    {
+      "fold": 21,
+      "period": "2022-10-04 \u2192 2023-04-03",
+      "n_val": 1126,
+      "auc": 0.5716,
+      "wr_all": 0.348,
+      "wr_top40pct": 0.404,
+      "exp_net_top40": 0.141
+    },
+    {
+      "fold": 22,
+      "period": "2023-04-04 \u2192 2023-10-03",
+      "n_val": 1139,
+      "auc": 0.5869,
+      "wr_all": 0.308,
+      "wr_top40pct": 0.375,
+      "exp_net_top40": 0.055
+    },
+    {
+      "fold": 23,
+      "period": "2023-10-04 \u2192 2023-12-29",
+      "n_val": 542,
+      "auc": 0.5958,
+      "wr_all": 0.352,
+      "wr_top40pct": 0.442,
+      "exp_net_top40": 0.257
+    }
+  ],
+  "lgbm_params": {
+    "objective": "binary",
+    "metric": "auc",
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "min_data_in_leaf": 50,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 0.8,
+    "bagging_freq": 5,
+    "lambda_l1": 0.1,
+    "lambda_l2": 0.1,
+    "verbose": -1,
+    "n_jobs": -1
+  }
+}

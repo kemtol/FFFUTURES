@@ -1,0 +1,15 @@
+{
+  "threshold": 0.2,
+  "features": [
+    "entry_adx",
+    "entry_cci",
+    "cci_abs",
+    "st_gap_ratio",
+    "efficiency_ratio",
+    "volatility_zscore",
+    "candle_body_atr",
+    "is_st_aligned",
+    "regime_state"
+  ],
+  "version": "meta_v4"
+}

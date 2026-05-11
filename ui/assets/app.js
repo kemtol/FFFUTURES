@@ -111,6 +111,8 @@ function getFilteredTrades() {
   const side = $("#sideFilter").val();
   const sessions = sessionVals();
   const result = $("#resultFilter").val();
+  const mlMin = parseFloat($("#mlMin").val());
+  const regimeFilter = $("#regimeFilter").val();
   const gapMin = parseFloat($("#gapMin").val());
   const gapMax = parseFloat($("#gapMax").val());
   const adxMin = parseFloat($("#adxMin").val());
@@ -130,6 +132,18 @@ function getFilteredTrades() {
     if (sessions.length && !sessions.includes(t.session)) return false;
     if (result === "Win" && !t.is_win) return false;
     if (result === "Loss" && t.is_win) return false;
+    
+    // ML & Regime Filters (with defensive defaults)
+    const prob = t.ml_prob ?? 0.0;
+    const reg = t.regime ?? 0;
+
+    if (!Number.isNaN(mlMin) && prob < mlMin) return false;
+    if (regimeFilter === "12") {
+      if (reg !== 1 && reg !== 2) return false;
+    } else if (regimeFilter !== "All") {
+      if (reg !== parseInt(regimeFilter)) return false;
+    }
+
     var gp = t.entry_gap_pts || 0;
     if (!Number.isNaN(gapMin) && gp < gapMin) return false;
     if (!Number.isNaN(gapMax) && gp > gapMax) return false;
@@ -272,8 +286,9 @@ function markerTime(epochSec) {
 
 function updateTableHeader() {
   const isFVG = currentStrategy === "fvg_scalper";
-  $(".col-dynamic").eq(0).text(isFVG ? "Gap" : "CCI");
-  $(".col-dynamic").eq(1).text(isFVG ? "CHOP" : "");
+  // Index might change due to new columns
+  $("#tradeHead th.col-dynamic").eq(0).text(isFVG ? "Gap" : "ML Prob");
+  $("#tradeHead th.col-dynamic").eq(1).text(isFVG ? "CHOP" : "Regime");
 } 
 
 function renderTable(trades) {
@@ -293,24 +308,25 @@ function renderTable(trades) {
 
     const dyn1 = isFVG
       ? (t.entry_gap_pts?.toFixed(1) ?? "—")
-      : (t.entry_cci?.toFixed(0) ?? "—");
+      : (t.ml_prob?.toFixed(2) ?? "—");
     const dyn2 = isFVG
       ? (t.entry_chop?.toFixed(1) ?? "—")
-      : (t.entry_gap_pts?.toFixed(1) ?? "—");
+      : (t.regime ?? "—");
 
     const $row = $(`
       <tr class="${selectedClass}" data-trade-no="${t.trade_no}">
         <td>${t.trade_no}</td>
         <td>${t.entry_ts}</td>
+        <td class="text-end"><b>${fmt.format(t.entry_price)}</b></td>
         <td class="${sideClass}">${t.side}</td>
-        <td class="text-end">${fmt.format(t.entry_price)}</td>
         <td class="text-end ${pnlClass}">${money.format(t.pnl_usd)}</td>
         <td class="text-end ${rClass}">${rText}</td>
+        <td>${t.exit_ts}</td>
+        <td class="text-end"><b>${fmt.format(t.exit_price)}</b></td>
         <td class="text-end">${t.entry_adx?.toFixed(1) ?? "—"}</td>
-        <td class="text-end">${dyn1}</td>
-        <td class="text-end">${dyn2}</td>
+        <td class="text-end col-dynamic" title="ML Probability">${dyn1}</td>
+        <td class="text-end col-dynamic" title="Market Regime">${dyn2}</td>
         <td>${t.session ?? "—"}</td>
-        <td>${t.exit_ts} <span class="pill">${t.exit_reason}</span></td>
       </tr>
     `);
     $body.append($row);
@@ -329,8 +345,8 @@ function renderDetail(t) {
     ? `<div>ADX: <b>${t.entry_adx?.toFixed(2) ?? "n/a"}</b> | CHOP: <b>${t.entry_chop?.toFixed(1) ?? "n/a"}</b></div>
        <div>Gap: <b>${t.entry_gap_pts?.toFixed(1) ?? "n/a"} pts</b> | DEMA: <b>${t.entry_dema?.toFixed(1) ?? "n/a"}</b></div>
        <div>DEMA slope: <b>${t.entry_dema_slope?.toFixed(4) ?? "n/a"}</b> | DEMA dist ATR: <b>${t.dema_distance_atr?.toFixed(2) ?? "n/a"}</b></div>`
-    : `<div>ADX: <b>${t.entry_adx?.toFixed(2) ?? "n/a"}</b> | CCI: <b>${t.entry_cci?.toFixed(2) ?? "n/a"}</b></div>
-       <div>DEMA dist ATR: <b>${t.dema_distance_atr?.toFixed(2) ?? "n/a"}</b> | ST dist ATR: <b>${t.st_distance_atr?.toFixed(2) ?? "n/a"}</b></div>`;
+    : `<div>ADX: <b>${t.entry_adx?.toFixed(2) ?? "n/a"}</b> | ML Prob: <b class="positive">${t.ml_prob?.toFixed(3) ?? "n/a"}</b></div>
+       <div>Regime: <b>${t.regime ?? "n/a"}</b> | ST dist ATR: <b>${t.st_distance_atr?.toFixed(2) ?? "n/a"}</b></div>`;
 
   $el.html(`
     <div><b>#${t.trade_no}</b> <span class="${t.side === "Long" ? "long" : "short"}">${t.side}</span> <span class="pill">${t.session}</span></div>
@@ -513,7 +529,6 @@ function readUrlParams() {
   if (p.has("strategy")) {
     currentStrategy = p.get("strategy");
     $("#strategySelect").val(currentStrategy);
-    console.log("[URL] Strategy:", currentStrategy);
   }
   if (p.has("timeframe")) {
     currentTimeframe = p.get("timeframe");
@@ -529,6 +544,11 @@ function readUrlParams() {
   }
   if (p.has("range")) $("#rangePreset").val(p.get("range"));
   if (p.has("side")) $("#sideFilter").val(p.get("side"));
+  
+  // New: ML & Regime
+  if (p.has("ml_min")) $("#mlMin").val(p.get("ml_min"));
+  if (p.has("regime")) $("#regimeFilter").val(p.get("regime"));
+
   if (p.has("session")) {
     const s = p.get("session");
     if (s) setSessionVals(s.split(","));
@@ -551,6 +571,13 @@ function updateUrl() {
   }
   const side = $("#sideFilter").val();
   if (side !== "All") p.set("side", side);
+  
+  // New: ML & Regime
+  const mlMin = $("#mlMin").val();
+  if (mlMin) p.set("ml_min", mlMin);
+  const regime = $("#regimeFilter").val();
+  if (regime !== "All") p.set("regime", regime);
+
   const sessions = sessionVals();
   const allSessions = currentStrategy === "fvg_scalper"
     ? ["Asia", "London", "NY", "Other"]
@@ -597,6 +624,8 @@ function applyBestPreset() {
     setSessionVals(["Asia", "London"]);
   } else {
     $("#adxMin").val("25");
+    $("#mlMin").val("0.38");
+    $("#regimeFilter").val("12");
     setSessionVals(null);
   }
 }
@@ -608,6 +637,8 @@ function resetFilters() {
   $("#sideFilter").val("All");
   setSessionVals(null);
   $("#resultFilter").val("All");
+  $("#mlMin").val("");
+  $("#regimeFilter").val("All");
   $("#gapMin").val("");
   $("#gapMax").val("");
   $("#adxMin").val("");

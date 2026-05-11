@@ -65,4 +65,4 @@ journalctl --user -u topstepx_feed -f
 - **ORB v2.0 is Research-Only:** It is NOT wired for live execution or Telegram reporting.
 
 ## Active Research State
-As of May 2026, the project is resolving a 2026 OOD failure using scale-invariant and volatility-normalized features. The `Super Structure` live pipeline is currently operational via systemd.
+As of May 2026, we have successfully validated **Meta-v7 Refined** ($300 Daily Limit + Session-Specific Thresholds: Tokyo 0.5, London 0.5, US 0.45). This model is the first to achieve a verified 'PASS' status for Topstep 50K within 30 days while maintaining a Max Drawdown of -$1,787. We are now transitioning to **Meta-v8**, focusing on further sharpening entry precision.

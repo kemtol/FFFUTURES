@@ -1,0 +1,9 @@
+{
+  "version": "meta_v4",
+  "base_model": "meta_v3",
+  "rules": {
+    "state_0": "SKIP",
+    "state_1_threshold": 0.35,
+    "state_2_threshold": 0.35
+  }
+}

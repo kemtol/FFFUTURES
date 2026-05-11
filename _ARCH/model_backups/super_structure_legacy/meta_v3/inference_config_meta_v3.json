@@ -1,0 +1,21 @@
+{
+  "threshold": 0.35000000000000003,
+  "features": [
+    "entry_adx",
+    "entry_cci",
+    "entry_atr",
+    "dema_distance_atr",
+    "st_distance_atr",
+    "hour_utc",
+    "day_of_week",
+    "atr_pct",
+    "st_gap_ratio",
+    "mom_intensity",
+    "is_asia_session",
+    "regime_state",
+    "volatility_zscore",
+    "efficiency_ratio",
+    "vol_convergence"
+  ],
+  "version": "meta_v3"
+}

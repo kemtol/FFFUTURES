@@ -1,0 +1,38 @@
+[
+  {
+    "feature": "entry_adx",
+    "gain": 2639.7135422229767
+  },
+  {
+    "feature": "entry_cci",
+    "gain": 1438.3202039003372
+  },
+  {
+    "feature": "cci_abs",
+    "gain": 1367.199478060007
+  },
+  {
+    "feature": "st_gap_ratio",
+    "gain": 2690.2620163857937
+  },
+  {
+    "feature": "efficiency_ratio",
+    "gain": 1976.839156806469
+  },
+  {
+    "feature": "volatility_zscore",
+    "gain": 2078.933335661888
+  },
+  {
+    "feature": "candle_body_atr",
+    "gain": 0.0
+  },
+  {
+    "feature": "is_st_aligned",
+    "gain": 0.0
+  },
+  {
+    "feature": "regime_state",
+    "gain": 19.33581018447876
+  }
+]

@@ -31,8 +31,11 @@
 ### Phase 4: Execution Realism 🔄
 - Not yet prioritized — feature discovery phase still ongoing
 
-### Phase 5: Inference 🔄
-- Deferred until a Topstep-suitable edge exists
+### Track B: Super Structure ML (Advisory Filter) 🚀 BREAKTHROUGH
+- **Status:** Active Research (v3)
+- **Discovery:** Identified GMM State 0 (Quiet) as the primary drawdown driver (-$3,126 in last 30d).
+- **Result:** Regime Kill-Switch (Skip State 0) boosted YTD 2026 PnL to **+$13,487** with Max DD reduced by 50% to **-$2,873**.
+- **Next Step:** Implement dynamic thresholding based on GMM Volatility.
 
 ---
 

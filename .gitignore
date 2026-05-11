@@ -50,3 +50,4 @@ model/
 # Browser/test artifacts
 playwright-report/
 test-results/
+_ARCH/research_legacy/*.db.bak*

@@ -30,12 +30,12 @@ for p in [str(ROOT), str(ROOT / "pipeline")]:
 from pipeline.live.signal_bus import SignalBus
 
 # ── config ────────────────────────────────────────────────────────────────────
-ATR_PERIOD = 10
-ST_FACTOR = 3.0
+ATR_PERIOD = 12
+ST_FACTOR = 4.0
 DEMA_LENGTH = 200
-ADX_LENGTH = 10
+ADX_LENGTH = 12
 ADX_THRESHOLD = 25
-CCI_LENGTH = 10
+CCI_LENGTH = 12
 CCI_SOURCE = "hl2"
 CCI_LONG_MIN = 100.0
 CCI_SHORT_MAX = -100.0

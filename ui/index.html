@@ -98,6 +98,22 @@
           </div>
           <div class="row g-2">
             <div class="col-6">
+              <label for="mlMin" class="form-label">ML Prob Min</label>
+              <input id="mlMin" class="form-control form-control-sm" type="number" placeholder="0.38" min="0" max="1" step="0.01">
+            </div>
+            <div class="col-6">
+              <label for="regimeFilter" class="form-label">Regime</label>
+              <select id="regimeFilter" class="form-select form-select-sm">
+                <option value="All">All</option>
+                <option value="12">1 & 2 (Safe)</option>
+                <option value="1">1 (Trending)</option>
+                <option value="2">2 (Choppy)</option>
+                <option value="0">0 (Quiet)</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
               <label for="gapMin" class="form-label">Gap Min</label>
               <input id="gapMin" class="form-control form-control-sm" type="number" placeholder="0" min="0" step="0.1">
             </div>
@@ -286,17 +302,18 @@
           <table class="table table-dark table-hover table-sm align-middle mb-0 trade-table">
             <thead>
               <tr id="tradeHead">
-                <th style="width:58px">#</th>
-                <th style="width:138px">Entry UTC</th>
-                <th style="width:70px">Side</th>
-                <th class="text-end" style="width:86px">Entry</th>
+                <th style="width:50px">#</th>
+                <th style="width:130px">Entry Time</th>
+                <th style="width:80px">Entry Price</th>
+                <th style="width:60px">Side</th>
                 <th class="text-end" style="width:80px">PnL</th>
-                <th class="text-end" style="width:70px">R</th>
+                <th class="text-end" style="width:60px">R</th>
+                <th style="width:130px">Exit Time</th>
+                <th style="width:80px">Exit Price</th>
                 <th class="text-end" style="width:70px">ADX</th>
-                <th class="text-end col-dynamic" style="width:78px">CCI</th>
-                <th class="text-end col-dynamic" style="width:70px">CHOP</th>
-                <th style="width:82px">Session</th>
-                <th>Exit</th>
+                <th class="text-end col-dynamic" style="width:78px">ML Prob</th>
+                <th class="text-end col-dynamic" style="width:70px">Regime</th>
+                <th>Session</th>
               </tr>
             </thead>
             <tbody id="tradeRows"></tbody>

@@ -1,0 +1,114 @@
+{
+  "version": "2.0",
+  "features": 42,
+  "feature_list": [
+    "breakout_strength",
+    "atr14_at_entry",
+    "orb_tf",
+    "session",
+    "breakout_side",
+    "adx_14_15m",
+    "adx_50_flag",
+    "atr14_percentile_20d",
+    "atr14_sq",
+    "atr14_zscore_20d",
+    "breakout_strength_atr_ratio",
+    "breakout_strength_percentile_20d",
+    "breakout_strength_sq",
+    "breakout_strength_vs_orb",
+    "breakout_strength_zscore_10d",
+    "day_of_week",
+    "ema_slope_1h",
+    "int_adx_x_orb_range",
+    "int_atr14_x_adx",
+    "int_breakout_strength_x_range",
+    "int_breakout_strength_x_session",
+    "int_vwap_distance_x_atr14",
+    "mac_dxy_trend",
+    "mac_oil_volatility",
+    "mac_spx_regime",
+    "mac_us10y_change",
+    "orb_range_atr_ratio",
+    "orb_range_percentile_20d",
+    "orb_range_sq",
+    "pre_bo_bullish_ratio",
+    "pre_bo_compression_ratio",
+    "pre_bo_drift_atr",
+    "pre_bo_inside_bar_flag",
+    "pre_bo_last_candle_range_ratio",
+    "price_vs_vwap_pct",
+    "price_vs_vwap_pct_abs",
+    "sm_first_30m_direction",
+    "sm_first_30m_range",
+    "sm_pre_breakout_volume_ratio",
+    "sm_pre_breakout_volume_z",
+    "time_in_session_min",
+    "vwap_at_breakout"
+  ],
+  "modules": [
+    "interaction_features.parquet",
+    "macro_features.parquet",
+    "orb_context_features.parquet",
+    "pre_breakout_profile_features.parquet",
+    "scale_invariant_features.parquet",
+    "session_momentum_features.parquet",
+    "volatility_normalized_features.parquet"
+  ],
+  "lgbm_params": {
+    "objective": "binary",
+    "metric": "auc",
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "min_data_in_leaf": 20,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 0.8,
+    "bagging_freq": 5,
+    "lambda_l1": 0.1,
+    "lambda_l2": 0.1,
+    "verbose": -1,
+    "n_jobs": -1
+  },
+  "walk_forward_windows": [
+    [
+      2019,
+      2020
+    ],
+    [
+      2020,
+      2021
+    ],
+    [
+      2021,
+      2022
+    ],
+    [
+      2022,
+      2023
+    ],
+    [
+      2023,
+      2024
+    ],
+    [
+      2024,
+      2025
+    ],
+    [
+      2025,
+      2026
+    ]
+  ],
+  "final_train_through": 2025,
+  "targets_trained": [
+    "y_1r2_60m",
+    "y_1r4_60m",
+    "y_1r2_120m",
+    "y_1r4_120m",
+    "y_1r2_180m",
+    "y_1r4_180m",
+    "y_1r2_240m",
+    "y_1r4_240m",
+    "y_1r2_close60m",
+    "y_1r4_close60m"
+  ]
+}

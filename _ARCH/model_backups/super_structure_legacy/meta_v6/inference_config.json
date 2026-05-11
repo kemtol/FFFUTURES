@@ -1,0 +1,12 @@
+{
+  "threshold": 0.44000000000000017,
+  "features": [
+    "entry_adx",
+    "cci_abs",
+    "st_gap_ratio",
+    "efficiency_ratio",
+    "wick_ratio",
+    "volatility_zscore",
+    "session_cluster"
+  ]
+}
