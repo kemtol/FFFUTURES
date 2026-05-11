@@ -1,0 +1,5 @@
+outs:
+- md5: 0b8fb1f64562ad065d0493ca9f48bb70
+  size: 53551104
+  hash: md5
+  path: MGC_15m.db.bak_pre_json_ingest

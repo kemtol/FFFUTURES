@@ -1,0 +1,710 @@
+[
+  {
+    "received_at": "2026-04-30T17:13:01.245006+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "entry": 4625.0,
+      "sl": 4618.0,
+      "reason": "",
+      "parsed_from": "Alert: BUY MGC action=BUY symbol=MGC entry=4625.0 sl=4618.0"
+    }
+  },
+  {
+    "received_at": "2026-04-30T17:13:13.434507+00:00",
+    "signal": {
+      "action": "SELL",
+      "symbol": "MGC",
+      "entry": 4600.0,
+      "sl": 4607.0,
+      "reason": "",
+      "parsed_from": "Alert action=SELL symbol=MGC entry=4600.0 sl=4607.0"
+    }
+  },
+  {
+    "received_at": "2026-04-30T17:13:13.449666+00:00",
+    "signal": {
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "entry": 4618.0,
+      "sl": 0.0,
+      "reason": "SL",
+      "parsed_from": "action=CLOSE symbol=MGC reason=SL price=4618.0"
+    }
+  },
+  {
+    "received_at": "2026-04-30T22:16:05.801179+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "entry": 4643.2001953125,
+      "sl": 4700.974896239389,
+      "reason": "",
+      "parsed_from": "tv_strategy.py: BUY MGC @ 4643.2"
+    }
+  },
+  {
+    "received_at": "2026-04-30T22:17:06.619881+00:00",
+    "signal": {
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "entry": 4700.974896239389,
+      "sl": 0.0,
+      "reason": "SL",
+      "parsed_from": "tv_strategy.py: CLOSE MGC @ 4701.0"
+    }
+  },
+  {
+    "received_at": "2026-05-01T02:07:40.432600+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "entry": 4633.2998046875,
+      "sl": 4601.766095943828,
+      "reason": "",
+      "parsed_from": "tv_strategy.py: BUY MGC @ 4633.3"
+    }
+  },
+  {
+    "received_at": "2026-05-01T08:02:19.448574+00:00",
+    "signal": {
+      "action": "SELL",
+      "symbol": "MGC",
+      "entry": 4595.10009765625,
+      "sl": 4614.874152449592,
+      "reason": "",
+      "parsed_from": "tv_strategy.py: SELL MGC @ 4595.1"
+    }
+  },
+  {
+    "received_at": "2026-05-01T12:26:08.139355+00:00",
+    "signal": {
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "entry": 4574.811819348266,
+      "sl": 0.0,
+      "reason": "SL",
+      "parsed_from": "tv_strategy.py: CLOSE MGC @ 4574.8"
+    }
+  },
+  {
+    "received_at": "2026-05-01T12:40:48.575274+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "entry": 4611.7001953125,
+      "sl": 4584.527228070287,
+      "reason": "",
+      "parsed_from": "tv_strategy.py: BUY MGC @ 4611.7"
+    }
+  },
+  {
+    "received_at": "2026-05-01T18:20:58.921598+00:00",
+    "signal": {
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "entry": 4634.461723602859,
+      "sl": 0.0,
+      "reason": "SL",
+      "parsed_from": "tv_strategy.py: CLOSE MGC @ 4634.5"
+    }
+  },
+  {
+    "received_at": "2026-05-01T19:46:30.259888+00:00",
+    "signal": {
+      "action": "SELL",
+      "symbol": "MGC",
+      "entry": 4628.2001953125,
+      "sl": 4646.351279103948,
+      "reason": "",
+      "parsed_from": "tv_strategy.py: SELL MGC @ 4628.2"
+    }
+  },
+  {
+    "received_at": "2026-05-04T02:01:30.541321+00:00",
+    "signal": {
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "entry": 4627.786727967898,
+      "sl": 0.0,
+      "reason": "SL",
+      "parsed_from": "tv_strategy.py: CLOSE MGC @ 4627.8"
+    }
+  },
+  {
+    "received_at": "2026-05-04T02:31:24.946962+00:00",
+    "signal": {
+      "action": "SELL",
+      "symbol": "MGC",
+      "entry": 4604.6,
+      "sl": 4627.745753433329,
+      "reason": "",
+      "parsed_from": "tv_strategy.py: SELL MGC @ 4604.6"
+    }
+  },
+  {
+    "received_at": "2026-05-05T06:51:53.165023+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4558.4,
+      "sl": 4541.1955669853205,
+      "reason": "",
+      "ts": "2026-05-05 06:55:00+00:00",
+      "adx": 29.5,
+      "cci": 101.0,
+      "dema": 4535.2,
+      "parsed_from": "tv_strategy.py: BUY MGC @ 4558.4"
+    }
+  },
+  {
+    "received_at": "2026-05-05T06:54:14.466708+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4559.4,
+      "sl": 4541.1955669853205,
+      "reason": "",
+      "ts": "2026-05-05 06:55:00+00:00",
+      "adx": 29.6,
+      "cci": 106.0,
+      "dema": 4535.2,
+      "parsed_from": "tv_strategy.py: BUY MGC @ 4559.4"
+    }
+  },
+  {
+    "received_at": "2026-05-05T07:03:42.182347+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4563.0,
+      "sl": 4541.1955669853205,
+      "reason": "",
+      "ts": "2026-05-05 07:05:00+00:00",
+      "adx": 31.1,
+      "cci": 107.0,
+      "dema": 4535.9,
+      "parsed_from": "tv_strategy.py: BUY MGC @ 4563.0"
+    }
+  },
+  {
+    "received_at": "2026-05-05T13:21:18.312711+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4590.4,
+      "sl": 4567.898403805819,
+      "reason": "",
+      "ts": "2026-05-05 13:25:00+00:00",
+      "adx": 26.9,
+      "cci": 107.0,
+      "dema": 4559.7,
+      "parsed_from": "tv_strategy.py: BUY MGC @ 4590.4"
+    }
+  },
+  {
+    "received_at": "2026-05-05T16:31:25.448075+00:00",
+    "signal": {
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4567.898403805819,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-05 16:35:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "tv_strategy.py: CLOSE MGC @ 4567.9"
+    }
+  },
+  {
+    "received_at": "2026-05-05T16:41:16.543392+00:00",
+    "signal": {
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4567.8,
+      "sl": 4587.410545410331,
+      "reason": "",
+      "ts": "2026-05-05 16:45:00+00:00",
+      "adx": 36.0,
+      "cci": -106.0,
+      "dema": 4574.2,
+      "parsed_from": "tv_strategy.py: SELL MGC @ 4567.8"
+    }
+  },
+  {
+    "received_at": "2026-05-05T22:56:03.477683+00:00",
+    "signal": {
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4569.482623978007,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-05 23:00:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "tv_strategy.py: CLOSE MGC @ 4569.5"
+    }
+  },
+  {
+    "received_at": "2026-05-05T22:56:06.405459+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4581.6,
+      "sl": 4557.40342802016,
+      "reason": "",
+      "ts": "2026-05-05 23:00:00+00:00",
+      "adx": 31.7,
+      "cci": 291.0,
+      "dema": 4570.6,
+      "parsed_from": "tv_strategy.py: BUY MGC @ 4581.6"
+    }
+  },
+  {
+    "received_at": "2026-05-06T00:03:39.855707+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4607.5,
+      "sl": 4581.912651801636,
+      "reason": "",
+      "ts": "2026-05-06 00:05:00+00:00",
+      "adx": 52.3,
+      "cci": 139.0,
+      "dema": 4577.2,
+      "parsed_from": "super_structure.py: BUY MGC @ 4607.5"
+    }
+  },
+  {
+    "received_at": "2026-05-06T00:04:12.311168+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4605.6,
+      "sl": 4581.912651801636,
+      "reason": "",
+      "ts": "2026-05-06 00:05:00+00:00",
+      "adx": 52.3,
+      "cci": 139.0,
+      "dema": 4577.2,
+      "parsed_from": "super_structure.py: BUY MGC @ 4605.6"
+    }
+  },
+  {
+    "received_at": "2026-05-06T00:46:04.916044+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4620.8,
+      "sl": 4599.678635877135,
+      "reason": "",
+      "ts": "2026-05-06 00:50:00+00:00",
+      "adx": 59.0,
+      "cci": 111.0,
+      "dema": 4583.7,
+      "parsed_from": "super_structure.py: BUY MGC @ 4620.8"
+    }
+  },
+  {
+    "received_at": "2026-05-06T01:21:29.360860+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4628.7,
+      "sl": 4605.786730799381,
+      "reason": "",
+      "ts": "2026-05-06 01:25:00+00:00",
+      "adx": 64.2,
+      "cci": 111.0,
+      "dema": 4589.9,
+      "parsed_from": "super_structure.py: BUY MGC @ 4628.7"
+    }
+  },
+  {
+    "received_at": "2026-05-06T04:31:21.137448+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4662.0,
+      "sl": 4645.074750751295,
+      "reason": "",
+      "ts": "2026-05-06 04:35:00+00:00",
+      "adx": 59.3,
+      "cci": 188.0,
+      "dema": 4627.5,
+      "parsed_from": "super_structure.py: BUY MGC @ 4662.0"
+    }
+  },
+  {
+    "received_at": "2026-05-06T04:51:12.800534+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4662.6,
+      "sl": 4645.20358277471,
+      "reason": "",
+      "ts": "2026-05-06 04:55:00+00:00",
+      "adx": 57.2,
+      "cci": 102.0,
+      "dema": 4631.0,
+      "parsed_from": "super_structure.py: BUY MGC @ 4662.6"
+    }
+  },
+  {
+    "received_at": "2026-05-06T05:09:20.908246+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4664.6,
+      "sl": 4646.053473383375,
+      "reason": "",
+      "ts": "2026-05-06 05:10:00+00:00",
+      "adx": 57.1,
+      "cci": 117.0,
+      "dema": 4633.6,
+      "parsed_from": "super_structure.py: BUY MGC @ 4664.6"
+    }
+  },
+  {
+    "received_at": "2026-05-06T05:11:05.783886+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4665.4,
+      "sl": 4648.946239490316,
+      "reason": "",
+      "ts": "2026-05-06 05:15:00+00:00",
+      "adx": 58.1,
+      "cci": 182.0,
+      "dema": 4634.6,
+      "parsed_from": "super_structure.py: BUY MGC @ 4665.4"
+    }
+  },
+  {
+    "received_at": "2026-05-06T12:01:20.159309+00:00",
+    "signal": {
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4702.8,
+      "sl": 4731.323068776112,
+      "reason": "",
+      "ts": "2026-05-06 12:05:00+00:00",
+      "adx": 32.6,
+      "cci": -136.0,
+      "dema": 4707.1,
+      "parsed_from": "super_structure.py: SELL MGC @ 4702.8"
+    }
+  },
+  {
+    "received_at": "2026-05-06T13:56:18.923900+00:00",
+    "signal": {
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4716.058104479748,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-06 14:00:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 4716.1"
+    }
+  },
+  {
+    "received_at": "2026-05-06T14:01:19.939591+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4718.5,
+      "sl": 4679.83685581941,
+      "reason": "",
+      "ts": "2026-05-06 14:05:00+00:00",
+      "adx": 27.1,
+      "cci": 103.0,
+      "dema": 4712.7,
+      "parsed_from": "super_structure.py: BUY MGC @ 4718.5"
+    }
+  },
+  {
+    "received_at": "2026-05-06T14:21:09.169155+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4724.1,
+      "sl": 4690.67392245621,
+      "reason": "",
+      "ts": "2026-05-06 14:25:00+00:00",
+      "adx": 29.5,
+      "cci": 108.0,
+      "dema": 4715.2,
+      "parsed_from": "super_structure.py: BUY MGC @ 4724.1"
+    }
+  },
+  {
+    "received_at": "2026-05-07T01:21:12.957868+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4721.2,
+      "sl": 4696.409224468688,
+      "reason": "",
+      "ts": "2026-05-07 01:25:00+00:00",
+      "adx": 25.8,
+      "cci": 155.0,
+      "dema": 4720.0,
+      "parsed_from": "super_structure.py: BUY MGC @ 4721.2"
+    }
+  },
+  {
+    "received_at": "2026-05-07T04:36:06.345195+00:00",
+    "signal": {
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4702.637071495463,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-07 04:40:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 4702.6"
+    }
+  },
+  {
+    "received_at": "2026-05-07T04:36:11.048954+00:00",
+    "signal": {
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4701.5,
+      "sl": 4715.689830299656,
+      "reason": "",
+      "ts": "2026-05-07 04:40:00+00:00",
+      "adx": 27.6,
+      "cci": -139.0,
+      "dema": 4722.8,
+      "parsed_from": "super_structure.py: SELL MGC @ 4701.5"
+    }
+  },
+  {
+    "received_at": "2026-05-07T06:21:05.172063+00:00",
+    "signal": {
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4717.439830299655,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-07 06:25:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 4717.4"
+    }
+  },
+  {
+    "received_at": "2026-05-07T06:31:02.885711+00:00",
+    "signal": {
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4726.7,
+      "sl": 4709.248855419279,
+      "reason": "",
+      "ts": "2026-05-07 06:35:00+00:00",
+      "adx": 30.4,
+      "cci": 166.0,
+      "dema": 4723.0,
+      "parsed_from": "super_structure.py: BUY MGC @ 4726.7"
+    }
+  },
+  {
+    "signal_id": "sssig_805b3b52ccc40fda",
+    "trade_id": "sstrade_b30b0aecd1f21f03",
+    "received_at": "2026-05-07T15:55:09.101563+00:00",
+    "signal": {
+      "signal_id": "sssig_805b3b52ccc40fda",
+      "trade_id": "sstrade_b30b0aecd1f21f03",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4742.1,
+      "sl": 4771.681733796913,
+      "reason": "",
+      "ts": "2026-05-07 15:55:00+00:00",
+      "adx": 26.3,
+      "cci": -121.0,
+      "dema": 4762.2,
+      "parsed_from": "super_structure.py: SELL MGC @ 4742.1"
+    }
+  },
+  {
+    "signal_id": "sssig_786d2165d6090fbd",
+    "trade_id": "sstrade_711d38f692efecd7",
+    "received_at": "2026-05-07T17:20:03.234368+00:00",
+    "signal": {
+      "signal_id": "sssig_786d2165d6090fbd",
+      "trade_id": "sstrade_711d38f692efecd7",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4716.4,
+      "sl": 4749.558894492198,
+      "reason": "",
+      "ts": "2026-05-07 17:20:00+00:00",
+      "adx": 46.5,
+      "cci": -145.0,
+      "dema": 4755.0,
+      "parsed_from": "super_structure.py: SELL MGC @ 4716.4"
+    }
+  },
+  {
+    "signal_id": "sssig_68e26b9f3153d8ec",
+    "trade_id": "sstrade_1bae525f73e4c935",
+    "received_at": "2026-05-07T21:00:09.264558+00:00",
+    "signal": {
+      "signal_id": "sssig_68e26b9f3153d8ec",
+      "trade_id": "sstrade_1bae525f73e4c935",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4697.0,
+      "sl": 4730.3415413670255,
+      "reason": "",
+      "ts": "2026-05-07 21:00:00+00:00",
+      "adx": 26.9,
+      "cci": -178.0,
+      "dema": 4736.0,
+      "parsed_from": "super_structure.py: SELL MGC @ 4697.0"
+    }
+  },
+  {
+    "signal_id": "sssig_3764efaee4766ce9",
+    "trade_id": "sstrade_6054df624a91b83c",
+    "received_at": "2026-05-08T02:10:31.242845+00:00",
+    "signal": {
+      "signal_id": "sssig_3764efaee4766ce9",
+      "trade_id": "sstrade_6054df624a91b83c",
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4737.7,
+      "sl": 4711.256317836716,
+      "reason": "",
+      "ts": "2026-05-08 02:10:00+00:00",
+      "adx": 25.4,
+      "cci": 146.0,
+      "dema": 4722.5,
+      "parsed_from": "super_structure.py: BUY MGC @ 4737.7"
+    }
+  },
+  {
+    "signal_id": "sssig_a9f796526f26d8d4",
+    "trade_id": "sstrade_6054df624a91b83c",
+    "received_at": "2026-05-08T07:25:08.208950+00:00",
+    "signal": {
+      "signal_id": "sssig_a9f796526f26d8d4",
+      "trade_id": "sstrade_6054df624a91b83c",
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4718.2922971310745,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-08 07:25:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 4718.3"
+    }
+  },
+  {
+    "signal_id": "sssig_c8beb849baf80144",
+    "trade_id": "sstrade_092648db16092232",
+    "received_at": "2026-05-08T07:30:28.382605+00:00",
+    "signal": {
+      "signal_id": "sssig_c8beb849baf80144",
+      "trade_id": "sstrade_092648db16092232",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4716.4,
+      "sl": 4739.259203768044,
+      "reason": "",
+      "ts": "2026-05-08 07:30:00+00:00",
+      "adx": 25.3,
+      "cci": -192.0,
+      "dema": 4727.8,
+      "parsed_from": "super_structure.py: SELL MGC @ 4716.4"
+    }
+  },
+  {
+    "signal_id": "sssig_7fb060528bebeb13",
+    "trade_id": "sstrade_092648db16092232",
+    "received_at": "2026-05-08T12:40:03.475509+00:00",
+    "signal": {
+      "signal_id": "sssig_7fb060528bebeb13",
+      "trade_id": "sstrade_092648db16092232",
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4735.627107373876,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-08 12:40:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 4735.6"
+    }
+  },
+  {
+    "signal_id": "sssig_105241b4ab7e8625",
+    "trade_id": "sstrade_57762ddefea6a01e",
+    "received_at": "2026-05-08T13:40:03.462273+00:00",
+    "signal": {
+      "signal_id": "sssig_105241b4ab7e8625",
+      "trade_id": "sstrade_57762ddefea6a01e",
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4748.3,
+      "sl": 4719.553758597964,
+      "reason": "",
+      "ts": "2026-05-08 13:40:00+00:00",
+      "adx": 26.8,
+      "cci": 247.0,
+      "dema": 4729.9,
+      "parsed_from": "super_structure.py: BUY MGC @ 4748.3"
+    }
+  },
+  {
+    "signal_id": "sssig_a59b663b5ad225bd",
+    "trade_id": "sstrade_57762ddefea6a01e",
+    "received_at": "2026-05-08T15:15:30.470050+00:00",
+    "signal": {
+      "signal_id": "sssig_a59b663b5ad225bd",
+      "trade_id": "sstrade_57762ddefea6a01e",
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4721.71769047226,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-08 15:15:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 4721.7"
+    }
+  },
+  {
+    "signal_id": "sssig_bdedd68313dd4ca6",
+    "trade_id": "sstrade_492fddca7b36f92c",
+    "received_at": "2026-05-08T15:15:35.192228+00:00",
+    "signal": {
+      "signal_id": "sssig_bdedd68313dd4ca6",
+      "trade_id": "sstrade_492fddca7b36f92c",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4717.6,
+      "sl": 4757.37208101639,
+      "reason": "",
+      "ts": "2026-05-08 15:15:00+00:00",
+      "adx": 26.6,
+      "cci": -126.0,
+      "dema": 4732.1,
+      "parsed_from": "super_structure.py: SELL MGC @ 4717.6"
+    }
+  }
+]

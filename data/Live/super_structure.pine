@@ -1,0 +1,125 @@
+//@version=6
+indicator("Alert ST + DEMA + ADX + CCI + Session",
+     overlay = true)
+
+// ==========================================
+// INPUT PARAMETERS
+// ==========================================
+// Core Settings
+atrPeriod  = input.int(12,    "ST ATR Length", group = "Core Settings")
+factor     = input.float(4.0, "ST Factor",     group = "Core Settings")
+demaLength = input.int(200,   "DEMA Length",   group = "Core Settings")
+
+// ADX Filter
+useAdx       = input.bool(true,  "Use ADX Filter?",        group = "Filters")
+adxLength    = input.int(12,     "ADX Smoothing",           group = "Filters")
+adxThreshold = input.int(25,     "ADX Min Level (20-30)",   group = "Filters")
+
+// CCI Filter
+useCci        = input.bool(true,   "Use CCI Filter?",                   group = "Filters")
+cciLength     = input.int(12,      "CCI Length",                        group = "Filters")
+cciSource     = input.source(hl2,  "CCI Source",                        group = "Filters")
+cciLongMin    = input.float(100.0,   "CCI Long Min",   group = "Filters", tooltip = "Long hanya jika CCI di atas nilai ini")
+cciShortMax   = input.float(-100.0, "CCI Short Max",  group = "Filters", tooltip = "Short hanya jika CCI di bawah nilai ini")
+
+// Session Filter
+useSession   = input.bool(false,  "Use Session Filter?",                    group = "Filters")
+sessionTime  = input.string("0800-1500:23456", "Session NY (EST/New York)", group = "Filters")
+autoClose    = input.bool(true,   "Auto-Close End of Session?",             group = "Filters")
+
+// Alert Format
+alertSymbol  = input.string("MGC", "Symbol for Alert", group = "Core Settings")
+
+// ==========================================
+// KALKULASI INDIKATOR
+// ==========================================
+[supertrend, direction] = ta.supertrend(factor, atrPeriod)
+e1   = ta.ema(close, demaLength)
+e2   = ta.ema(e1, demaLength)
+dema = 2 * e1 - e2
+[plusDI, minusDI, adxValue] = ta.dmi(adxLength, adxLength)
+cciValue = ta.cci(cciSource, cciLength)
+
+isInSession    = useSession ? not na(time(timeframe.period, sessionTime, "America/New_York")) : true
+isEndOfSession = useSession and autoClose and not isInSession and not na(time(timeframe.period, sessionTime, "America/New_York"))[1]
+
+// ==========================================
+// MANUAL POSITION TRACKING
+// ==========================================
+var int pos = 0          // 0 = flat, 1 = long, -1 = short
+var float entryPrice = na
+var float slPrice    = na
+
+// ==========================================
+// LOGIKA ENTRY & EXIT
+// ==========================================
+isFlat = pos == 0
+adxOk  = useAdx ? adxValue > adxThreshold : true
+cciOkLong  = useCci ? cciValue > cciLongMin  : true
+cciOkShort = useCci ? cciValue < cciShortMax : true
+
+// Entry Conditions
+longCondition  = isFlat and isInSession and adxOk and cciOkLong  and (ta.crossover(close, dema)  or close > dema) and direction < 0 and not na(close)
+shortCondition = isFlat and isInSession and adxOk and cciOkShort and (ta.crossunder(close, dema) or close < dema) and direction > 0 and not na(close)
+
+if longCondition
+    pos := 1
+    entryPrice := close
+    slPrice := supertrend
+    alert("action=BUY symbol=" + alertSymbol + " entry=" + str.tostring(close, "0.0") + " sl=" + str.tostring(supertrend, "0.0"), alert.freq_once_per_bar_close)
+
+if shortCondition
+    pos := -1
+    entryPrice := close
+    slPrice := supertrend
+    alert("action=SELL symbol=" + alertSymbol + " entry=" + str.tostring(close, "0.0") + " sl=" + str.tostring(supertrend, "0.0"), alert.freq_once_per_bar_close)
+
+// SL Hit (Trailing Supertrend — updates every bar)
+if pos == 1
+    slPrice := math.max(slPrice, supertrend)  // trail up (long: SL naik ikut Supertrend)
+    if low <= slPrice
+        alert("action=CLOSE symbol=" + alertSymbol + " reason=SL price=" + str.tostring(slPrice, "0.0"), alert.freq_once_per_bar_close)
+        pos := 0
+
+if pos == -1
+    slPrice := math.min(slPrice, supertrend)  // trail down (short: SL turun ikut Supertrend)
+    if high >= slPrice
+        alert("action=CLOSE symbol=" + alertSymbol + " reason=SL price=" + str.tostring(slPrice, "0.0"), alert.freq_once_per_bar_close)
+        pos := 0
+
+// Trend Flip
+if pos == 1 and direction > 0
+    alert("action=CLOSE symbol=" + alertSymbol + " reason=TREND_FLIP price=" + str.tostring(close, "0.0"), alert.freq_once_per_bar_close)
+    pos := 0
+
+if pos == -1 and direction < 0
+    alert("action=CLOSE symbol=" + alertSymbol + " reason=TREND_FLIP price=" + str.tostring(close, "0.0"), alert.freq_once_per_bar_close)
+    pos := 0
+
+// Session End
+if pos != 0 and isEndOfSession
+    alert("action=CLOSE symbol=" + alertSymbol + " reason=SESSION_END price=" + str.tostring(close, "0.0"), alert.freq_once_per_bar_close)
+    pos := 0
+
+// ==========================================
+// VISUALISASI
+// ==========================================
+plot(dema, "DEMA", color = color.teal, linewidth = 2)
+stColor = direction < 0 ? color.green : color.red
+plot(supertrend, "Supertrend Line", color = stColor, linewidth = 2)
+
+// Position marker
+bgcolor(pos == 1 ? color.new(color.green, 90) : pos == -1 ? color.new(color.red, 90) : na)
+
+// Background jam trading aktif
+bgcolor(useSession and isInSession ? color.new(color.blue, 95) : na)
+
+// Dashboard
+var table db = table.new(position.top_right, 2, 2, bgcolor = color.black, border_width = 1)
+if barstate.islast
+    table.cell(db, 0, 0, "ADX: " + str.tostring(adxValue, "0.00"),  text_color = adxOk ? color.green : color.red)
+    cciColor = cciValue > cciLongMin ? color.green : cciValue < cciShortMax ? color.red : color.gray
+    table.cell(db, 1, 0, "CCI: " + str.tostring(cciValue, "0.00"), text_color = cciColor)
+    posText = pos == 1 ? "LONG" : pos == -1 ? "SHORT" : "FLAT"
+    table.cell(db, 0, 1, "Pos: " + posText, text_color = pos == 1 ? color.green : pos == -1 ? color.red : color.gray)
+    table.cell(db, 1, 1, "SL: " + str.tostring(slPrice, "0.0"), text_color = color.yellow)

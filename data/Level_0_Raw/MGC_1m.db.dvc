@@ -1,0 +1,5 @@
+outs:
+- md5: 84f62fb94f662831cd7a323a72ac98ec
+  size: 618708992
+  hash: md5
+  path: MGC_1m.db

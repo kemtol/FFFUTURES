@@ -1,0 +1,300 @@
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+[Live] PID: 
+
+
+============================================================
+  SIGNAL — 2026-04-29 00:08 UTC
+============================================================
+  Session:   TOKYO
+  Breakout:  BULL (15m)
+  Decision:  REV
+  Prob(Rev): 0.170   Prob(Cont): 0.039
+  Entry:    $4621.6
+  TP:      $4665.6 (4.0R)
+  SL:      $4610.6 (1R)
+============================================================
+SIGNAL|2026-04-29 00:08:00+00:00|tokyo|BULL|REV|entry=4621.60009765625|TP=4665.60009765625|SL=4610.60009765625
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+[Live] PID: 
+
+
+============================================================
+  SIGNAL — 2026-04-29 00:14 UTC
+============================================================
+  Session:   TOKYO
+  Breakout:  BULL (15m)
+  Decision:  REV
+  Prob(Rev): 0.131   Prob(Cont): 0.044
+  Entry:    $4622.4
+  TP:      $4568.8 (4.0R)
+  SL:      $4635.8 (1R)
+============================================================
+SIGNAL|2026-04-29 00:14:00+00:00|tokyo|BULL|REV|entry=4622.39990234375|TP=4568.79833984375|SL=4635.80029296875
+Traceback (most recent call last):
+  File "/home/kemal/futures/pipeline/live/runner.py", line 299, in <module>
+    runner = SignalRunner()
+             ^^^^^^^^^^^^
+NameError: name 'SignalRunner' is not defined
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+[Live] PID: 
+
+
+============================================================
+  SIGNAL — 2026-04-29 01:02 UTC
+============================================================
+  Session:   TOKYO
+  Breakout:  BEAR (5m)
+  Decision:  REV
+  Prob(Rev): 0.157   Prob(Cont): 0.156
+  Entry:    $4604.3
+  TP:      $4666.7 (4.0R)
+  SL:      $4588.7 (1R)
+============================================================
+SIGNAL|2026-04-29 01:02:00+00:00|tokyo|BEAR|REV|entry=4604.2998046875|TP=4666.7001953125|SL=4588.69970703125
+[Telegram] Connected to chat 7980136995
+Traceback (most recent call last):
+  File "/home/kemal/futures/pipeline/live/runner.py", line 371, in <module>
+    if args.backfill:
+       ^^^^
+NameError: name 'args' is not defined
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+
+============================================================
+  SIGNAL — 2026-04-29 01:02 UTC
+============================================================
+  Session:   TOKYO
+  Breakout:  BEAR (5m)
+  Decision:  REV
+  Prob(Rev): 0.157   Prob(Cont): 0.156
+  Entry:    $4604.3
+  TP:      $4666.7 (4.0R)
+  SL:      $4588.7 (1R)
+============================================================
+SIGNAL|2026-04-29 01:02:00+00:00|tokyo|BEAR|REV|entry=4604.2998046875|TP=4666.7001953125|SL=4588.69970703125
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+
+============================================================
+  SIGNAL — 2026-04-29 01:02 UTC
+============================================================
+  Session:   TOKYO
+  Breakout:  BEAR (5m)
+  Decision:  REV
+  Prob(Rev): 0.157   Prob(Cont): 0.156
+  Entry:    $4604.3
+  TP:      $4666.7 (4.0R)
+  SL:      $4588.7 (1R)
+============================================================
+SIGNAL|2026-04-29 01:02:00+00:00|tokyo|BEAR|REV|entry=4604.2998046875|TP=4666.7001953125|SL=4588.69970703125
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+
+============================================================
+  SIGNAL — 2026-04-29 01:02 UTC
+============================================================
+  Session:   TOKYO
+  Breakout:  BEAR (5m)
+  Decision:  REV
+  Prob(Rev): 0.157   Prob(Cont): 0.156
+  Entry:    $4604.3
+  TP:      $4666.7 (4.0R)
+  SL:      $4588.7 (1R)
+============================================================
+SIGNAL|2026-04-29 01:02:00+00:00|tokyo|BEAR|REV|entry=4604.2998046875|TP=4666.7001953125|SL=4588.69970703125
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+
+============================================================
+  SIGNAL — 2026-04-29 01:02 UTC
+============================================================
+  Session:   TOKYO
+  Breakout:  BEAR (5m)
+  Decision:  REV
+  Prob(Rev): 0.157   Prob(Cont): 0.156
+  Entry:    $4604.3
+  TP:      $4666.7 (4.0R)
+  SL:      $4588.7 (1R)
+============================================================
+SIGNAL|2026-04-29 01:02:00+00:00|tokyo|BEAR|REV|entry=4604.2998046875|TP=4666.7001953125|SL=4588.69970703125
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+
+============================================================
+  SIGNAL — 2026-04-29 01:02 UTC
+============================================================
+  Session:   TOKYO
+  Breakout:  BEAR (5m)
+  Decision:  REV
+  Prob(Rev): 0.157   Prob(Cont): 0.156
+  Entry:    $4604.3
+  TP:      $4666.7 (4.0R)
+  SL:      $4588.7 (1R)
+============================================================
+SIGNAL|2026-04-29 01:02:00+00:00|tokyo|BEAR|REV|entry=4604.2998046875|TP=4666.7001953125|SL=4588.69970703125
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+
+============================================================
+  SIGNAL — 2026-04-29 01:02 UTC
+============================================================
+  Session:   TOKYO
+  Breakout:  BEAR (5m)
+  Decision:  REV
+  Prob(Rev): 0.157   Prob(Cont): 0.156
+  Entry:    $4604.3
+  TP:      $4666.7 (4.0R)
+  SL:      $4588.7 (1R)
+============================================================
+SIGNAL|2026-04-29 01:02:00+00:00|tokyo|BEAR|REV|entry=4604.2998046875|TP=4666.7001953125|SL=4588.69970703125
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Live] Error: type object 'datetime.datetime' has no attribute 'timedelta'
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Telegram] Command: /status
+[Telegram] Command: /last
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Telegram] Command: /status
+[Telegram] Command: /last
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Telegram] Command: /status
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Telegram] Command: /status
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+Traceback (most recent call last):
+  File "/home/kemal/futures/pipeline/live/runner.py", line 35, in <module>
+    from pipeline.live.data_buffer import DataBuffer
+ModuleNotFoundError: No module named 'pipeline.live.data_buffer'
+Traceback (most recent call last):
+  File "/home/kemal/futures/pipeline/live/runner.py", line 36, in <module>
+    from pipeline.live.orb_detector import ORBDetector, BreakoutEvent
+  File "/home/kemal/futures/pipeline/live/orb_detector.py", line 36, in <module>
+    from pipeline.live.data_buffer import DataBuffer
+ModuleNotFoundError: No module named 'pipeline.live.data_buffer'
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Telegram] Command: /status
+[Runner] Trade execution enabled (TopstepX REST)
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Runner] Trade execution enabled (TopstepX REST)
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Runner] Trade execution enabled (TopstepX REST)
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+[Telegram] Command: /status
+[Telegram] Command: /status
+[Runner] Trade execution enabled (TopstepX REST)
+[Telegram] Connected to chat 7980136995
+[Live] Starting live monitoring...
+[Live] Strategy: y_1r4_180m (4R), Risk: $100/1R
+[Live] Sessions: Tokyo 00:00, London 07:00, US 13:30 UTC
+
+
+============================================================
+  SIGNAL — 2026-04-29 07:19 UTC
+============================================================
+  Session:   LONDON
+  Breakout:  BEAR (5m)
+  Decision:  REV
+  Prob(Rev): 0.127   Prob(Cont): 0.042
+  Entry:    $4590.5
+  TP:      $4640.9 (4.0R)
+  SL:      $4577.9 (1R)
+============================================================
+[Exec] Order placed: 2898728555 Buy 4590.5
+SIGNAL|2026-04-29 07:19:00+00:00|london|BEAR|REV|entry=4590.5|TP=4640.9000000000015|SL=4577.9
+[Live] Error: database is locked
+[Live] Error: database is locked
+[Live] Error: database is locked
+$MGC=F: possibly delisted; no price data found  (period=5d)
+$MGC=F: possibly delisted; no price data found  (period=5d)

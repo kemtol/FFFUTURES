@@ -1,0 +1,14 @@
+{
+  "halt": false,
+  "halt_reason": "",
+  "pos": 0,
+  "entry_price": 0.0,
+  "sl_price": 0.0,
+  "sl_order_id": null,
+  "trade_id": "",
+  "last_processed_bar_ts": "2026-05-08T21:00:00+00:00",
+  "manual_close_block_action": "",
+  "exchange_state_known": false,
+  "exchange_state_error": "position_query_failed",
+  "saved_at": "2026-05-11T00:47:40.582358+00:00"
+}

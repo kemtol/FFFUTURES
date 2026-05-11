@@ -1,0 +1,53 @@
+{
+  "closed_trades": [
+    {
+      "id": 1,
+      "direction": "LONG",
+      "session": "london",
+      "entry": 4590.5,
+      "tp": 4640.9000000000015,
+      "sl": 4577.9,
+      "rr": 4.0,
+      "open_time": "2026-04-29 07:19:00+00:00",
+      "open_price": 4590.5,
+      "current_price": 4577.9,
+      "unrealized_pnl": -99.92,
+      "pnl": -103.0,
+      "close_reason": "SL",
+      "close_time": "2026-05-03 13:26:07.649525+00:00"
+    },
+    {
+      "id": 2,
+      "direction": "SHORT",
+      "session": "us",
+      "entry": 4522.9,
+      "tp": 4415.299999999997,
+      "sl": 4549.8,
+      "rr": 4.0,
+      "open_time": "2026-04-29 13:45:00+00:00",
+      "open_price": 4522.9,
+      "current_price": 4553.2,
+      "unrealized_pnl": -112.6,
+      "pnl": -103.0,
+      "close_reason": "SL",
+      "close_time": "2026-05-03 13:27:29.100783+00:00"
+    }
+  ],
+  "balance": 49794.0,
+  "start_balance": 50000.0,
+  "open_positions": [
+    {
+      "id": 3,
+      "direction": "SHORT",
+      "session": "us",
+      "entry": 4553.2,
+      "tp": 4431.599999999998,
+      "sl": 4583.6,
+      "rr": 4.0,
+      "open_time": "2026-04-29 14:33:00+00:00",
+      "open_price": 4553.2,
+      "current_price": 4553.2,
+      "unrealized_pnl": 0.0
+    }
+  ]
+}

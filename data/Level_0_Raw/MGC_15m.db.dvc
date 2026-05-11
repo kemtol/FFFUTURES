@@ -1,0 +1,5 @@
+outs:
+- md5: ed50d8b34c9e635e9c3c265b21a994d5
+  size: 53551104
+  hash: md5
+  path: MGC_15m.db
