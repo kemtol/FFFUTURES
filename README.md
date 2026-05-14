@@ -32,6 +32,12 @@ TradingView comparator status:
 - `pipeline/live/super_structure.py` matches TradingView strategy semantics closely after indicator and lifecycle fixes.
 - Current comparison artifact shows 32 closed trades matched and 1 open trade entry matched (96.97% match).
 
+Super Structure live ML status (2026-05-14):
+
+- V8 router live: Meta-v7 Refined CONS (dynamic per-session thresholds) + v1.12 AGGR mechanical (`risk_pts <= 12`, no ML brain). Toggle: `USE_V8_ROUTER` in `pipeline/live/super_structure.py`.
+- Walk-forward 90d sim: PnL +$5,151 / max DD -$1,861 → PASS Topstep (borderline). Sync-verified vs router 0/0 divergence (`pipeline/super_structure_ml/eval/verify_router_sync.py`).
+- Monitoring: heartbeat + parity + UI builder all V8-aware (mode-tagged). See `plans/super_structure_ml_v8.md` and `_MEMORY/20260514.md`.
+
 Databento repair status:
 
 - `pipeline/fetch/ingest_databento_json.py` ingested Apr 16-Apr 30, 2026 Databento OHLCV into `MGC_1m.db`, then 5m/15m were resampled.

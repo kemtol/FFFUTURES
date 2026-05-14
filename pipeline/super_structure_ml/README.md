@@ -2,22 +2,29 @@
 
 Research workspace for ML/meta-modeling around the Super Structure strategy.
 
-This is a discovery area. It must not mutate the live Super Structure execution
-path unless a model has been separately promoted, reviewed, and wired into live
-inference.
+As of 2026-05-14, V8 router is live (Meta-v7 Refined CONS + v1.12 AGGR
+mechanical). See `plans/super_structure_ml_v8.md` for current roadmap and
+`pipeline/live/inference_router.py` for the production decision path.
 
-## Current Status
+## Current Status (V8 LIVE)
 
-SMART_1 is a two-mode research framework:
+SMART_1 dual-mode is now wired through `pipeline/live/inference_router.py`:
 
-| Mode | Purpose | Current model | Current datamart | Status |
+| Mode | Purpose | Production path | Event source | Status |
 | --- | --- | --- | --- | --- |
-| Conservative | Select high-confidence Super Structure ST-flip trades | `model/SUPER_STRUCTURE/meta_v7/inference_model.txt` | `data/Level_2_Datamart/super_structure_ml/v3_final_training.parquet` | Existing anchor mode |
-| Aggressive | DEMA/SuperTrend pullback scalper, RR 1:1 | No promoted model | `data/Level_2_Datamart/super_structure_ml/v1_12_training_datamart.parquet` | Discovery baseline only |
+| Conservative | High-confidence ST-flip trades | `model/SUPER_STRUCTURE/meta_v7/inference_model.txt` + `inference_config_refined.json` (dynamic threshold per session_cluster) | DEMA-cross signal in `super_structure.py` main loop | LIVE (toggle: `USE_V8_ROUTER=True`) |
+| Aggressive | DEMA/SuperTrend pullback scalper, RR 1:1 | **Mechanical** filter `risk_pts <= 12` on v1.12 events. No ML brain. | `pipeline/live/pullback_detector.py` emits events per 5m bar | LIVE |
 
-Important: aggressive mode has not been promoted to live and has no inference
-integration yet. Treat all aggressive models as research artifacts until
-explicitly promoted.
+Combined walk-forward (90d): PnL +$5,151, max DD -$1,861 → PASS Topstep
+(borderline; $139 headroom). Sync-verified vs `simulate_cons_ml_aggr_mech.py`
+at 0/0 divergence.
+
+Legacy SMART_1 dual-ML (regime_dispatcher + cons_brain + aggr_brain) tetap
+di-load di `_load_smart_models()` untuk fallback path saat `USE_V8_ROUTER=False`.
+**Do not delete `aggressive_brain.txt`** — rollback safety.
+
+Important: while V8 is live, treat any NEW model experiment as research until
+walk-forward PASS + sync verify before promoting.
 
 ## Layout
 

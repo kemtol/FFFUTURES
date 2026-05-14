@@ -28,6 +28,10 @@ for p in [str(ROOT), str(ROOT / "pipeline")]:
         sys.path.insert(0, p)
 
 from pipeline.live.signal_bus import SignalBus
+import lightgbm as lgb
+from pipeline.live.smart_features import SMARTFeatureBuilder
+from pipeline.live.pullback_detector import detect_pullback_event, MAX_HOLD_BARS as AGGR_MAX_HOLD_BARS
+from pipeline.live.inference_router import InferenceRouter
 
 # ── config ────────────────────────────────────────────────────────────────────
 ATR_PERIOD = 12
@@ -47,6 +51,21 @@ SYMBOL = "MGC"
 SESSION_START = time(13, 0)
 SESSION_END = time(20, 0)
 AUTO_CLOSE = True
+
+# ── ML Filter Config ──────────────────────────────────────────────────────────
+SMART_DIR = ROOT / "model" / "SUPER_STRUCTURE" / "SMART_1"
+ENABLE_ML_FILTER = True
+
+# Legacy SMART_1 (regime dispatcher + cons ML + aggr ML) thresholds.
+# Walk-forward 90d: -$2,175 DD ❌ FAIL Topstep MLL. Kept for rollback only.
+ML_THRESHOLD_CONS = 0.50
+ML_THRESHOLD_AGGR = 0.45
+
+# V8 router: CONS ML (Meta-v7 Refined dynamic threshold) + AGGR mechanical (v1.12).
+# Walk-forward 90d: -$1,861 DD ✅ PASS Topstep. Sync-verified by
+# pipeline/super_structure_ml/eval/verify_router_sync.py.
+USE_V8_ROUTER = True
+# ──────────────────────────────────────────────────────────────────────────────
 
 SIGNALS_PATH = ROOT / "data" / "Live" / "super_structure_signals.json"
 STATE_PATH = ROOT / "data" / "Live" / "super_structure_state.json"
@@ -251,9 +270,30 @@ class SuperStructure:
         self._manual_close_block_action = ""
         self._halt = False
         self._halt_reason = ""
+        # V8 router state — only meaningful when USE_V8_ROUTER is True.
+        self._position_mode: str = ""        # "CONS" | "AGGR" | ""
+        self._tp_price: float = 0.0          # AGGR-only TP target
+        # In-memory snapshot of most recent V8 decision (for heartbeat display).
+        # Resets every restart — not persisted.
+        self._last_v8_decision: dict = {}
         self._load_signals()
         self._load_state()
         self._ensure_runtime_ids()
+        self._load_smart_models()
+        self.smart_builder = SMARTFeatureBuilder(self.buffer)
+        self._router: InferenceRouter | None = None
+        if USE_V8_ROUTER:
+            try:
+                self._router = InferenceRouter()
+                # Restore position mode into router queue so it knows we're busy.
+                if self._pos != 0 and self._position_mode:
+                    self._router.on_entry(self._position_mode)
+                print(f"[SS] V8 router loaded (Meta-v7 Refined CONS + v1.12 AGGR mech)",
+                      flush=True)
+            except Exception as exc:
+                print(f"[SS] V8 router init failed, falling back to legacy: {exc}",
+                      flush=True)
+                self._router = None
 
         # Init trade executor (auto-detect if credentials exist)
         if (ROOT / "data" / "Live" / "topstepx_token.json").exists():
@@ -277,6 +317,48 @@ class SuperStructure:
                     pass
             except Exception as exc:
                 print(f"[SS] Executor init failed: {exc}", flush=True)
+
+    def _load_smart_models(self):
+        try:
+            self._dispatcher = lgb.Booster(model_file=str(SMART_DIR / "regime_dispatcher.txt"))
+            self._brain_cons = lgb.Booster(model_file=str(SMART_DIR / "conservative_brain.txt"))
+            self._brain_aggr = lgb.Booster(model_file=str(SMART_DIR / "aggressive_brain.txt"))
+            print(f"[SS] SMART_1 Models Loaded (Dispatcher, Cons, Aggr)", flush=True)
+        except Exception as e:
+            print(f"[SS] Failed to load SMART_1 models: {e}", flush=True)
+            self._dispatcher = None
+
+    def _get_ml_prediction(self, bar_ts, st_val, atr_val):
+        if not self._dispatcher or not self.smart_builder:
+            return None
+        
+        feats = self.smart_builder.build_smart_features(now=bar_ts, st_val=st_val, entry_atr=atr_val)
+        if not feats: return None
+        
+        # 1. Dispatcher Prediction
+        disp_input = np.array([[feats[f] for f in ['efficiency_ratio', 'volatility_zscore', 'entry_adx', 'cci_abs']]])
+        regime_prob = float(self._dispatcher.predict(disp_input)[0])
+        mode = "AGGRESSIVE" if regime_prob > 0.5 else "CONSERVATIVE"
+        
+        # 2. Brain Prediction
+        if mode == "CONSERVATIVE":
+            cols = ['entry_adx', 'cci_abs', 'st_gap_ratio', 'efficiency_ratio', 'volatility_zscore', 'session_cluster']
+            brain_input = np.array([[feats[f] for f in cols]])
+            prob = float(self._brain_cons.predict(brain_input)[0])
+            threshold = ML_THRESHOLD_CONS
+        else:
+            cols = ['entry_adx', 'cci_abs', 'st_gap_ratio', 'efficiency_ratio', 'volatility_zscore', 'wick_ratio', 'candle_body_atr', 'vol_ratio', 'st_slope', 'rsi_5']
+            brain_input = np.array([[feats[f] for f in cols]])
+            prob = float(self._brain_aggr.predict(brain_input)[0])
+            threshold = ML_THRESHOLD_AGGR
+            
+        return {
+            "mode": mode,
+            "regime_prob": regime_prob,
+            "prob": prob,
+            "threshold": threshold,
+            "pass": prob >= threshold
+        }
 
     def _load_signals(self) -> None:
         if SIGNALS_PATH.exists():
@@ -305,6 +387,9 @@ class SuperStructure:
                 self._trade_id = str(d.get("trade_id", "") or "")
                 self._last_processed_bar_ts = _to_utc_timestamp(d.get("last_processed_bar_ts"))
                 self._manual_close_block_action = str(d.get("manual_close_block_action", "") or "")
+                self._position_mode = str(d.get("position_mode", "") or "")
+                self._tp_price = float(d.get("tp_price", 0.0) or 0.0)
+                self._entry_bar_ts = _to_utc_timestamp(d.get("entry_bar_ts"))
                 if self._halt:
                     print(f"[SS] Loaded HALT state: {self._halt_reason}", flush=True)
                 if self._pos != 0:
@@ -336,6 +421,12 @@ class SuperStructure:
                     if self._last_processed_bar_ts is not None else ""
                 ),
                 "manual_close_block_action": self._manual_close_block_action,
+                "position_mode": self._position_mode,
+                "tp_price": self._tp_price,
+                "entry_bar_ts": (
+                    self._entry_bar_ts.isoformat()
+                    if self._entry_bar_ts is not None else ""
+                ),
                 "exchange_state_known": self._exchange_state_known,
                 "exchange_state_error": self._exchange_state_error,
                 "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -347,6 +438,37 @@ class SuperStructure:
             if tmp_path.exists():
                 try: os.remove(tmp_path)
                 except: pass
+
+    def _finalize_close(self, bar_ts: pd.Timestamp, exit_price: float,
+                        exit_side: int) -> None:
+        """Reset position state after a CLOSE and notify the V8 router.
+
+        exit_side: 1 if we were long (closing), -1 if short. Used to compute
+        signed pnl_pts before the position is wiped.
+        """
+        # Compute realized PnL while entry state is still intact.
+        entry = float(self._entry_price)
+        pnl_pts = 0.0
+        if entry > 0 and exit_side in (1, -1):
+            pnl_pts = (exit_price - entry) if exit_side == 1 else (entry - exit_price)
+        # MGC: $10/point. Commission $1.74 round-turn matches v1.12 sim
+        # (see pipeline/super_structure_ml/train/build_training_datamart_v1_12.py).
+        pnl_usd = pnl_pts * 10.0 - 1.74
+
+        if self._router is not None and self._position_mode:
+            try:
+                self._router.on_exit(bar_ts, pnl_usd)
+            except Exception as exc:
+                print(f"[SS] router.on_exit failed: {exc}", flush=True)
+
+        self._pos = 0
+        self._entry_price = 0.0
+        self._sl_price = 0.0
+        self._tp_price = 0.0
+        self._position_mode = ""
+        self._entry_bar_ts = None
+        self._trade_id = ""
+        self._save_state()
 
     def reconcile(self) -> dict:
         """Pull truth from exchange, silently adopt. Returns truth dict."""
@@ -496,6 +618,9 @@ class SuperStructure:
             "adx": extra.get("adx", 0),
             "cci": extra.get("cci", 0),
             "dema": extra.get("dema", 0),
+            "mode": str(extra.get("mode", "") or ""),
+            "tp": float(extra.get("tp", 0.0) or 0.0),
+            "v8_router": bool(extra.get("v8_router", False)),
             "parsed_from": f"super_structure.py: {action} {SYMBOL} @ {price:.1f}",
         }
         entry = {
@@ -649,11 +774,15 @@ class SuperStructure:
         h = df["high"].values.astype(float)
         l = df["low"].values.astype(float)
         c = df["close"].values.astype(float)
+        o = df["open"].values.astype(float)
 
         st, direction = supertrend(h, l, c, ST_FACTOR, ATR_PERIOD)
         d = dema(c, DEMA_LENGTH)
         ax = adx(h, l, c, ADX_LENGTH)
         cx = cci(h, l, c, CCI_LENGTH, source=CCI_SOURCE)
+        # DEMA100 only needed for V8 pullback filter.
+        d100 = dema(c, 100) if USE_V8_ROUTER else None
+        atr_for_aggr = _atr(h, l, c, ATR_PERIOD) if USE_V8_ROUTER else None
 
         if len(c) - 1 < DEMA_LENGTH:
             return []
@@ -688,10 +817,104 @@ class SuperStructure:
             cci_ok_short = not USE_CCI or cur_cci < CCI_SHORT_MAX
             cross_up = (c[i - 1] < d[i - 1] and cur_close > cur_dema)
             cross_dn = (c[i - 1] > d[i - 1] and cur_close < cur_dema)
-            long_signal = adx_ok and cci_ok_long and \
-                (cross_up or cur_close > cur_dema) and cur_dir < 0
-            short_signal = adx_ok and cci_ok_short and \
-                (cross_dn or cur_close < cur_dema) and cur_dir > 0
+            long_signal = adx_ok and cci_ok_long and (cross_up or cur_close > cur_dema) and cur_dir < 0
+            short_signal = adx_ok and cci_ok_short and (cross_dn or cur_close < cur_dema) and cur_dir > 0
+            
+            # ── ML Filter Step ──────────────────────────────────────────────
+            ml_pred = None
+            v8_mode_taken = ""        # "CONS" | "AGGR" | ""
+            v8_aggr_event = None      # PullbackEvent when AGGR fires
+
+            if USE_V8_ROUTER and self._router is not None:
+                # CONS path: gate DEMA-cross through router.route_cons
+                if long_signal or short_signal:
+                    cur_atr = float(_atr(h, l, c, 14)[i])
+                    feats = self.smart_builder.build_smart_features(
+                        now=bar_ts, st_val=cur_st, entry_atr=cur_atr)
+                    if feats:
+                        dec = self._router.route_cons(ts_utc=bar_ts, features=feats)
+                        ml_pred = {
+                            "mode": "CONSERVATIVE",
+                            "prob": dec.prob,
+                            "threshold": dec.threshold,
+                            "pass": dec.take,
+                        }
+                        self._last_v8_decision = {
+                            "ts": str(bar_ts), "path": "CONS",
+                            "take": dec.take, "reason": dec.reason,
+                            "prob": dec.prob, "threshold": dec.threshold,
+                        }
+                        if dec.take:
+                            v8_mode_taken = "CONS"
+                            print(f"[SS] V8 CONS PASS: prob={dec.prob:.3f} thr={dec.threshold:.2f}",
+                                  flush=True)
+                        else:
+                            print(f"[SS] V8 CONS SKIP ({dec.reason}): "
+                                  f"prob={dec.prob:.3f} thr={dec.threshold:.2f}", flush=True)
+                            long_signal = False
+                            short_signal = False
+                    else:
+                        # Feature build failed — fail safe, skip the trade
+                        print("[SS] V8 CONS SKIP: smart_features unavailable", flush=True)
+                        self._last_v8_decision = {
+                            "ts": str(bar_ts), "path": "CONS",
+                            "take": False, "reason": "features_unavailable",
+                        }
+                        long_signal = False
+                        short_signal = False
+
+                # AGGR path: detect pullback event when no CONS signal active and
+                # no position is open (single-queue rule per D1).
+                if (not v8_mode_taken
+                    and self._router.current_position_mode() is None
+                    and i >= 1
+                    and d100 is not None and not np.isnan(d100[i])):
+                    event = detect_pullback_event(
+                        open_=float(o[i]),
+                        high=float(h[i]),
+                        low=float(l[i]),
+                        close=float(c[i]),
+                        st=cur_st,
+                        st_dir=cur_dir,
+                        prev_st_dir=int(direction[i - 1]),
+                        atr=float(atr_for_aggr[i]),
+                        dema_100=float(d100[i]),
+                        dema_200=cur_dema,
+                    )
+                    if event is not None:
+                        dec = self._router.route_aggr(ts_utc=bar_ts, event=event)
+                        self._last_v8_decision = {
+                            "ts": str(bar_ts), "path": "AGGR",
+                            "take": dec.take, "reason": dec.reason,
+                            "risk_pts": dec.risk_pts, "side": event.side,
+                        }
+                        if dec.take:
+                            v8_mode_taken = "AGGR"
+                            v8_aggr_event = event
+                            if event.side == "Long":
+                                long_signal = True
+                                short_signal = False
+                            else:
+                                short_signal = True
+                                long_signal = False
+                            print(f"[SS] V8 AGGR PASS: side={event.side} "
+                                  f"risk_pts={event.risk_pts:.2f} tp={event.tp_price:.2f}",
+                                  flush=True)
+                        else:
+                            print(f"[SS] V8 AGGR SKIP ({dec.reason}): "
+                                  f"risk_pts={event.risk_pts:.2f}", flush=True)
+            elif ENABLE_ML_FILTER and (long_signal or short_signal):
+                cur_atr = float(_atr(h, l, c, 14)[i])
+                ml_pred = self._get_ml_prediction(bar_ts, cur_st, cur_atr)
+
+                if ml_pred:
+                    if not ml_pred["pass"]:
+                        print(f"[SS] ML SKIP ({ml_pred['mode']}): Prob {ml_pred['prob']:.3f} < {ml_pred['threshold']}", flush=True)
+                        long_signal = False
+                        short_signal = False
+                    else:
+                        print(f"[SS] ML PASS ({ml_pred['mode']}): Prob {ml_pred['prob']:.3f} >= {ml_pred['threshold']}", flush=True)
+
             signal_ts = str(bar_ts)
 
             if self._manual_close_block_action:
@@ -744,53 +967,68 @@ class SuperStructure:
                 if self._has_signal("CLOSE", signal_ts):
                     self._block_trade(f"dup-close:{signal_ts}", f"[SS] Duplicate CLOSE skipped for {signal_ts}")
                 else:
-                    self._store_signal("CLOSE", self._sl_price, reason="SL", ts=signal_ts)
+                    self._store_signal("CLOSE", self._sl_price, reason="SL", ts=signal_ts,
+                                       mode=self._position_mode, v8_router=USE_V8_ROUTER)
                     new_signals.append(self._signals[-1])
-                self._pos = 0
-                self._entry_price = 0.0
-                self._sl_price = 0.0
-                self._trade_id = ""
-                self._save_state()
+                self._finalize_close(bar_ts, exit_price=self._sl_price, exit_side=1)
 
             elif self._pos == -1 and h[i] >= self._sl_price:
                 if self._has_signal("CLOSE", signal_ts):
                     self._block_trade(f"dup-close:{signal_ts}", f"[SS] Duplicate CLOSE skipped for {signal_ts}")
                 else:
-                    self._store_signal("CLOSE", self._sl_price, reason="SL", ts=signal_ts)
+                    self._store_signal("CLOSE", self._sl_price, reason="SL", ts=signal_ts,
+                                       mode=self._position_mode, v8_router=USE_V8_ROUTER)
                     new_signals.append(self._signals[-1])
-                self._pos = 0
-                self._entry_price = 0.0
-                self._sl_price = 0.0
-                self._trade_id = ""
-                self._save_state()
+                self._finalize_close(bar_ts, exit_price=self._sl_price, exit_side=-1)
 
-            # Trend flip close happens on bar close if the stop did not already fill.
-            if self._pos == 1 and cur_dir > 0:
-                if self._has_signal("CLOSE", signal_ts):
-                    self._block_trade(f"dup-close:{signal_ts}", f"[SS] Duplicate CLOSE skipped for {signal_ts}")
-                else:
-                    self._store_signal("CLOSE", cur_close, reason="TREND_FLIP", ts=signal_ts)
-                    new_signals.append(self._signals[-1])
-                self._pos = 0
-                self._entry_price = 0.0
-                self._sl_price = 0.0
-                self._trade_id = ""
-                self._save_state()
+            # V8 AGGR TP hit (RR 1:1 fixed target). Only when in AGGR position.
+            if self._position_mode == "AGGR" and self._pos != 0 and self._tp_price > 0:
+                tp_hit_long = self._pos == 1 and h[i] >= self._tp_price
+                tp_hit_short = self._pos == -1 and l[i] <= self._tp_price
+                if tp_hit_long or tp_hit_short:
+                    if not self._has_signal("CLOSE", signal_ts):
+                        self._store_signal("CLOSE", self._tp_price, reason="TP", ts=signal_ts,
+                                           mode=self._position_mode, v8_router=USE_V8_ROUTER)
+                        new_signals.append(self._signals[-1])
+                    self._finalize_close(bar_ts, exit_price=self._tp_price,
+                                         exit_side=self._pos)
 
-            elif self._pos == -1 and cur_dir < 0:
-                if self._has_signal("CLOSE", signal_ts):
-                    self._block_trade(f"dup-close:{signal_ts}", f"[SS] Duplicate CLOSE skipped for {signal_ts}")
-                else:
-                    self._store_signal("CLOSE", cur_close, reason="TREND_FLIP", ts=signal_ts)
-                    new_signals.append(self._signals[-1])
-                self._pos = 0
-                self._entry_price = 0.0
-                self._sl_price = 0.0
-                self._trade_id = ""
-                self._save_state()
+            # V8 AGGR timeout (close at market after MAX_HOLD_BARS bars).
+            if (self._position_mode == "AGGR" and self._pos != 0
+                and self._entry_bar_ts is not None):
+                bars_held = int((df.index > self._entry_bar_ts).sum())
+                if bars_held >= AGGR_MAX_HOLD_BARS:
+                    if not self._has_signal("CLOSE", signal_ts):
+                        self._store_signal("CLOSE", cur_close, reason="TIMEOUT",
+                                           ts=signal_ts, mode=self._position_mode,
+                                           v8_router=USE_V8_ROUTER)
+                        new_signals.append(self._signals[-1])
+                    self._finalize_close(bar_ts, exit_price=cur_close,
+                                         exit_side=self._pos)
+
+            # Trend flip close — CONS path only. AGGR trades exit via SL/TP/timeout.
+            if self._position_mode != "AGGR":
+                if self._pos == 1 and cur_dir > 0:
+                    if self._has_signal("CLOSE", signal_ts):
+                        self._block_trade(f"dup-close:{signal_ts}", f"[SS] Duplicate CLOSE skipped for {signal_ts}")
+                    else:
+                        self._store_signal("CLOSE", cur_close, reason="TREND_FLIP", ts=signal_ts,
+                                           mode=self._position_mode, v8_router=USE_V8_ROUTER)
+                        new_signals.append(self._signals[-1])
+                    self._finalize_close(bar_ts, exit_price=cur_close, exit_side=1)
+
+                elif self._pos == -1 and cur_dir < 0:
+                    if self._has_signal("CLOSE", signal_ts):
+                        self._block_trade(f"dup-close:{signal_ts}", f"[SS] Duplicate CLOSE skipped for {signal_ts}")
+                    else:
+                        self._store_signal("CLOSE", cur_close, reason="TREND_FLIP", ts=signal_ts,
+                                           mode=self._position_mode, v8_router=USE_V8_ROUTER)
+                        new_signals.append(self._signals[-1])
+                    self._finalize_close(bar_ts, exit_price=cur_close, exit_side=-1)
 
             # Submit/update the dynamic stop for the next bar.
-            if self._pos != 0:
+            # AGGR SL is fixed at entry (ST ± 1pt) — do NOT trail.
+            if self._pos != 0 and self._position_mode != "AGGR":
                 prev_sl = self._sl_price
                 self._sl_price = cur_st
                 if abs(prev_sl - self._sl_price) > 0.1:
@@ -815,12 +1053,28 @@ class SuperStructure:
                 else:
                     self._pos = 1
                     self._entry_price = cur_close
-                    self._sl_price = cur_st
-                    self._store_signal("BUY", cur_close, cur_st,
+                    if v8_mode_taken == "AGGR" and v8_aggr_event is not None:
+                        self._sl_price = v8_aggr_event.sl_price
+                        self._tp_price = v8_aggr_event.tp_price
+                        self._position_mode = "AGGR"
+                        self._entry_bar_ts = bar_ts
+                    else:
+                        self._sl_price = cur_st
+                        self._tp_price = 0.0
+                        self._position_mode = "CONS" if v8_mode_taken == "CONS" else ""
+                        self._entry_bar_ts = bar_ts if USE_V8_ROUTER else None
+                    if self._router is not None and v8_mode_taken:
+                        self._router.on_entry(v8_mode_taken)
+                    self._store_signal("BUY", cur_close, self._sl_price,
                                        adx=round(cur_adx, 1) if not np.isnan(cur_adx) else 0,
                                        cci=round(cur_cci, 0) if not np.isnan(cur_cci) else 0,
                                        dema=round(cur_dema, 1),
-                                       ts=signal_ts)
+                                       ts=signal_ts,
+                                       mode=v8_mode_taken,
+                                       tp=self._tp_price,
+                                       v8_router=USE_V8_ROUTER,
+                                       ml_mode=ml_pred["mode"] if ml_pred else "NONE",
+                                       ml_prob=ml_pred["prob"] if ml_pred else 0.0)
                     new_signals.append(self._signals[-1])
 
             elif short_signal and self._pos == 0:
@@ -838,12 +1092,28 @@ class SuperStructure:
                 else:
                     self._pos = -1
                     self._entry_price = cur_close
-                    self._sl_price = cur_st
-                    self._store_signal("SELL", cur_close, cur_st,
+                    if v8_mode_taken == "AGGR" and v8_aggr_event is not None:
+                        self._sl_price = v8_aggr_event.sl_price
+                        self._tp_price = v8_aggr_event.tp_price
+                        self._position_mode = "AGGR"
+                        self._entry_bar_ts = bar_ts
+                    else:
+                        self._sl_price = cur_st
+                        self._tp_price = 0.0
+                        self._position_mode = "CONS" if v8_mode_taken == "CONS" else ""
+                        self._entry_bar_ts = bar_ts if USE_V8_ROUTER else None
+                    if self._router is not None and v8_mode_taken:
+                        self._router.on_entry(v8_mode_taken)
+                    self._store_signal("SELL", cur_close, self._sl_price,
                                        adx=round(cur_adx, 1) if not np.isnan(cur_adx) else 0,
                                        cci=round(cur_cci, 0) if not np.isnan(cur_cci) else 0,
                                        dema=round(cur_dema, 1),
-                                       ts=signal_ts)
+                                       ts=signal_ts,
+                                       mode=v8_mode_taken,
+                                       tp=self._tp_price,
+                                       v8_router=USE_V8_ROUTER,
+                                       ml_mode=ml_pred["mode"] if ml_pred else "NONE",
+                                       ml_prob=ml_pred["prob"] if ml_pred else 0.0)
                     new_signals.append(self._signals[-1])
 
             self._last_processed_bar_ts = bar_ts
@@ -1104,10 +1374,27 @@ class SuperStructure:
                                 print(f"[SS] AUTO-HALT (violation): {self._halt_reason}", flush=True)
                         except Exception:
                             pass
-                        # Send heartbeat (with refreshed state)
+                        # Send heartbeat (with refreshed state + V8 router context)
+                        v8_state = {}
+                        if USE_V8_ROUTER and self._router is not None:
+                            try:
+                                v8_state = {
+                                    "v8_active": True,
+                                    "position_mode": self._position_mode or "",
+                                    "tp_price": self._tp_price,
+                                    "daily_pnl": self._router.daily_pnl(
+                                        pd.Timestamp(datetime.now(timezone.utc))
+                                    ),
+                                    "daily_cap": self._router.daily_cap_usd,
+                                    "risk_cap_pts": self._router.risk_cap_pts,
+                                    "last_v8_decision": self._last_v8_decision,
+                                }
+                            except Exception:
+                                v8_state = {"v8_active": True, "error": "state_snapshot_failed"}
                         self._executor.heartbeat({**self._heartbeat_state, "pos": self._pos,
                                                    "entry_price": self._entry_price,
-                                                   "sl_price": self._sl_price})
+                                                   "sl_price": self._sl_price,
+                                                   **v8_state})
                     except Exception:
                         pass
 

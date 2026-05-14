@@ -37,6 +37,10 @@ from pipeline.live.super_structure import (
     dema,
     supertrend,
 )
+from pipeline.live.pullback_detector import (
+    detect_pullback_event,
+    MAX_HOLD_BARS as AGGR_MAX_HOLD_BARS,
+)
 
 RAW_DB = ROOT / "data/Level_0_Raw/MGC_1m.db"
 OUT_PARQUET = ROOT / "data/Level_2_Datamart/super_structure_trade_events.parquet"
@@ -209,6 +213,139 @@ def close_trade(
     }
 
 
+def build_aggr_pullback_events(df_bars: pd.DataFrame, event_start: str,
+                                timeframe_min: int) -> pd.DataFrame:
+    """Generate AGGR (v1.12 pullback) theoretical trades for UI overlay.
+
+    Mirrors `pipeline/live/pullback_detector.py` + v1.12 datamart builder
+    so live AGGR trades show up in the UI/parity stream. Single-queue rule
+    is NOT applied here — UI shows ALL theoretical AGGR opportunities for
+    research visibility.
+    """
+    h = df_bars["high"].to_numpy(dtype=float)
+    l_arr = df_bars["low"].to_numpy(dtype=float)
+    c = df_bars["close"].to_numpy(dtype=float)
+    o = df_bars["open"].to_numpy(dtype=float)
+
+    st, direction = supertrend(h, l_arr, c, ST_FACTOR, ATR_PERIOD)
+    d100 = dema(c, 100)
+    d200 = dema(c, DEMA_LENGTH)
+    atr = _atr(h, l_arr, c, ATR_PERIOD)
+    ax = adx(h, l_arr, c, ADX_LENGTH)
+    cx = cci(h, l_arr, c, CCI_LENGTH, CCI_SOURCE)
+
+    event_start_ts = pd.Timestamp(event_start, tz="UTC")
+    rows: list[dict] = []
+
+    # Start after enough warmup for indicators.
+    start_i = max(DEMA_LENGTH + 50, 200)
+    for i in range(start_i, len(df_bars)):
+        if any(np.isnan(x[i]) for x in (st, atr, d100, d200)):
+            continue
+        event = detect_pullback_event(
+            open_=float(o[i]),
+            high=float(h[i]),
+            low=float(l_arr[i]),
+            close=float(c[i]),
+            st=float(st[i]),
+            st_dir=int(direction[i]),
+            prev_st_dir=int(direction[i - 1]),
+            atr=float(atr[i]),
+            dema_100=float(d100[i]),
+            dema_200=float(d200[i]),
+        )
+        if event is None:
+            continue
+
+        entry_ts = df_bars.index[i]
+        if entry_ts < event_start_ts:
+            continue
+
+        # Simulate forward: SL, TP, or 100-bar timeout.
+        end_i = min(i + 1 + AGGR_MAX_HOLD_BARS, len(df_bars))
+        future_h = h[i + 1:end_i]
+        future_l = l_arr[i + 1:end_i]
+        future_c = c[i + 1:end_i]
+
+        if event.side == "Long":
+            sl_hit = np.where(future_l <= event.sl_price)[0]
+            tp_hit = np.where(future_h >= event.tp_price)[0]
+        else:
+            sl_hit = np.where(future_h >= event.sl_price)[0]
+            tp_hit = np.where(future_l <= event.tp_price)[0]
+
+        first_sl = int(sl_hit[0]) if len(sl_hit) else None
+        first_tp = int(tp_hit[0]) if len(tp_hit) else None
+
+        if first_tp is not None and (first_sl is None or first_tp < first_sl):
+            exit_idx = first_tp
+            exit_price = event.tp_price
+            exit_reason = "TP"
+            pnl_pts = abs(event.tp_price - event.entry_price)
+        elif first_sl is not None:
+            exit_idx = first_sl
+            exit_price = event.sl_price
+            exit_reason = "SL"
+            pnl_pts = -abs(event.entry_price - event.sl_price)
+        elif len(future_c):
+            exit_idx = len(future_c) - 1
+            exit_price = float(future_c[-1])
+            exit_reason = "TIMEOUT"
+            pnl_pts = (exit_price - event.entry_price) if event.side == "Long" \
+                      else (event.entry_price - exit_price)
+        else:
+            continue  # no forward bars
+
+        exit_i = i + 1 + exit_idx
+        exit_ts = df_bars.index[exit_i]
+        bars_held = exit_i - i
+        risk_points = event.risk_pts
+        pnl_usd = pnl_pts * POINT_VALUE_USD - ROUND_TURN_COMMISSION_USD
+        r_multiple = pnl_pts / risk_points if risk_points > 0 else 0.0
+
+        rows.append({
+            "side": event.side,
+            "entry_ts": entry_ts,
+            "exit_ts": exit_ts,
+            "entry_price": event.entry_price,
+            "exit_price": exit_price,
+            "exit_reason": exit_reason,
+            "bars_held": bars_held,
+            "duration_min": bars_held * timeframe_min,
+            "gross_points": pnl_pts,
+            "gross_usd": pnl_pts * POINT_VALUE_USD,
+            "commission_usd": ROUND_TURN_COMMISSION_USD,
+            "pnl_usd": pnl_usd,
+            "risk_points": risk_points,
+            "risk_usd": risk_points * POINT_VALUE_USD,
+            "r_multiple": r_multiple,
+            "mfe_points": 0.0,
+            "mae_points": 0.0,
+            "mfe_usd": 0.0,
+            "mae_usd": 0.0,
+            "entry_adx": float(ax[i]) if not np.isnan(ax[i]) else 0.0,
+            "entry_cci": float(cx[i]) if not np.isnan(cx[i]) else 0.0,
+            "entry_dema": float(d200[i]),
+            "entry_supertrend": float(st[i]),
+            "entry_st_direction": int(direction[i]),
+            "entry_atr": float(atr[i]),
+            "entry_bar_high": float(h[i]),
+            "entry_bar_low": float(l_arr[i]),
+            "entry_bar_close": float(c[i]),
+            "hour_utc": entry_ts.hour,
+            "minute_utc": entry_ts.minute,
+            "session": session_name(entry_ts),
+            "is_win": pnl_usd > 0,
+            "hit_1r": pnl_pts >= risk_points if risk_points > 0 else False,
+            "hit_2r": False,
+            "entry_i": i,
+            "exit_i": exit_i,
+            "mode": "AGGR",
+        })
+
+    return pd.DataFrame(rows)
+
+
 def build_events(df_bars: pd.DataFrame, event_start: str, timeframe_min: int) -> pd.DataFrame:
     h = df_bars["high"].to_numpy(dtype=float)
     l = df_bars["low"].to_numpy(dtype=float)
@@ -379,6 +516,9 @@ def candle_records(df: pd.DataFrame, start: str, end: str) -> list[dict]:
 def trade_records(events: pd.DataFrame) -> list[dict]:
     records = []
     for _, row in events.iterrows():
+        d = row.to_dict()
+        dema_d = d.get("dema_distance_atr")
+        st_d = d.get("st_distance_atr")
         records.append({
             "trade_no": int(row.trade_no),
             "entry_time": int(row.entry_ts.timestamp()),
@@ -386,6 +526,7 @@ def trade_records(events: pd.DataFrame) -> list[dict]:
             "entry_ts": row.entry_ts.strftime("%Y-%m-%d %H:%M"),
             "exit_ts": row.exit_ts.strftime("%Y-%m-%d %H:%M"),
             "side": row.side,
+            "mode": d.get("mode", "CONS"),
             "entry_price": round(float(row.entry_price), 4),
             "exit_price": round(float(row.exit_price), 4),
             "exit_reason": row.exit_reason,
@@ -395,8 +536,8 @@ def trade_records(events: pd.DataFrame) -> list[dict]:
             "mae_usd": round(float(row.mae_usd), 2),
             "entry_adx": round(float(row.entry_adx), 2),
             "entry_cci": round(float(row.entry_cci), 2),
-            "dema_distance_atr": round(float(row.dema_distance_atr), 4) if pd.notna(row.dema_distance_atr) else None,
-            "st_distance_atr": round(float(row.st_distance_atr), 4) if pd.notna(row.st_distance_atr) else None,
+            "dema_distance_atr": round(float(dema_d), 4) if pd.notna(dema_d) else None,
+            "st_distance_atr": round(float(st_d), 4) if pd.notna(st_d) else None,
             "session": row.session,
             "is_win": bool(row.is_win),
             "hit_1r": bool(row.hit_1r),
@@ -490,6 +631,24 @@ def main() -> None:
         "5m": build_events(bars_by_tf["5m"], args.start, 5),
         "15m": build_events(bars_by_tf["15m"], args.start, 15),
     }
+    # Tag every existing trade as CONS (DEMA cross + ML refined gate in live).
+    for tf, df_ev in events_by_tf.items():
+        if not df_ev.empty and "mode" not in df_ev.columns:
+            df_ev["mode"] = "CONS"
+    # AGGR (v1.12 pullback) overlay — only meaningful on 5m bars (matches live).
+    aggr_5m = build_aggr_pullback_events(bars_by_tf["5m"], args.start, 5)
+    if not aggr_5m.empty:
+        events_by_tf["5m"] = (
+            pd.concat([events_by_tf["5m"], aggr_5m], ignore_index=True)
+            .sort_values("entry_ts")
+            .reset_index(drop=True)
+        )
+        # Re-number trade_no globally after concat (AGGR rows had no trade_no).
+        events_by_tf["5m"]["trade_no"] = np.arange(1, len(events_by_tf["5m"]) + 1)
+        # Ensure derived date columns exist for AGGR rows too.
+        events_by_tf["5m"]["entry_date"] = events_by_tf["5m"]["entry_ts"].dt.date.astype(str)
+        events_by_tf["5m"]["exit_date"] = events_by_tf["5m"]["exit_ts"].dt.date.astype(str)
+        print(f"AGGR pullback overlay: {len(aggr_5m):,} events added to 5m")
     events = events_by_tf["5m"].copy()
     args.out.parent.mkdir(parents=True, exist_ok=True)
     events.to_parquet(args.out, index=False)

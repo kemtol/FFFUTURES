@@ -25,7 +25,9 @@ data/
     └── fvg_live.log          # FVG daemon log
 pipeline/
 ├── live/                # 🔴 LIVE INFERENCE & EXECUTION
-│   ├── super_structure.py  # Super Structure: ST+DEMA+ADX+CCI, check(), run_live(), heartbeat state
+│   ├── super_structure.py  # Super Structure: ST+DEMA+ADX+CCI, V8 router gate (CONS+AGGR), check(), run_live()
+│   ├── inference_router.py # V8 router: CONS ML (Meta-v7 Refined) + AGGR mechanical (v1.12), single-queue, $700 cap
+│   ├── pullback_detector.py # V8 AGGR pullback event detector (mirrors v1.12 datamart rules)
 │   ├── fvg_scalper.py      # FVG Scalper: FVG+DEMA+ADX+CHOP, check(), run_live() (parked)
 │   ├── run_super_structure_live.py  # Entry-point for systemd daemon (single SuperStructure instance)
 │   ├── signal_bus.py       # Pub/sub: _format_super_structure(), _format_fvg_scalper(), Telegram send

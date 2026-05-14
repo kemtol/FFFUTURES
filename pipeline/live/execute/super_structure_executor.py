@@ -343,6 +343,32 @@ class SuperStructureExecutor:
 
         signal_analysis = "\n".join(f"• {r}" for r in reasons)
 
+        # ── V8 router section ────────────────────────────────────────────────
+        v8_block: list[str] = []
+        if s.get("v8_active"):
+            mode = s.get("position_mode", "") or "FLAT"
+            daily_pnl_v = float(s.get("daily_pnl", 0.0) or 0.0)
+            daily_cap_v = float(s.get("daily_cap", -700.0) or -700.0)
+            headroom = daily_pnl_v - daily_cap_v
+            cap_emoji = "🛡️" if headroom > 200 else ("⚠️" if headroom > 0 else "🛑")
+            risk_cap = s.get("risk_cap_pts", 12.0)
+            last = s.get("last_v8_decision") or {}
+            v8_block.append("")
+            v8_block.append("🧠 *V8 Router*:")
+            v8_block.append(f"• Mode: `{mode}` | Risk cap: `{risk_cap}` pts")
+            v8_block.append(f"• Daily PnL: `${daily_pnl_v:+.2f}` / cap `${daily_cap_v:.0f}` "
+                            f"({cap_emoji} headroom `${headroom:+.0f}`)")
+            if last:
+                path = last.get("path", "?")
+                take = "PASS" if last.get("take") else "SKIP"
+                reason = last.get("reason", "")
+                if path == "CONS":
+                    extra = (f"prob `{last.get('prob', 0):.3f}` "
+                             f"thr `{last.get('threshold', 0):.2f}`")
+                else:
+                    extra = f"risk `{last.get('risk_pts', 0):.1f}` side `{last.get('side', '?')}`"
+                v8_block.append(f"• Last {path}: `{take}` ({reason}) {extra}")
+
         if pos == 0:
             hdr = "💓 *Super Structure — Heartbeat*\n\n"
             lines = [
@@ -354,6 +380,7 @@ class SuperStructureExecutor:
                 "",
                 f"🔍 *Signal Check*:",
                 signal_analysis,
+                *v8_block,
                 "",
                 f"Position: *FLAT*",
                 f"Exchange: *{'KNOWN' if exchange_known else 'UNKNOWN'}*",
@@ -367,15 +394,22 @@ class SuperStructureExecutor:
             emoji = "✅" if est_pnl >= 0 else "❌"
             hdr = "💓 *Super Structure — Heartbeat*\n\n"
 
+            mode_chip = ""
+            tp_val = float(s.get("tp_price", 0.0) or 0.0)
+            if s.get("v8_active") and s.get("position_mode"):
+                mode_chip = f" [{s['position_mode']}]"
+            tp_line = f"TP: `${tp_val:.1f}` | " if tp_val > 0 else ""
+
             lines = [
                 hdr,
                 f"`{ts}`" if ts else "",
                 "",
-                f"{emoji} {side} @ `${entry:.1f}`",
-                f"SL: `${sl_val:.1f}` | Est PnL: `{pnl_s}`",
+                f"{emoji} {side}{mode_chip} @ `${entry:.1f}`",
+                f"{tp_line}SL: `${sl_val:.1f}` | Est PnL: `{pnl_s}`",
                 "",
                 f"📊 *5m Bar*: O:`{o}` H:`{hi}` L:`{lo}` C:`{cl}`",
                 f"📐 ST:`{st_val}` | DEMA:`{dema}` | ADX:`{adx}` | CCI:`{cci}`",
+                *v8_block,
                 f"Exchange: *{'KNOWN' if exchange_known else 'UNKNOWN'}*",
             ]
 

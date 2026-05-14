@@ -115,6 +115,8 @@ def load_signals() -> list[dict]:
             "received_at": parse_ts(received_at),
             "price": price(sig),
             "reason": sig.get("reason", ""),
+            "mode": str(sig.get("mode", "") or ""),
+            "v8_router": bool(sig.get("v8_router", False)),
             "raw": sig,
         })
     return out
@@ -148,12 +150,14 @@ def load_ui_trades() -> list[dict]:
         row["entry_dt"] = parse_ts(row.get("entry_ts"), default_tz="UTC")
         row["exit_dt"] = parse_ts(row.get("exit_ts"), default_tz="UTC")
         row["status"] = row.get("status", "CLOSED")
+        row["mode"] = row.get("mode", "")
         out.append(row)
     for tr in data.get("open_trades", []):
         row = dict(tr)
         row["entry_dt"] = parse_ts(row.get("entry_ts"), default_tz="UTC")
         row["exit_dt"] = None
         row["status"] = "OPEN"
+        row["mode"] = row.get("mode", "")
         out.append(row)
     return out
 
@@ -212,7 +216,15 @@ def match_execution_entry(sig: dict, executions: list[dict], used: set[int]) -> 
     return candidates[0] if candidates else (None, None)
 
 
-def match_ui_entry(side: str, entry_ts: pd.Timestamp | None, ui_trades: list[dict], used: set[int]) -> tuple[int | None, dict | None]:
+def match_ui_entry(side: str, entry_ts: pd.Timestamp | None, ui_trades: list[dict],
+                   used: set[int], mode: str = "") -> tuple[int | None, dict | None]:
+    """Match a live signal to a UI theoretical entry.
+
+    If `mode` is given (CONS|AGGR), require UI trade to be the same mode so a
+    CONS DEMA-cross signal does not accidentally pair with an AGGR pullback
+    theoretical (and vice versa). Mode-less signals (legacy / pre-V8) accept
+    any UI mode for backward compat.
+    """
     if entry_ts is None:
         return None, None
     best_i = None
@@ -220,6 +232,8 @@ def match_ui_entry(side: str, entry_ts: pd.Timestamp | None, ui_trades: list[dic
     best_dt = ENTRY_TOLERANCE + pd.Timedelta(seconds=1)
     for i, tr in enumerate(ui_trades):
         if i in used or tr.get("side") != side or tr.get("entry_dt") is None:
+            continue
+        if mode and tr.get("mode") and tr.get("mode") != mode:
             continue
         dt = abs(tr["entry_dt"] - entry_ts)
         if dt <= ENTRY_TOLERANCE and dt < best_dt:
@@ -257,6 +271,7 @@ def signal_entry_vs_topstep(signals: list[dict], executions: list[dict]) -> list
                 "signal_id": sig["signal_id"],
                 "trade_id": sig["trade_id"],
                 "side": sig["side"],
+                "mode": sig.get("mode", ""),
                 "signal_entry": fmt_ts(sig["ts"]),
                 "signal_px": sig["price"],
                 "topstep_entry": "MISSING",
@@ -273,6 +288,7 @@ def signal_entry_vs_topstep(signals: list[dict], executions: list[dict]) -> list
             "signal_id": sig["signal_id"],
             "trade_id": sig["trade_id"],
             "side": sig["side"],
+            "mode": sig.get("mode", ""),
             "signal_entry": fmt_ts(sig["ts"]),
             "signal_px": sig["price"],
             "topstep_entry": fmt_ts(match.get("ts")),
@@ -306,7 +322,8 @@ def signal_entry_vs_ui(signals: list[dict], ui_trades: list[dict]) -> list[dict]
     rows = []
     used_ui: set[int] = set()
     for sig in [s for s in signals if is_entry_signal(s)]:
-        ui_i, ui = match_ui_entry(sig["side"], sig["ts"], ui_trades, used_ui)
+        ui_i, ui = match_ui_entry(sig["side"], sig["ts"], ui_trades, used_ui,
+                                  mode=sig.get("mode", ""))
         if ui_i is not None:
             used_ui.add(ui_i)
         if ui is None:
@@ -329,6 +346,7 @@ def signal_entry_vs_ui(signals: list[dict], ui_trades: list[dict]) -> list[dict]
                 "signal_id": sig["signal_id"],
                 "trade_id": sig["trade_id"],
                 "side": sig["side"],
+                "mode": sig.get("mode", ""),
                 "signal_entry": fmt_ts(sig["ts"]),
                 "signal_px": sig["price"],
                 "ui_entry": ui_entry,
@@ -345,6 +363,7 @@ def signal_entry_vs_ui(signals: list[dict], ui_trades: list[dict]) -> list[dict]
             "signal_id": sig["signal_id"],
             "trade_id": sig["trade_id"],
             "side": sig["side"],
+            "mode": sig.get("mode", ""),
             "signal_entry": fmt_ts(sig["ts"]),
             "signal_px": sig["price"],
             "ui_entry": fmt_ts(ui["entry_dt"]),
@@ -755,10 +774,10 @@ def render_markdown_report(report: dict) -> str:
         "Manual closes and theoretical exits are context, not critical parity failures.",
         "",
         "## Signal Entry vs Topstep Entry",
-        markdown_table(execution_sync, ["severity", "side", "signal_entry", "signal_px", "topstep_entry", "topstep_px", "slippage", "drift_type", "note"]),
+        markdown_table(execution_sync, ["severity", "side", "mode", "signal_entry", "signal_px", "topstep_entry", "topstep_px", "slippage", "drift_type", "note"]),
         "",
         "## Signal Entry vs UI Entry",
-        markdown_table(logic_sync, ["severity", "side", "signal_entry", "signal_px", "ui_entry", "ui_exit", "ui_status", "entry_delta_min", "entry_px_delta", "drift_type", "note"]),
+        markdown_table(logic_sync, ["severity", "side", "mode", "signal_entry", "signal_px", "ui_entry", "ui_exit", "ui_status", "entry_delta_min", "entry_px_delta", "drift_type", "note"]),
         "",
     ]
     return "\n".join(md)
@@ -822,12 +841,15 @@ def comparison_table_for_telegram(report: dict) -> str:
     for row in execution_sync:
         logic = logic_by_trade.get(row.get("trade_id", ""), {})
         side = "L" if row.get("side") == "Long" else ("S" if row.get("side") == "Short" else "?")
+        mode = (row.get("mode") or logic.get("mode") or "").upper()
+        mode_chip = mode[:4] if mode else "—"
         exec_ok = row.get("severity") == "PASS"
         logic_ok = logic.get("severity") == "PASS"
         status = "OK" if exec_ok and logic_ok else "CRIT"
         note = row.get("drift_type") or logic.get("drift_type") or ""
         rows.append({
             "side": side,
+            "mode": mode_chip,
             "signal": _time_part(row.get("signal_entry", "")),
             "topstep": _time_part(row.get("topstep_entry", "")),
             "ui": _time_part(logic.get("ui_entry", "")),
@@ -839,12 +861,13 @@ def comparison_table_for_telegram(report: dict) -> str:
         return "No matched trade rows."
 
     lines = [
-        "Side Signal   Topstep  UI       St  Drift",
-        "---- -------- -------- -------- --- --------------------",
+        "Side Mode Signal   Topstep  UI       St  Drift",
+        "---- ---- -------- -------- -------- --- --------------------",
     ]
     for row in rows[:10]:
         lines.append(
             f"{_fit(row['side'], 4)} "
+            f"{_fit(row['mode'], 4)} "
             f"{_fit(row['signal'], 8)} "
             f"{_fit(row['topstep'], 8)} "
             f"{_fit(row['ui'], 8)} "

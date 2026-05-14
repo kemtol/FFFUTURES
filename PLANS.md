@@ -31,11 +31,15 @@
 ### Phase 4: Execution Realism 🔄
 - Not yet prioritized — feature discovery phase still ongoing
 
-### Track B: Super Structure ML (Advisory Filter) 🚀 BREAKTHROUGH
-- **Status:** Active Research (v3)
-- **Discovery:** Identified GMM State 0 (Quiet) as the primary drawdown driver (-$3,126 in last 30d).
-- **Result:** Regime Kill-Switch (Skip State 0) boosted YTD 2026 PnL to **+$13,487** with Max DD reduced by 50% to **-$2,873**.
-- **Next Step:** Implement dynamic thresholding based on GMM Volatility.
+### Track B: Super Structure ML (V8 Router) ✅ LIVE since 2026-05-14
+- **Status:** V8 router deployed to live `super_structure.service` (flag `USE_V8_ROUTER=True`).
+- **Architecture:** Hybrid CONS ML (Meta-v7 Refined, dynamic per-session_cluster threshold) + AGGR mechanical (v1.12 pullback, `risk_pts <= 12` filter, no ML brain).
+- **Walk-forward (sim) 90d:** PnL **+$5,151**, max DD **-$1,861** → PASS Topstep (borderline; $139 MLL headroom).
+- **Sync verification:** `pipeline/super_structure_ml/eval/verify_router_sync.py` confirms router = sim trade-by-trade (0/0 divergence at 7d/30d/90d).
+- **Monitoring stack realigned:** heartbeat shows V8 block (daily PnL vs $700 cap, mode, last decision); UI builder emits AGGR overlay; parity matches by `side + mode`.
+- **Detail roadmap:** [`plans/super_structure_ml_v8.md`](plans/super_structure_ml_v8.md). Daily memory: [`_MEMORY/20260514.md`](_MEMORY/20260514.md).
+- **Rollback:** flip `USE_V8_ROUTER=False` in `pipeline/live/super_structure.py:60` + restart service. Legacy SMART_1 dual-ML stack still loaded for instant fallback.
+- **Next:** Monte Carlo combined sim (tail risk @ 90d), precision sharpening (`wick_ratio`/`atr_expansion` for sub-$1500 DD), feature-parity verification (live `smart_features.py` vs training builder).
 
 ---
 
