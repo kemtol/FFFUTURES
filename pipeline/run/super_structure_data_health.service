@@ -1,0 +1,14 @@
+[Unit]
+Description=Super Structure Live Buffer Data Health Check
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/kemal/futures
+ExecStart=/usr/bin/python3 -u /home/kemal/futures/pipeline/live/data_health_check.py --telegram always
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=append:/home/kemal/futures/data/Live/super_structure_data_health.log
+StandardError=append:/home/kemal/futures/data/Live/super_structure_data_health.log
+
+[Install]
+WantedBy=default.target

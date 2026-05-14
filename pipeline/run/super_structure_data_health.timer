@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Super Structure Data Health Check every 15 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15min
+Persistent=true
+Unit=super_structure_data_health.service
+
+[Install]
+WantedBy=timers.target
