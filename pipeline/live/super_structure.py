@@ -65,6 +65,12 @@ ML_THRESHOLD_AGGR = 0.45
 # Walk-forward 90d: -$1,861 DD ✅ PASS Topstep. Sync-verified by
 # pipeline/super_structure_ml/eval/verify_router_sync.py.
 USE_V8_ROUTER = True
+
+# Discretionary profit alerts. Bot sends a Telegram message when unrealized
+# PnL on the open trade first crosses each $PROFIT_ALERT_STEP_USD multiple
+# ($100, $200, $300, ...). Bot does NOT modify the trade — user moves SL
+# manually if they choose. Set to 0 to disable.
+PROFIT_ALERT_STEP_USD = 100.0
 # ──────────────────────────────────────────────────────────────────────────────
 
 SIGNALS_PATH = ROOT / "data" / "Live" / "super_structure_signals.json"
@@ -273,6 +279,10 @@ class SuperStructure:
         # V8 router state — only meaningful when USE_V8_ROUTER is True.
         self._position_mode: str = ""        # "CONS" | "AGGR" | ""
         self._tp_price: float = 0.0          # AGGR-only TP target
+        # Highest $PROFIT_ALERT_STEP_USD multiple at which an alert has been
+        # sent for the current open trade. Cleared when position closes so
+        # the next trade can re-trigger from $100 upward.
+        self._profit_alert_level: int = 0
         # In-memory snapshot of most recent V8 decision (for heartbeat display).
         # Resets every restart — not persisted.
         self._last_v8_decision: dict = {}
@@ -390,6 +400,7 @@ class SuperStructure:
                 self._position_mode = str(d.get("position_mode", "") or "")
                 self._tp_price = float(d.get("tp_price", 0.0) or 0.0)
                 self._entry_bar_ts = _to_utc_timestamp(d.get("entry_bar_ts"))
+                self._profit_alert_level = int(d.get("profit_alert_level", 0) or 0)
                 # Self-heal: if persisted state has a mode tag but no actual
                 # position (e.g. external SL closed the position without
                 # reconcile clearing the router state), discard the mode tag
@@ -437,6 +448,7 @@ class SuperStructure:
                     self._entry_bar_ts.isoformat()
                     if self._entry_bar_ts is not None else ""
                 ),
+                "profit_alert_level": self._profit_alert_level,
                 "exchange_state_known": self._exchange_state_known,
                 "exchange_state_error": self._exchange_state_error,
                 "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -448,6 +460,61 @@ class SuperStructure:
             if tmp_path.exists():
                 try: os.remove(tmp_path)
                 except: pass
+
+    def _check_profit_alert(self, cur_close: float) -> None:
+        """Send a one-shot Telegram alert each time unrealized PnL crosses
+        another $PROFIT_ALERT_STEP_USD multiple. Bot doesn't touch the
+        trade — user adjusts SL manually if they want. State is persisted
+        so restarts don't re-alert at the same level.
+        """
+        if PROFIT_ALERT_STEP_USD <= 0 or self._pos == 0 or self._entry_price <= 0:
+            return
+        if self._pos == 1:
+            pnl_pts = cur_close - self._entry_price
+        else:
+            pnl_pts = self._entry_price - cur_close
+        unrealized_usd = pnl_pts * 10.0 - 1.74
+        if unrealized_usd <= 0:
+            return
+        level = int(unrealized_usd // PROFIT_ALERT_STEP_USD)
+        if level <= self._profit_alert_level:
+            return
+        threshold = level * PROFIT_ALERT_STEP_USD
+        side_emoji = "🟢 LONG" if self._pos == 1 else "🔴 SHORT"
+        mode_chip = f" ({self._position_mode})" if self._position_mode else ""
+        if level == 1:
+            hint = (f"_Consider moving SL to BE @ `${self._entry_price:.1f}` "
+                    f"to lock risk-free._")
+        else:
+            lock_target = self._entry_price + (
+                (level - 1) * PROFIT_ALERT_STEP_USD / 10.0
+                * (1 if self._pos == 1 else -1)
+            )
+            lock_usd = (level - 1) * PROFIT_ALERT_STEP_USD
+            hint = (f"_Consider trailing SL to `${lock_target:.1f}` to lock "
+                    f"`+${lock_usd:.0f}` profit._")
+        msg = (
+            f"💰 *Profit Alert* — crossed `+${threshold:.0f}`\n\n"
+            f"{side_emoji}{mode_chip} @ `${self._entry_price:.1f}` "
+            f"(now `${cur_close:.1f}`)\n"
+            f"Unrealized: `+${unrealized_usd:.2f}`\n"
+            f"Local SL: `${self._sl_price:.1f}` (trailing)\n\n"
+            f"{hint}"
+        )
+        try:
+            from pipeline.live.execute.super_structure_executor import _send_telegram
+            sent = _send_telegram(msg)
+        except Exception as exc:
+            print(f"[SS] profit alert import/send error: {exc}", flush=True)
+            return
+        if sent:
+            self._profit_alert_level = level
+            self._save_state()
+            print(f"[SS] 💰 Profit alert sent: +${unrealized_usd:.2f} "
+                  f"(level {level} = ${threshold:.0f})", flush=True)
+        else:
+            print(f"[SS] ⚠️ Profit alert send failed — will retry next bar",
+                  flush=True)
 
     def _finalize_close(self, bar_ts: pd.Timestamp, exit_price: float,
                         exit_side: int) -> None:
@@ -477,6 +544,7 @@ class SuperStructure:
         self._tp_price = 0.0
         self._position_mode = ""
         self._entry_bar_ts = None
+        self._profit_alert_level = 0
         self._trade_id = ""
         self._save_state()
 
@@ -541,6 +609,7 @@ class SuperStructure:
                           flush=True)
             self._position_mode = ""
             self._tp_price = 0.0
+            self._profit_alert_level = 0
         elif not self._trade_id:
             open_trade = self._latest_unmatched_entry()
             if open_trade:
@@ -1056,6 +1125,10 @@ class SuperStructure:
                 self._sl_price = cur_st
                 if abs(prev_sl - self._sl_price) > 0.1:
                     self._save_state()
+
+            # Discretionary profit alert (Telegram only — no trade action).
+            if self._pos != 0:
+                self._check_profit_alert(cur_close)
 
             # Entries are market orders processed on bar close.
             if self._halt:
