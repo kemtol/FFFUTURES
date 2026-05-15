@@ -390,6 +390,16 @@ class SuperStructure:
                 self._position_mode = str(d.get("position_mode", "") or "")
                 self._tp_price = float(d.get("tp_price", 0.0) or 0.0)
                 self._entry_bar_ts = _to_utc_timestamp(d.get("entry_bar_ts"))
+                # Self-heal: if persisted state has a mode tag but no actual
+                # position (e.g. external SL closed the position without
+                # reconcile clearing the router state), discard the mode tag
+                # so the V8 router doesn't think the queue is busy forever.
+                if self._pos == 0 and self._position_mode:
+                    print(f"[SS] Stale position_mode={self._position_mode!r} "
+                          f"with pos=0 in state — clearing on load", flush=True)
+                    self._position_mode = ""
+                    self._tp_price = 0.0
+                    self._entry_bar_ts = None
                 if self._halt:
                     print(f"[SS] Loaded HALT state: {self._halt_reason}", flush=True)
                 if self._pos != 0:
@@ -518,6 +528,19 @@ class SuperStructure:
             self._sl_order_id = None
             self._entry_bar_ts = None
             self._trade_id = ""
+            # V8 router was tracking this position — clear its queue so the
+            # next signal isn't rejected with queue_busy. Use 0.0 pnl since
+            # we don't know the realized PnL when exit happened externally.
+            if self._router is not None and self._position_mode:
+                try:
+                    self._router.on_exit(
+                        pd.Timestamp(datetime.now(timezone.utc)), 0.0
+                    )
+                except Exception as exc:
+                    print(f"[SS] router.on_exit failed during reconcile: {exc}",
+                          flush=True)
+            self._position_mode = ""
+            self._tp_price = 0.0
         elif not self._trade_id:
             open_trade = self._latest_unmatched_entry()
             if open_trade:

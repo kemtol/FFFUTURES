@@ -110,23 +110,27 @@ def _cancel_all_orders() -> dict:
     body = resp.read()
     return json.loads(body) if body and body.strip() else {"status": resp.status, "msg": "cancelled"}
 
-def _send_telegram(msg: str) -> None:
+def _send_telegram(msg: str) -> bool:
     try:
         env = ROOT / "data" / "Live" / "telegram.env"
-        if not env.exists(): return
+        if not env.exists():
+            return False
         token = chat = ""
         for line in env.read_text().strip().split("\n"):
             if "=" in line:
                 k, v = line.split("=", 1)
                 if k == "TELEGRAM_BOT_TOKEN": token = v
                 elif k == "TELEGRAM_CHAT_ID": chat = v
-        if token and chat:
-            url = f"https://api.telegram.org/bot{token}/sendMessage"
-            data = urllib.parse.urlencode({"chat_id": chat, "text": msg,
-                                            "parse_mode": "Markdown"}).encode()
-            urllib.request.urlopen(url, data, timeout=5)
-    except Exception:
-        pass
+        if not (token and chat):
+            return False
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        data = urllib.parse.urlencode({"chat_id": chat, "text": msg,
+                                        "parse_mode": "Markdown"}).encode()
+        urllib.request.urlopen(url, data, timeout=10)
+        return True
+    except Exception as exc:
+        print(f"[SSExec] _send_telegram error: {exc}", flush=True)
+        return False
 
 
 def _flatten_all() -> dict:
@@ -295,13 +299,15 @@ class SuperStructureExecutor:
 
     def heartbeat(self, state: dict | None = None) -> None:
         """Send status to Telegram every 5 min. Called from super_structure.run_live.
-        
+
         Args:
             state: dict with OHLC + indicators from super_structure._heartbeat_state
         """
         now = time.time()
-        if now - self._last_heartbeat < 300: return
-        self._last_heartbeat = now
+        if now - self._last_heartbeat < 300:
+            return
+        # Defer updating _last_heartbeat until after a successful send, so a
+        # transient Telegram/SSL failure doesn't lock out heartbeats for 5 min.
 
         s = state or {}
         ts = s.get("ts", "")
@@ -414,7 +420,16 @@ class SuperStructureExecutor:
             ]
 
         msg = "\n".join(l for l in lines if l)
-        _send_telegram(msg)
+        sent = _send_telegram(msg)
+        if sent:
+            self._last_heartbeat = now
+            print(f"[SSExec] 💓 Heartbeat sent (pos={pos}, mode={s.get('position_mode') or 'FLAT'})",
+                  flush=True)
+        else:
+            # Telegram failed (SSL/network). Leave _last_heartbeat unchanged
+            # so the next loop iteration retries instead of waiting 5 min.
+            print(f"[SSExec] ⚠️ Heartbeat send FAILED — will retry next cycle",
+                  flush=True)
 
     # ── internal ──────────────────────────────────────────────────────────
 
