@@ -368,12 +368,23 @@ class SuperStructureExecutor:
                 path = last.get("path", "?")
                 take = "PASS" if last.get("take") else "SKIP"
                 reason = last.get("reason", "")
+                import math
+                def _fmt(v, places=3):
+                    try:
+                        fv = float(v)
+                        return "—" if math.isnan(fv) or math.isinf(fv) else f"{fv:.{places}f}"
+                    except (TypeError, ValueError):
+                        return "—"
                 if path == "CONS":
-                    extra = (f"prob `{last.get('prob', 0):.3f}` "
-                             f"thr `{last.get('threshold', 0):.2f}`")
+                    extra = (f"prob `{_fmt(last.get('prob', 0), 3)}` "
+                             f"thr `{_fmt(last.get('threshold', 0), 2)}`")
                 else:
-                    extra = f"risk `{last.get('risk_pts', 0):.1f}` side `{last.get('side', '?')}`"
-                v8_block.append(f"• Last {path}: `{take}` ({reason}) {extra}")
+                    extra = (f"risk `{_fmt(last.get('risk_pts', 0), 1)}` "
+                             f"side `{last.get('side', '?')}`")
+                # Wrap reason in backticks so underscores/colons in values
+                # like `ml_reject` or `queue_busy:CONS` don't break Telegram
+                # Markdown italic parsing.
+                v8_block.append(f"• Last {path}: `{take}` `{reason}` {extra}")
 
         if pos == 0:
             hdr = "💓 *Super Structure — Heartbeat*\n\n"
@@ -403,7 +414,11 @@ class SuperStructureExecutor:
             mode_chip = ""
             tp_val = float(s.get("tp_price", 0.0) or 0.0)
             if s.get("v8_active") and s.get("position_mode"):
-                mode_chip = f" [{s['position_mode']}]"
+                # NOTE: don't use square brackets here — Telegram Markdown
+                # parses `[text]` as the start of a link `[text](url)` and
+                # fails downstream when it can't find the closing paren
+                # (e.g. when a later `(reason)` appears in the v8 block).
+                mode_chip = f" ({s['position_mode']})"
             tp_line = f"TP: `${tp_val:.1f}` | " if tp_val > 0 else ""
 
             lines = [
