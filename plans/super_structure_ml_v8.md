@@ -28,6 +28,14 @@ karena 42.6% prob_of_ruin di walk-forward.
 90d DD -$1,861 cuma $139 headroom dari MLL -$2,000. Tail risk perlu Monte
 Carlo follow-up sebelum bilang fully safe.
 
+⚠️ **Live PnL expectation correction (observed 2026-05-15):** sim model
+parallel CONS+AGGR execution, tapi live single-queue (D1) blok AGGR saat
+CONS holding. CONS hold sering hours-long (trail-by-ST), jadi AGGR
+mostly starved. Realistic live PnL ≈ CONS solo sim (+$3,666 90d /
+DD -$1,850), bukan combined (+$5,151). Verified empirically: 28h V8
+live = 0 AGGR signals, 2 valid pullback events di buffer history
+both blocked oleh active CONS position. User accept trade-off.
+
 Artifacts:
 - `pipeline/super_structure_ml/eval/simulate_cons_ml_aggr_mech.py`
 - `model/SUPER_STRUCTURE/simulation-compare/SIM_CONS_ML_AGGR_MECH_MGC_{7,30,90}d.json`
