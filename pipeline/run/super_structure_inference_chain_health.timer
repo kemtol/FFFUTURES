@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Super Structure Inference Chain Health every hour
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+Persistent=true
+Unit=super_structure_inference_chain_health.service
+
+[Install]
+WantedBy=timers.target

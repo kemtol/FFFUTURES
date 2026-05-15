@@ -1,0 +1,14 @@
+[Unit]
+Description=Super Structure Inference Chain Health (model + L0 sync + datamart anchors)
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/kemal/futures
+ExecStart=/usr/bin/python3 -u /home/kemal/futures/pipeline/live/inference_chain_health_check.py --telegram always
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=append:/home/kemal/futures/data/Live/super_structure_inference_chain_health.log
+StandardError=append:/home/kemal/futures/data/Live/super_structure_inference_chain_health.log
+
+[Install]
+WantedBy=default.target
