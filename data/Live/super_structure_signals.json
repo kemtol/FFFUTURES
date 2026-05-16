@@ -706,5 +706,359 @@
       "dema": 4732.1,
       "parsed_from": "super_structure.py: SELL MGC @ 4717.6"
     }
+  },
+  {
+    "signal_id": "sssig_7d5e453aaba17387",
+    "trade_id": "sstrade_13bcb1c9556ed81d",
+    "received_at": "2026-05-12T00:30:09.274936+00:00",
+    "signal": {
+      "signal_id": "sssig_7d5e453aaba17387",
+      "trade_id": "sstrade_13bcb1c9556ed81d",
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4772.1,
+      "sl": 4747.244856051599,
+      "reason": "",
+      "ts": "2026-05-12 00:30:00+00:00",
+      "adx": 31.7,
+      "cci": 387.0,
+      "dema": 4731.5,
+      "parsed_from": "super_structure.py: BUY MGC @ 4772.1"
+    }
+  },
+  {
+    "signal_id": "sssig_e10fd485ad05d386",
+    "trade_id": "sstrade_13bcb1c9556ed81d",
+    "received_at": "2026-05-12T01:30:17.299651+00:00",
+    "signal": {
+      "signal_id": "sssig_e10fd485ad05d386",
+      "trade_id": "sstrade_13bcb1c9556ed81d",
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4747.244856051599,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-12 01:30:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 4747.2"
+    }
+  },
+  {
+    "signal_id": "sssig_d3e7958d2663358d",
+    "trade_id": "sstrade_8ffcf4819581e148",
+    "received_at": "2026-05-12T01:40:15.437412+00:00",
+    "signal": {
+      "signal_id": "sssig_d3e7958d2663358d",
+      "trade_id": "sstrade_8ffcf4819581e148",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4734.3,
+      "sl": 4770.390847126328,
+      "reason": "",
+      "ts": "2026-05-12 01:40:00+00:00",
+      "adx": 29.5,
+      "cci": -191.0,
+      "dema": 4738.2,
+      "parsed_from": "super_structure.py: SELL MGC @ 4734.3"
+    }
+  },
+  {
+    "signal_id": "sssig_7af72b8296422709",
+    "trade_id": "sstrade_ba7848a41a5a769f",
+    "received_at": "2026-05-12T03:35:29.660638+00:00",
+    "signal": {
+      "signal_id": "sssig_7af72b8296422709",
+      "trade_id": "sstrade_ba7848a41a5a769f",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4735.0,
+      "sl": 4755.456301482316,
+      "reason": "",
+      "ts": "2026-05-12 03:35:00+00:00",
+      "adx": 42.8,
+      "cci": -110.0,
+      "dema": 4751.8,
+      "parsed_from": "super_structure.py: SELL MGC @ 4735.0"
+    }
+  },
+  {
+    "signal_id": "sssig_f4f66a605d235ba6",
+    "trade_id": "sstrade_4b98738ea2e23b58",
+    "received_at": "2026-05-12T15:10:09.453073+00:00",
+    "signal": {
+      "signal_id": "sssig_f4f66a605d235ba6",
+      "trade_id": "sstrade_4b98738ea2e23b58",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4680.5,
+      "sl": 4712.838667856809,
+      "reason": "",
+      "ts": "2026-05-12 15:10:00+00:00",
+      "adx": 43.0,
+      "cci": -112.0,
+      "dema": 4704.3,
+      "parsed_from": "super_structure.py: SELL MGC @ 4680.5"
+    }
+  },
+  {
+    "signal_id": "sssig_931dabda9ac0e76a",
+    "trade_id": "sstrade_f296e100ef78c62c",
+    "received_at": "2026-05-12T18:50:02.727999+00:00",
+    "signal": {
+      "signal_id": "sssig_931dabda9ac0e76a",
+      "trade_id": "sstrade_f296e100ef78c62c",
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4699.3,
+      "sl": 4683.158626706147,
+      "reason": "",
+      "ts": "2026-05-12 18:50:00+00:00",
+      "adx": 34.8,
+      "cci": 122.0,
+      "dema": 4688.1,
+      "parsed_from": "super_structure.py: BUY MGC @ 4699.3"
+    }
+  },
+  {
+    "signal_id": "sssig_c5ed9d2dfe879a56",
+    "trade_id": "sstrade_b5899b7e0d1574a9",
+    "received_at": "2026-05-13T02:50:08.483280+00:00",
+    "signal": {
+      "signal_id": "sssig_c5ed9d2dfe879a56",
+      "trade_id": "sstrade_b5899b7e0d1574a9",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4704.6,
+      "sl": 4723.111874425161,
+      "reason": "",
+      "ts": "2026-05-13 02:50:00+00:00",
+      "adx": 38.0,
+      "cci": -142.0,
+      "dema": 4711.7,
+      "parsed_from": "super_structure.py: SELL MGC @ 4704.6"
+    }
+  },
+  {
+    "signal_id": "sssig_e02575b708b3aeaf",
+    "trade_id": "sstrade_b5899b7e0d1574a9",
+    "received_at": "2026-05-13T06:10:25.458855+00:00",
+    "signal": {
+      "signal_id": "sssig_e02575b708b3aeaf",
+      "trade_id": "sstrade_b5899b7e0d1574a9",
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4720.272825037808,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-13 06:10:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 4720.3"
+    }
+  },
+  {
+    "signal_id": "sssig_cb1c102b6896061b",
+    "trade_id": "sstrade_edf29d686d14b93f",
+    "received_at": "2026-05-13T13:40:08.431551+00:00",
+    "signal": {
+      "signal_id": "sssig_cb1c102b6896061b",
+      "trade_id": "sstrade_edf29d686d14b93f",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4681.2,
+      "sl": 4710.426813345947,
+      "reason": "",
+      "ts": "2026-05-13 13:40:00+00:00",
+      "adx": 28.2,
+      "cci": -124.0,
+      "dema": 4702.3,
+      "parsed_from": "super_structure.py: SELL MGC @ 4681.2"
+    }
+  },
+  {
+    "signal_id": "sssig_0518624ee16ec17d",
+    "trade_id": "sstrade_edf29d686d14b93f",
+    "received_at": "2026-05-13T16:15:06.165471+00:00",
+    "signal": {
+      "signal_id": "sssig_0518624ee16ec17d",
+      "trade_id": "sstrade_edf29d686d14b93f",
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4710.101231704688,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-13 16:15:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 4710.1"
+    }
+  },
+  {
+    "signal_id": "sssig_99db184c6866be3e",
+    "trade_id": "sstrade_f296e100ef78c62c",
+    "received_at": "2026-05-13T16:25:22.506709+00:00",
+    "signal": {
+      "signal_id": "sssig_99db184c6866be3e",
+      "trade_id": "sstrade_f296e100ef78c62c",
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 0.0,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-13 16:25:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 0.0"
+    }
+  },
+  {
+    "signal_id": "sssig_3d92fc168be8696c",
+    "trade_id": "sstrade_4b98738ea2e23b58",
+    "received_at": "2026-05-13T16:30:12.787898+00:00",
+    "signal": {
+      "signal_id": "sssig_3d92fc168be8696c",
+      "trade_id": "sstrade_4b98738ea2e23b58",
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 0.0,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-13 16:30:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 0.0"
+    }
+  },
+  {
+    "signal_id": "sssig_cb81acfaa3118a76",
+    "trade_id": "sstrade_ba7848a41a5a769f",
+    "received_at": "2026-05-13T17:05:08.897553+00:00",
+    "signal": {
+      "signal_id": "sssig_cb81acfaa3118a76",
+      "trade_id": "sstrade_ba7848a41a5a769f",
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 0.0,
+      "sl": 0.0,
+      "reason": "SL",
+      "ts": "2026-05-13 17:05:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 0.0"
+    }
+  },
+  {
+    "signal_id": "sssig_87cf304e902d1223",
+    "trade_id": "sstrade_5ea53a04c31f2677",
+    "received_at": "2026-05-14T00:25:17.469218+00:00",
+    "signal": {
+      "signal_id": "sssig_87cf304e902d1223",
+      "trade_id": "sstrade_5ea53a04c31f2677",
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4708.7,
+      "sl": 4696.906237570382,
+      "reason": "",
+      "ts": "2026-05-14 00:25:00+00:00",
+      "adx": 25.6,
+      "cci": 168.0,
+      "dema": 4699.1,
+      "parsed_from": "super_structure.py: BUY MGC @ 4708.7"
+    }
+  },
+  {
+    "signal_id": "sssig_da899d5a5afe29b8",
+    "trade_id": "sstrade_671a8b43f17e20c7",
+    "received_at": "2026-05-14T18:55:16.146980+00:00",
+    "signal": {
+      "signal_id": "sssig_da899d5a5afe29b8",
+      "trade_id": "sstrade_671a8b43f17e20c7",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4674.0,
+      "sl": 4688.918697225581,
+      "reason": "",
+      "ts": "2026-05-14 18:55:00+00:00",
+      "adx": 29.9,
+      "cci": -110.0,
+      "dema": 4688.7,
+      "mode": "CONS",
+      "tp": 0.0,
+      "v8_router": true,
+      "parsed_from": "super_structure.py: SELL MGC @ 4674.0"
+    }
+  },
+  {
+    "signal_id": "sssig_5aaefc4b5e1d654e",
+    "trade_id": "sstrade_e6d6a6d9d9922610",
+    "received_at": "2026-05-15T05:20:12.054168+00:00",
+    "signal": {
+      "signal_id": "sssig_5aaefc4b5e1d654e",
+      "trade_id": "sstrade_e6d6a6d9d9922610",
+      "action": "SELL",
+      "symbol": "MGC",
+      "price": 4587.2,
+      "sl": 4618.596930310469,
+      "reason": "",
+      "ts": "2026-05-15 05:20:00+00:00",
+      "adx": 36.5,
+      "cci": -162.0,
+      "dema": 4623.6,
+      "mode": "CONS",
+      "tp": 0.0,
+      "v8_router": true,
+      "parsed_from": "super_structure.py: SELL MGC @ 4587.2"
+    }
+  },
+  {
+    "signal_id": "sssig_01d1aa4770072957",
+    "trade_id": "sstrade_105faea73513d97f",
+    "received_at": "2026-05-15T13:15:09.756951+00:00",
+    "signal": {
+      "signal_id": "sssig_01d1aa4770072957",
+      "trade_id": "sstrade_105faea73513d97f",
+      "action": "BUY",
+      "symbol": "MGC",
+      "price": 4550.8,
+      "sl": 4540.120306877791,
+      "reason": "",
+      "ts": "2026-05-15 13:15:00+00:00",
+      "adx": 20.8,
+      "cci": -116.0,
+      "dema": 4552.4,
+      "mode": "AGGR",
+      "tp": 4561.479693122209,
+      "v8_router": true,
+      "parsed_from": "super_structure.py: BUY MGC @ 4550.8"
+    }
+  },
+  {
+    "signal_id": "sssig_e364dd94f86243a7",
+    "trade_id": "sstrade_105faea73513d97f",
+    "received_at": "2026-05-15T13:30:07.964205+00:00",
+    "signal": {
+      "signal_id": "sssig_e364dd94f86243a7",
+      "trade_id": "sstrade_105faea73513d97f",
+      "action": "CLOSE",
+      "symbol": "MGC",
+      "price": 4561.479693122209,
+      "sl": 0.0,
+      "reason": "TP",
+      "ts": "2026-05-15 13:30:00+00:00",
+      "adx": 0,
+      "cci": 0,
+      "dema": 0,
+      "mode": "AGGR",
+      "tp": 0.0,
+      "v8_router": true,
+      "parsed_from": "super_structure.py: CLOSE MGC @ 4561.5"
+    }
   }
 ]

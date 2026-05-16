@@ -1,0 +1,92 @@
+{
+  "generated_at_utc": "2026-05-15T16:25:41.926982+00:00",
+  "timezone": "Asia/Jakarta",
+  "first_run": false,
+  "baselines_captured_at": "2026-05-14T08:52:52.445378+00:00",
+  "summary": {
+    "status": "PASS",
+    "first_run": false,
+    "model_severity": "PASS",
+    "l0_sync_severity": "PASS",
+    "datamart_severity": "PASS"
+  },
+  "model_artifact": {
+    "severity": "PASS",
+    "critical": 0,
+    "warn": 0,
+    "files": [
+      {
+        "path": "model/SUPER_STRUCTURE/meta_v7/inference_model.txt",
+        "exists": true,
+        "sha256": "cbd03f384e26040863e410f1501263f5ce88cc7aef23446f44ea096921372832",
+        "size_bytes": 341063,
+        "severity": "PASS",
+        "note": ""
+      },
+      {
+        "path": "model/SUPER_STRUCTURE/meta_v7/inference_config_refined.json",
+        "exists": true,
+        "sha256": "756b5c682627cc861a7fe0cbe687e4d30ef3614fd184c1a4e2eb49562ae1a941",
+        "size_bytes": 419,
+        "severity": "PASS",
+        "note": ""
+      },
+      {
+        "path": "model/SUPER_STRUCTURE/SMART_1/conservative_brain.txt",
+        "exists": true,
+        "sha256": "cbd03f384e26040863e410f1501263f5ce88cc7aef23446f44ea096921372832",
+        "size_bytes": 341063,
+        "severity": "PASS",
+        "note": ""
+      }
+    ],
+    "equality": {
+      "check": "inference_model_eq_conservative_brain",
+      "severity": "PASS",
+      "note": "byte-identical"
+    },
+    "config": {
+      "check": "refined_config_structure",
+      "severity": "PASS",
+      "thresholds": {
+        "0": 0.5,
+        "1": 0.5,
+        "2": 0.45
+      }
+    },
+    "lightgbm": {
+      "check": "lightgbm_loadable",
+      "severity": "PASS",
+      "num_features": 6,
+      "num_trees": 100
+    }
+  },
+  "l0_live_sync": {
+    "severity": "PASS",
+    "note": "raw DB stale (batch-ingested, expected)",
+    "raw_rows": 0,
+    "live_rows": 358
+  },
+  "datamart_anchors": {
+    "severity": "PASS",
+    "critical": 0,
+    "files": [
+      {
+        "path": "data/Level_2_Datamart/super_structure_ml/v3_final_training.parquet",
+        "anchor_rows": 3643,
+        "actual_rows": 3643,
+        "sha256": "8aebc74d0f458a8010193f17a8f7902a59baa7711deb47317c8580639893a29f",
+        "severity": "PASS",
+        "note": ""
+      },
+      {
+        "path": "data/Level_2_Datamart/super_structure_ml/v1_12_training_datamart.parquet",
+        "anchor_rows": 1471,
+        "actual_rows": 1471,
+        "sha256": "c7200b2fb23b85a9aac5ebb6d140e3d52ff0c2d0d20862714882674745b69eab",
+        "severity": "PASS",
+        "note": ""
+      }
+    ]
+  }
+}

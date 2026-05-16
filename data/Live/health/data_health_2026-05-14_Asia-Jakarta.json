@@ -1,0 +1,66 @@
+{
+  "generated_at_utc": "2026-05-14T16:45:41.965743+00:00",
+  "timezone": "Asia/Jakarta",
+  "buffer_path": "/home/kemal/futures/data/Live/topstepx_buffer.db",
+  "window_hours": 24,
+  "summary": {
+    "status": "PASS",
+    "checks_run": 6,
+    "checks_passed": 6,
+    "checks_warn": 0,
+    "checks_critical": 0
+  },
+  "freshness": {
+    "severity": "PASS",
+    "latest_bar_ts": "2026-05-14T16:44:00+00:00",
+    "age_seconds": 102.0,
+    "threshold_seconds": 600,
+    "note": ""
+  },
+  "quantity": {
+    "severity": "PASS",
+    "actual_bars": 1379,
+    "expected_bars": 1440,
+    "ratio": 0.958,
+    "threshold_ratio": 0.9,
+    "note": ""
+  },
+  "continuity": {
+    "severity": "PASS",
+    "gap_count": 1,
+    "max_gap_min": 61.0,
+    "max_effective_gap_min": 1.0,
+    "samples": [
+      {
+        "from": "2026-05-13T20:59:00+00:00",
+        "to": "2026-05-13T22:00:00+00:00",
+        "gap_min": 61.0,
+        "cme_halt_min": 60.0,
+        "effective_gap_min": 1.0
+      }
+    ],
+    "note": ""
+  },
+  "ohlc_sanity": {
+    "severity": "PASS",
+    "violations": 0,
+    "total_rows": 1379,
+    "samples": [],
+    "note": ""
+  },
+  "price_plausibility": {
+    "severity": "PASS",
+    "latest_close": 4681.5,
+    "range": [
+      1000.0,
+      10000.0
+    ],
+    "note": ""
+  },
+  "duplicate_timestamps": {
+    "severity": "PASS",
+    "duplicate_count": 0,
+    "samples": [],
+    "note": ""
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "generated_at_utc": "2026-05-13T16:46:13.788348+00:00",
+  "date": "2026-05-13",
+  "timezone": "Asia/Jakarta",
+  "window_utc": {
+    "start": "2026-05-12T17:00:00+00:00",
+    "end": "2026-05-13T17:00:00+00:00"
+  },
+  "sources": {
+    "signals": "/home/kemal/futures/data/Live/super_structure_signals.json",
+    "executions": "/home/kemal/futures/data/Live/super_structure_executions.jsonl",
+    "ui_theoretical": "/home/kemal/futures/ui/data/trade_events_super_structure_5m.json"
+  },
+  "summary": {
+    "signals": 3,
+    "executions": 3,
+    "ui_theoretical_trades": 6,
+    "signal_entries": 3,
+    "topstep_entry_events": 3,
+    "ui_entry_events": 6,
+    "critical": 3
+  },
+  "signal_entry_vs_topstep_entry": [
+    {
+      "severity": "PASS",
+      "signal_id": "sssig_931dabda9ac0e76a",
+      "trade_id": "sstrade_f296e100ef78c62c",
+      "side": "Long",
+      "signal_entry": "2026-05-12 18:50",
+      "signal_px": 4699.3,
+      "topstep_entry": "2026-05-12 18:50",
+      "topstep_px": 4699.2,
+      "slippage": -0.1000000000003638,
+      "drift_type": "",
+      "note": ""
+    },
+    {
+      "severity": "PASS",
+      "signal_id": "sssig_c5ed9d2dfe879a56",
+      "trade_id": "sstrade_b5899b7e0d1574a9",
+      "side": "Short",
+      "signal_entry": "2026-05-13 02:50",
+      "signal_px": 4704.6,
+      "topstep_entry": "2026-05-13 02:50",
+      "topstep_px": 4705.1,
+      "slippage": 0.5,
+      "drift_type": "",
+      "note": ""
+    },
+    {
+      "severity": "PASS",
+      "signal_id": "sssig_cb1c102b6896061b",
+      "trade_id": "sstrade_edf29d686d14b93f",
+      "side": "Short",
+      "signal_entry": "2026-05-13 13:40",
+      "signal_px": 4681.2,
+      "topstep_entry": "2026-05-13 13:40",
+      "topstep_px": 4683.1,
+      "slippage": 1.9000000000005457,
+      "drift_type": "",
+      "note": ""
+    }
+  ],
+  "signal_entry_vs_ui_entry": [
+    {
+      "severity": "CRITICAL",
+      "signal_id": "sssig_931dabda9ac0e76a",
+      "trade_id": "sstrade_f296e100ef78c62c",
+      "side": "Long",
+      "signal_entry": "2026-05-12 18:50",
+      "signal_px": 4699.3,
+      "ui_entry": "2026-05-12 18:35",
+      "ui_exit": "2026-05-13 01:30",
+      "ui_status": "CLOSED",
+      "entry_delta_min": null,
+      "entry_px_delta": null,
+      "drift_type": "UI_ALREADY_IN_POSITION",
+      "note": "UI theoretical was already in same-side trade 2026-05-12 18:35->2026-05-13 01:30"
+    },
+    {
+      "severity": "CRITICAL",
+      "signal_id": "sssig_c5ed9d2dfe879a56",
+      "trade_id": "sstrade_b5899b7e0d1574a9",
+      "side": "Short",
+      "signal_entry": "2026-05-13 02:50",
+      "signal_px": 4704.6,
+      "ui_entry": "2026-05-13 02:00",
+      "ui_exit": "2026-05-13 06:10",
+      "ui_status": "CLOSED",
+      "entry_delta_min": null,
+      "entry_px_delta": null,
+      "drift_type": "UI_ALREADY_IN_POSITION",
+      "note": "UI theoretical was already in same-side trade 2026-05-13 02:00->2026-05-13 06:10"
+    },
+    {
+      "severity": "CRITICAL",
+      "signal_id": "sssig_cb1c102b6896061b",
+      "trade_id": "sstrade_edf29d686d14b93f",
+      "side": "Short",
+      "signal_entry": "2026-05-13 13:40",
+      "signal_px": 4681.2,
+      "ui_entry": "2026-05-13 12:35",
+      "ui_exit": "2026-05-13 16:15",
+      "ui_status": "CLOSED",
+      "entry_delta_min": null,
+      "entry_px_delta": null,
+      "drift_type": "UI_ALREADY_IN_POSITION",
+      "note": "UI theoretical was already in same-side trade 2026-05-13 12:35->2026-05-13 16:15"
+    }
+  ],
+  "signal_vs_topstep": [
+    {
+      "severity": "PASS",
+      "signal_id": "sssig_931dabda9ac0e76a",
+      "trade_id": "sstrade_f296e100ef78c62c",
+      "side": "Long",
+      "signal_entry": "2026-05-12 18:50",
+      "signal_px": 4699.3,
+      "topstep_entry": "2026-05-12 18:50",
+      "topstep_px": 4699.2,
+      "slippage": -0.1000000000003638,
+      "drift_type": "",
+      "note": ""
+    },
+    {
+      "severity": "PASS",
+      "signal_id": "sssig_c5ed9d2dfe879a56",
+      "trade_id": "sstrade_b5899b7e0d1574a9",
+      "side": "Short",
+      "signal_entry": "2026-05-13 02:50",
+      "signal_px": 4704.6,
+      "topstep_entry": "2026-05-13 02:50",
+      "topstep_px": 4705.1,
+      "slippage": 0.5,
+      "drift_type": "",
+      "note": ""
+    },
+    {
+      "severity": "PASS",
+      "signal_id": "sssig_cb1c102b6896061b",
+      "trade_id": "sstrade_edf29d686d14b93f",
+      "side": "Short",
+      "signal_entry": "2026-05-13 13:40",
+      "signal_px": 4681.2,
+      "topstep_entry": "2026-05-13 13:40",
+      "topstep_px": 4683.1,
+      "slippage": 1.9000000000005457,
+      "drift_type": "",
+      "note": ""
+    }
+  ],
+  "signal_vs_ui_theoretical": [
+    {
+      "severity": "CRITICAL",
+      "signal_id": "sssig_931dabda9ac0e76a",
+      "trade_id": "sstrade_f296e100ef78c62c",
+      "side": "Long",
+      "signal_entry": "2026-05-12 18:50",
+      "signal_px": 4699.3,
+      "ui_entry": "2026-05-12 18:35",
+      "ui_exit": "2026-05-13 01:30",
+      "ui_status": "CLOSED",
+      "entry_delta_min": null,
+      "entry_px_delta": null,
+      "drift_type": "UI_ALREADY_IN_POSITION",
+      "note": "UI theoretical was already in same-side trade 2026-05-12 18:35->2026-05-13 01:30"
+    },
+    {
+      "severity": "CRITICAL",
+      "signal_id": "sssig_c5ed9d2dfe879a56",
+      "trade_id": "sstrade_b5899b7e0d1574a9",
+      "side": "Short",
+      "signal_entry": "2026-05-13 02:50",
+      "signal_px": 4704.6,
+      "ui_entry": "2026-05-13 02:00",
+      "ui_exit": "2026-05-13 06:10",
+      "ui_status": "CLOSED",
+      "entry_delta_min": null,
+      "entry_px_delta": null,
+      "drift_type": "UI_ALREADY_IN_POSITION",
+      "note": "UI theoretical was already in same-side trade 2026-05-13 02:00->2026-05-13 06:10"
+    },
+    {
+      "severity": "CRITICAL",
+      "signal_id": "sssig_cb1c102b6896061b",
+      "trade_id": "sstrade_edf29d686d14b93f",
+      "side": "Short",
+      "signal_entry": "2026-05-13 13:40",
+      "signal_px": 4681.2,
+      "ui_entry": "2026-05-13 12:35",
+      "ui_exit": "2026-05-13 16:15",
+      "ui_status": "CLOSED",
+      "entry_delta_min": null,
+      "entry_px_delta": null,
+      "drift_type": "UI_ALREADY_IN_POSITION",
+      "note": "UI theoretical was already in same-side trade 2026-05-13 12:35->2026-05-13 16:15"
+    }
+  ],
+  "topstep_vs_ui_theoretical": []
+}

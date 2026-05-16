@@ -1,0 +1,30 @@
+{
+  "captured_at_utc": "2026-05-14T08:52:52.445378+00:00",
+  "captured_by": "first run",
+  "model_artifacts": {
+    "model/SUPER_STRUCTURE/meta_v7/inference_model.txt": {
+      "sha256": "cbd03f384e26040863e410f1501263f5ce88cc7aef23446f44ea096921372832",
+      "size_bytes": 341063
+    },
+    "model/SUPER_STRUCTURE/meta_v7/inference_config_refined.json": {
+      "sha256": "756b5c682627cc861a7fe0cbe687e4d30ef3614fd184c1a4e2eb49562ae1a941",
+      "size_bytes": 419
+    },
+    "model/SUPER_STRUCTURE/SMART_1/conservative_brain.txt": {
+      "sha256": "cbd03f384e26040863e410f1501263f5ce88cc7aef23446f44ea096921372832",
+      "size_bytes": 341063
+    }
+  },
+  "datamart_anchors": {
+    "data/Level_2_Datamart/super_structure_ml/v3_final_training.parquet": {
+      "rows": 3643,
+      "anchor_rows": 3643,
+      "sha256": "8aebc74d0f458a8010193f17a8f7902a59baa7711deb47317c8580639893a29f"
+    },
+    "data/Level_2_Datamart/super_structure_ml/v1_12_training_datamart.parquet": {
+      "rows": 1471,
+      "anchor_rows": 1471,
+      "sha256": "c7200b2fb23b85a9aac5ebb6d140e3d52ff0c2d0d20862714882674745b69eab"
+    }
+  }
+}

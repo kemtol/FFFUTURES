@@ -1,9 +1,9 @@
 {
-  "date": "2026-05-09",
-  "status": "PASS",
-  "signals": 0,
-  "executions": 0,
-  "ui": 1,
-  "critical": 0,
-  "sent_at": "2026-05-09T01:57:12.838975+00:00"
+  "date": "2026-05-15",
+  "status": "CRITICAL",
+  "signals": 3,
+  "executions": 3,
+  "ui": 3,
+  "critical": 2,
+  "sent_at": "2026-05-15T16:46:45.473935+00:00"
 }
