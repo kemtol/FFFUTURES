@@ -53,11 +53,34 @@ TZ = "Asia/Jakarta"
 # CME futures maintenance windows (US Central Time):
 #   Daily: 16:00-17:00 CT  (Mon-Thu)
 #   Weekly: Friday 16:00 CT → Sunday 17:00 CT
-# We treat gaps that fall fully inside these windows as expected, not outages.
+# We treat gaps that fall fully inside these windows as expected, not outages,
+# AND we don't flag freshness as CRITICAL while we're currently inside one.
 CME_DAILY_HALT_START_CT = (16, 0)
 CME_DAILY_HALT_END_CT = (17, 0)
 CME_WEEKEND_START_DAY = 4            # Friday
 CME_WEEKEND_END_DAY = 6              # Sunday
+
+
+def _is_in_cme_halt(ts_utc) -> tuple[bool, str]:
+    """Return (in_halt, label). Handles DST via America/Chicago tz."""
+    if ts_utc.tzinfo is None:
+        ts_utc = ts_utc.replace(tzinfo=timezone.utc)
+    import zoneinfo
+    ts_ct = ts_utc.astimezone(zoneinfo.ZoneInfo("America/Chicago"))
+    weekday = ts_ct.weekday()  # Monday=0, Sunday=6
+    h, m = ts_ct.hour, ts_ct.minute
+    # Weekend halt: Fri 16:00 CT → Sun 17:00 CT
+    if weekday == CME_WEEKEND_START_DAY and (h, m) >= CME_DAILY_HALT_START_CT:
+        return True, "weekend halt (Fri 16:00 CT → Sun 17:00 CT)"
+    if weekday == 5:                     # All Saturday
+        return True, "weekend halt (Sat)"
+    if weekday == CME_WEEKEND_END_DAY and (h, m) < CME_DAILY_HALT_START_CT:
+        return True, "weekend halt (Sun, pre-17:00 CT reopen)"
+    # Daily 16:00-17:00 CT halt, Mon-Thu only.
+    if weekday < CME_WEEKEND_START_DAY:
+        if CME_DAILY_HALT_START_CT <= (h, m) < CME_DAILY_HALT_END_CT:
+            return True, "daily maintenance halt (16:00-17:00 CT)"
+    return False, ""
 
 
 # ── data loading ──────────────────────────────────────────────────────────
@@ -106,20 +129,40 @@ def load_recent_bars(hours: int = WINDOW_HOURS) -> pd.DataFrame:
 
 
 def check_freshness(df: pd.DataFrame, now_utc: datetime) -> dict:
+    in_halt, halt_label = _is_in_cme_halt(now_utc)
     if df.empty:
+        # During CME halt, an empty 24h tail is suspicious but not "outage";
+        # mark WARN rather than CRITICAL so the timer doesn't spam alerts
+        # all weekend long.
+        if in_halt:
+            return {"severity": "WARN", "latest_bar_ts": None,
+                    "age_seconds": None,
+                    "threshold_seconds": FRESHNESS_THRESHOLD_S,
+                    "in_cme_halt": True,
+                    "note": f"buffer empty during {halt_label}"}
         return {"severity": "CRITICAL", "latest_bar_ts": None,
                 "age_seconds": None,
                 "threshold_seconds": FRESHNESS_THRESHOLD_S,
+                "in_cme_halt": False,
                 "note": "buffer empty in window"}
     latest = df["timestamp_utc"].max()
     age = (now_utc - latest.to_pydatetime()).total_seconds()
-    severity = "PASS" if age <= FRESHNESS_THRESHOLD_S else "CRITICAL"
+    if age <= FRESHNESS_THRESHOLD_S:
+        severity = "PASS"
+        note = ""
+    elif in_halt:
+        severity = "PASS"
+        note = f"stale {age:.0f}s but {halt_label} — expected"
+    else:
+        severity = "CRITICAL"
+        note = f"stale > {FRESHNESS_THRESHOLD_S}s"
     return {
         "severity": severity,
         "latest_bar_ts": latest.isoformat(),
         "age_seconds": round(age, 1),
         "threshold_seconds": FRESHNESS_THRESHOLD_S,
-        "note": "" if severity == "PASS" else f"stale > {FRESHNESS_THRESHOLD_S}s",
+        "in_cme_halt": in_halt,
+        "note": note,
     }
 
 
@@ -127,15 +170,26 @@ def check_quantity(df: pd.DataFrame, hours: int) -> dict:
     expected = hours * 60
     actual = len(df)
     ratio = (actual / expected) if expected else 0.0
-    severity = "PASS" if ratio >= QUANTITY_WARN_RATIO else "WARN"
+    in_halt, halt_label = _is_in_cme_halt(datetime.now(timezone.utc))
+    if ratio >= QUANTITY_WARN_RATIO:
+        severity = "PASS"
+        note = ""
+    elif in_halt:
+        # During weekend/daily halt the 24h window naturally has fewer bars
+        # (e.g. ~83% over a Saturday window). Don't flag.
+        severity = "PASS"
+        note = f"{ratio*100:.1f}% of nominal — {halt_label}, expected"
+    else:
+        severity = "WARN"
+        note = f"only {ratio*100:.1f}% of expected (market halt acceptable)"
     return {
         "severity": severity,
         "actual_bars": int(actual),
         "expected_bars": int(expected),
         "ratio": round(ratio, 3),
         "threshold_ratio": QUANTITY_WARN_RATIO,
-        "note": "" if severity == "PASS"
-                else f"only {ratio*100:.1f}% of expected (market halt acceptable)",
+        "in_cme_halt": in_halt,
+        "note": note,
     }
 
 
