@@ -773,10 +773,22 @@ class SuperStructure:
             return "US"
         return "Other"
 
-    def _set_heartbeat_state(self, last_ts, df_5m, c, d, st, ax, cx, direction) -> None:
+    def _set_heartbeat_state(self, last_ts, df_5m, c, d, st, ax, cx, direction,
+                              d100=None, atr_arr=None) -> None:
         try:
             prev_close = float(c[-2]) if len(c) > 1 else 0
             prev_dema = float(d[-2]) if len(d) > 1 else 0
+            prev_dir = int(direction[-2]) if len(direction) > 1 else int(direction[-1]) if len(direction) > 0 else 0
+            # AGGR-related extras for v1.12 pullback condition rendering.
+            dema_100_val = None
+            atr_val = None
+            pullback_band = None
+            if d100 is not None and len(d100) > 0 and not np.isnan(d100[-1]):
+                dema_100_val = round(float(d100[-1]), 1)
+            if atr_arr is not None and len(atr_arr) > 0 and not np.isnan(atr_arr[-1]):
+                atr_val = float(atr_arr[-1])
+                # Mirror pullback_detector: max(0.5 pts, atr * 0.25)
+                pullback_band = max(0.5, atr_val * 0.25)
             self._heartbeat_state = {
                 "ts": str(last_ts)[:19] if last_ts is not None else "",
                 "open": round(float(df_5m["open"].iloc[-1]), 1),
@@ -790,6 +802,10 @@ class SuperStructure:
                 "adx": round(float(ax[-1]), 1) if len(ax) > 0 else 0,
                 "cci": round(float(cx[-1]), 0) if len(cx) > 0 else 0,
                 "direction": int(direction[-1]) if len(direction) > 0 else 0,
+                "prev_direction": prev_dir,
+                "dema_100": dema_100_val,
+                "atr": atr_val,
+                "pullback_band": pullback_band,
                 "pos": self._pos,
                 "entry_price": self._entry_price,
                 "sl_price": self._sl_price,
@@ -892,7 +908,7 @@ class SuperStructure:
         if not target_indices:
             if latest_completed_ts != self._last_ts:
                 self._last_ts = latest_completed_ts
-                self._set_heartbeat_state(latest_completed_ts, df, c, d, st, ax, cx, direction)
+                self._set_heartbeat_state(latest_completed_ts, df, c, d, st, ax, cx, direction, d100=d100, atr_arr=atr_for_aggr)
             return []
 
         for i in target_indices:
@@ -1028,7 +1044,7 @@ class SuperStructure:
                     self._manual_close_block_action = ""
                     self._save_state()
 
-            self._set_heartbeat_state(bar_ts, df.iloc[:i + 1], c[:i + 1], d[:i + 1], st[:i + 1], ax[:i + 1], cx[:i + 1], direction[:i + 1])
+            self._set_heartbeat_state(bar_ts, df.iloc[:i + 1], c[:i + 1], d[:i + 1], st[:i + 1], ax[:i + 1], cx[:i + 1], direction[:i + 1], d100=(d100[:i + 1] if d100 is not None else None), atr_arr=(atr_for_aggr[:i + 1] if atr_for_aggr is not None else None))
 
             sl_hit = (
                 (self._pos == 1 and l[i] <= self._sl_price) or
@@ -1218,7 +1234,7 @@ class SuperStructure:
 
         # Store latest bar + indicator values for heartbeat
         latest_i = target_indices[-1]
-        self._set_heartbeat_state(df.index[latest_i], df.iloc[:latest_i + 1], c[:latest_i + 1], d[:latest_i + 1], st[:latest_i + 1], ax[:latest_i + 1], cx[:latest_i + 1], direction[:latest_i + 1])
+        self._set_heartbeat_state(df.index[latest_i], df.iloc[:latest_i + 1], c[:latest_i + 1], d[:latest_i + 1], st[:latest_i + 1], ax[:latest_i + 1], cx[:latest_i + 1], direction[:latest_i + 1], d100=(d100[:latest_i + 1] if d100 is not None else None), atr_arr=(atr_for_aggr[:latest_i + 1] if atr_for_aggr is not None else None))
 
         # Trail stop-loss to latest SuperTrend if position active
         if self._executor and self._pos != 0:

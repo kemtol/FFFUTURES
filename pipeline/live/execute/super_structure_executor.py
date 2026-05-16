@@ -312,42 +312,107 @@ class SuperStructureExecutor:
         s = state or {}
         ts = s.get("ts", "")
         o = s.get("open", 0); hi = s.get("high", 0); lo = s.get("low", 0); cl = s.get("close", 0)
-        pc = s.get("prev_close", 0); dema = s.get("dema", 0); pd = s.get("prev_dema", 0)
+        pc = s.get("prev_close", 0); dema = s.get("dema", 0); pd_ = s.get("prev_dema", 0)
         st_val = s.get("st", 0)
         adx = s.get("adx", 0); cci = s.get("cci", 0)
         direction = s.get("direction", 0)
+        prev_direction = s.get("prev_direction", direction)
+        dema_100 = s.get("dema_100")
+        atr_val = s.get("atr")
+        pullback_band = s.get("pullback_band")
         pos = s.get("pos", 0)
         exchange_known = s.get("exchange_state_known", True)
         exchange_error = s.get("exchange_state_error", "")
         ADX_THR = 25; CCI_L = 100.0; CCI_S = -100.0
 
-        # Signal status analysis
-        reasons = []
+        def mark(ok: bool) -> str:
+            return "✅" if ok else "❌"
+
+        # ── CONS conditions (Conservative ML trend-follow) ──────────────────
+        # Mechanical pre-filter:
+        #   ADX > 25, CCI aligned, ST direction aligned, DEMA cross.
+        # ML gate runs only after a mechanical pass — its status is shown in
+        # the V8 block below as the last decision.
+        adx_ok = adx > ADX_THR
+        if cci > CCI_L:
+            cci_state, cci_ok = "LONG ok", True
+        elif cci < CCI_S:
+            cci_state, cci_ok = "SHORT ok", True
+        else:
+            cci_state, cci_ok = "neutral (-100..100)", False
+        if direction > 0:
+            st_bias = "📉 SHORT"
+            cross_dn = (pd_ > 0 and pc > pd_ and cl < dema)
+            dema_state = "cross DOWN" if cross_dn else "no cross"
+            dema_ok = cross_dn or cl < dema
+        elif direction < 0:
+            st_bias = "📈 LONG"
+            cross_up = (pd_ > 0 and pc < pd_ and cl > dema)
+            dema_state = "cross UP" if cross_up else "no cross"
+            dema_ok = cross_up or cl > dema
+        else:
+            st_bias = "neutral"
+            dema_state = "—"
+            dema_ok = False
+
+        cons_lines = ["🎯 *CONS — Conservative ML*"]
         if not exchange_known:
             err = f" ({exchange_error})" if exchange_error else ""
-            reasons.append(f"⛔ Exchange state UNKNOWN{err} — entries blocked")
+            cons_lines.append(f"  ⛔ Exchange state UNKNOWN{err} — entries blocked")
+        cons_lines.append(f"  {mark(adx_ok)} ADX `{adx}` `>` `{ADX_THR}`")
+        cons_lines.append(f"  {mark(cci_ok)} CCI `{cci}` → `{cci_state}`")
+        cons_lines.append(f"  • ST bias: {st_bias}")
+        cons_lines.append(f"  {mark(dema_ok)} DEMA: `{dema_state}` "
+                          f"(prev `{pc:.1f}` → now `{cl:.1f}`)")
+        cons_ready = adx_ok and cci_ok and dema_ok and exchange_known
+        cons_lines.append(f"  → Mechanical: "
+                          f"{'🟢 READY (ML akan dievaluasi)' if cons_ready else '🔴 belum syarat'}")
 
-        if adx <= ADX_THR: reasons.append(f"❌ ADX `{adx}` < `{ADX_THR}`")
-        else: reasons.append(f"✅ ADX `{adx}` > `{ADX_THR}`")
-
-        if cci > CCI_L: reasons.append(f"✅ CCI `{cci}` > `{CCI_L}` → LONG ok")
-        elif cci < CCI_S: reasons.append(f"✅ CCI `{cci}` < `{CCI_S}` → SHORT ok")
-        else: reasons.append(f"❌ CCI `{cci}` between `{CCI_S}`..`{CCI_L}` (neutral)")
-
-        if direction > 0:
-            cross_dn = (pd > 0 and pc > pd and cl < dema)
-            reasons.append(f"ST dir `{direction}` → SELL bias")
-            if cross_dn: reasons.append(f"✅ DEMA cross DOWN (`{pc:.1f}`→`{cl:.1f}`)")
-            else: reasons.append(f"❌ DEMA no cross down (`{pc:.1f}`→`{cl:.1f}`)")
-        elif direction < 0:
-            cross_up = (pd > 0 and pc < pd and cl > dema)
-            reasons.append(f"ST dir `{direction}` → BUY bias")
-            if cross_up: reasons.append(f"✅ DEMA cross UP (`{pc:.1f}`→`{cl:.1f}`)")
-            else: reasons.append(f"❌ DEMA no cross up (`{pc:.1f}`→`{cl:.1f}`)")
+        # ── AGGR conditions (Aggressive mechanical pullback v1.12) ──────────
+        # Long pullback: ST direction unchanged AND st_dir=-1 AND close>dema100
+        #   AND close>st AND low <= st+band AND green candle (close>open).
+        # Short pullback: symmetric mirror.
+        aggr_lines = ["⚡ *AGGR — Aggressive Pullback*"]
+        if dema_100 is None or atr_val is None or pullback_band is None:
+            aggr_lines.append("  (waiting for indicator warmup)")
+            aggr_ready = False
         else:
-            reasons.append(f"ST: neutral")
+            st_stable = direction == prev_direction
+            aggr_lines.append(f"  {mark(st_stable)} ST direction stabil "
+                              f"(no flip vs bar sebelumnya)")
+            if direction == -1:
+                aggr_side = "📈 LONG pullback"
+                cond_dema = cl > dema_100
+                cond_st = cl > st_val
+                touch_level = st_val + pullback_band
+                cond_touch = lo <= touch_level
+                cond_candle = cl > o
+                touch_txt = f"low `{lo}` `≤` ST+band `{touch_level:.1f}`"
+                candle_txt = f"close `{cl}` `>` open `{o}` (green)"
+            elif direction == 1:
+                aggr_side = "📉 SHORT pullback"
+                cond_dema = cl < dema_100
+                cond_st = cl < st_val
+                touch_level = st_val - pullback_band
+                cond_touch = hi >= touch_level
+                cond_candle = cl < o
+                touch_txt = f"high `{hi}` `≥` ST-band `{touch_level:.1f}`"
+                candle_txt = f"close `{cl}` `<` open `{o}` (red)"
+            else:
+                aggr_side = "neutral"
+                cond_dema = cond_st = cond_touch = cond_candle = False
+                touch_txt = candle_txt = "—"
+            aggr_lines.append(f"  • Bias: {aggr_side}")
+            aggr_lines.append(f"  {mark(cond_dema)} Close vs DEMA100 `{dema_100:.1f}`")
+            aggr_lines.append(f"  {mark(cond_st)} Close vs ST `{st_val:.1f}`")
+            aggr_lines.append(f"  {mark(cond_touch)} Touch band: {touch_txt}")
+            aggr_lines.append(f"  {mark(cond_candle)} Candle: {candle_txt}")
+            aggr_ready = (st_stable and cond_dema and cond_st
+                          and cond_touch and cond_candle)
+            aggr_lines.append(f"  → Pullback event: "
+                              f"{'🟢 READY (router akan dievaluasi)' if aggr_ready else '🔴 belum syarat'}")
 
-        signal_analysis = "\n".join(f"• {r}" for r in reasons)
+        signal_analysis = "\n".join(cons_lines + [""] + aggr_lines)
 
         # ── V8 router section ────────────────────────────────────────────────
         v8_block: list[str] = []
@@ -388,14 +453,15 @@ class SuperStructureExecutor:
 
         if pos == 0:
             hdr = "💓 *Super Structure — Heartbeat*\n\n"
+            dema_100_txt = f" | D100:`{dema_100:.1f}`" if dema_100 is not None else ""
             lines = [
                 hdr,
                 f"`{ts}`" if ts else "",
                 "",
                 f"📊 *5m Bar*: O:`{o}` H:`{hi}` L:`{lo}` C:`{cl}`",
-                f"📐 ST:`{st_val}` | DEMA:`{dema}` | ADX:`{adx}` | CCI:`{cci}`",
+                f"📐 ST:`{st_val}` | DEMA:`{dema}`{dema_100_txt} | "
+                f"ADX:`{adx}` | CCI:`{cci}`",
                 "",
-                f"🔍 *Signal Check*:",
                 signal_analysis,
                 *v8_block,
                 "",
