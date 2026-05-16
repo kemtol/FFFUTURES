@@ -358,12 +358,15 @@ def aggregate_summary(checks: dict) -> dict:
         status = "WARN"
     else:
         status = "PASS"
+    in_halt, halt_label = _is_in_cme_halt(datetime.now(timezone.utc))
     return {
         "status": status,
         "checks_run": len(checks),
         "checks_passed": passed,
         "checks_warn": warn,
         "checks_critical": crit,
+        "in_cme_halt": in_halt,
+        "halt_label": halt_label,
     }
 
 
@@ -395,12 +398,16 @@ def render_markdown(report: dict) -> str:
     now_local = datetime.fromisoformat(report["generated_at_utc"]).astimezone(
         ZoneInfo(report["timezone"])
     )
+    market_line = ""
+    if s.get("in_cme_halt"):
+        market_line = f"\n🏖️ **Market: CME CLOSED** — {s.get('halt_label', '')}"
     lines = [
         f"# Live Buffer Data Health — {now_local:%Y-%m-%d %H:%M %Z}",
         "",
         f"**Status: {status_emoji} {s['status']}**  "
         f"({s['checks_passed']}/{s['checks_run']} pass, "
-        f"{s['checks_warn']} warn, {s['checks_critical']} critical)",
+        f"{s['checks_warn']} warn, {s['checks_critical']} critical)"
+        + market_line,
         "",
         f"Buffer: `{report['buffer_path']}`",
         f"Window: last `{report['window_hours']}h`",
@@ -446,8 +453,10 @@ def render_telegram(report: dict) -> str:
         f"🩺 *Data Health* `{now_local:%Y-%m-%d %H:%M %Z}`",
         f"Status: *{status_emoji} {s['status']}*  "
         f"({s['checks_passed']}/{s['checks_run']} ok)",
-        "",
     ]
+    if s.get("in_cme_halt"):
+        lines.append(f"🏖️ *Market CLOSED* — `{s.get('halt_label', '')}`")
+    lines.append("")
     emoji = {"PASS": "✅", "WARN": "⚠️", "CRITICAL": "🛑"}
     one_liners = {
         "freshness": lambda c: f"Fresh: `{c['age_seconds']}s` ago",
