@@ -424,8 +424,7 @@ class SuperStructureExecutor:
             cap_emoji = "🛡️" if headroom > 200 else ("⚠️" if headroom > 0 else "🛑")
             risk_cap = s.get("risk_cap_pts", 12.0)
             last = s.get("last_v8_decision") or {}
-            v8_block.append("")
-            v8_block.append("🧠 *V8 Router*:")
+            v8_block.append("🧠 *V8 Router*")
             v8_block.append(f"• Mode: `{mode}` | Risk cap: `{risk_cap}` pts")
             v8_block.append(f"• Daily PnL: `${daily_pnl_v:+.2f}` / cap `${daily_cap_v:.0f}` "
                             f"({cap_emoji} headroom `${headroom:+.0f}`)")
@@ -451,19 +450,32 @@ class SuperStructureExecutor:
                 # Markdown italic parsing.
                 v8_block.append(f"• Last {path}: `{take}` `{reason}` {extra}")
 
+        # Separator used between major sections. Two newlines via empty
+        # string in the lines list (we filter None, not empty strings, so
+        # explicit blank lines survive).
+        SEP = "─" * 28
+        ts_line = f"`{ts}`" if ts else None
+
         if pos == 0:
-            hdr = "💓 *Super Structure — Heartbeat*\n\n"
+            hdr = "💓 *Super Structure — Heartbeat*"
             dema_100_txt = f" | D100:`{dema_100:.1f}`" if dema_100 is not None else ""
             lines = [
                 hdr,
-                f"`{ts}`" if ts else "",
+                ts_line,
                 "",
                 f"📊 *5m Bar*: O:`{o}` H:`{hi}` L:`{lo}` C:`{cl}`",
                 f"📐 ST:`{st_val}` | DEMA:`{dema}`{dema_100_txt} | "
                 f"ADX:`{adx}` | CCI:`{cci}`",
                 "",
+                SEP,
+                "",
                 signal_analysis,
+                "",
+                SEP,
+                "",
                 *v8_block,
+                "",
+                SEP,
                 "",
                 f"Position: *FLAT*",
                 f"Exchange: *{'KNOWN' if exchange_known else 'UNKNOWN'}*",
@@ -475,7 +487,7 @@ class SuperStructureExecutor:
             est_pnl = ((cl - entry) * 10 * pos - 1.74) if entry > 0 else 0
             pnl_s = f"+{est_pnl:.0f}" if est_pnl >= 0 else f"-{abs(est_pnl):.0f}"
             emoji = "✅" if est_pnl >= 0 else "❌"
-            hdr = "💓 *Super Structure — Heartbeat*\n\n"
+            hdr = "💓 *Super Structure — Heartbeat*"
 
             mode_chip = ""
             tp_val = float(s.get("tp_price", 0.0) or 0.0)
@@ -486,21 +498,31 @@ class SuperStructureExecutor:
                 # (e.g. when a later `(reason)` appears in the v8 block).
                 mode_chip = f" ({s['position_mode']})"
             tp_line = f"TP: `${tp_val:.1f}` | " if tp_val > 0 else ""
+            dema_100_txt = f" | D100:`{dema_100:.1f}`" if dema_100 is not None else ""
 
             lines = [
                 hdr,
-                f"`{ts}`" if ts else "",
+                ts_line,
                 "",
                 f"{emoji} {side}{mode_chip} @ `${entry:.1f}`",
                 f"{tp_line}SL: `${sl_val:.1f}` | Est PnL: `{pnl_s}`",
                 "",
+                SEP,
+                "",
                 f"📊 *5m Bar*: O:`{o}` H:`{hi}` L:`{lo}` C:`{cl}`",
-                f"📐 ST:`{st_val}` | DEMA:`{dema}` | ADX:`{adx}` | CCI:`{cci}`",
+                f"📐 ST:`{st_val}` | DEMA:`{dema}`{dema_100_txt} | "
+                f"ADX:`{adx}` | CCI:`{cci}`",
+                "",
+                SEP,
+                "",
                 *v8_block,
+                "",
                 f"Exchange: *{'KNOWN' if exchange_known else 'UNKNOWN'}*",
             ]
 
-        msg = "\n".join(l for l in lines if l)
+        # Filter only None (skip-conditional entries); keep "" so explicit
+        # blank lines survive between sections.
+        msg = "\n".join(l for l in lines if l is not None)
         sent = _send_telegram(msg)
         if sent:
             self._last_heartbeat = now
