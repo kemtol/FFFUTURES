@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-05-16T00:33:41.918687+00:00",
+  "generated_at_utc": "2026-05-16T16:46:41.935392+00:00",
   "timezone": "Asia/Jakarta",
   "first_run": false,
   "baselines_captured_at": "2026-05-14T08:52:52.445378+00:00",
@@ -65,7 +65,7 @@
     "severity": "PASS",
     "note": "raw DB stale (batch-ingested, expected)",
     "raw_rows": 0,
-    "live_rows": 145
+    "live_rows": 0
   },
   "datamart_anchors": {
     "severity": "PASS",

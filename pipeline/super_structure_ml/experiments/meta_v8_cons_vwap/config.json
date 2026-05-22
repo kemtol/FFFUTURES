@@ -1,0 +1,44 @@
+{
+  "experiment": "meta_v8_cons_vwap",
+  "status": "research_only",
+  "live_safe": true,
+  "baseline": {
+    "model": "model/SUPER_STRUCTURE/meta_v7/inference_model.txt",
+    "config": "model/SUPER_STRUCTURE/meta_v7/inference_config_refined.json",
+    "datamart": "data/Level_2_Datamart/super_structure_ml/v3_final_training.parquet",
+    "features": [
+      "entry_adx",
+      "cci_abs",
+      "st_gap_ratio",
+      "efficiency_ratio",
+      "volatility_zscore",
+      "session_cluster"
+    ]
+  },
+  "level1": {
+    "vwap_context": "data/Level_1_Features/super_structure_ml/ct_vwap_context.parquet"
+  },
+  "candidate": {
+    "datamart": "data/Level_2_Datamart/super_structure_ml/meta_v8_cons_vwap_training.parquet",
+    "model_dir": "model/SUPER_STRUCTURE/meta_v8_cons_vwap",
+    "features": [
+      "entry_adx",
+      "cci_abs",
+      "st_gap_ratio",
+      "efficiency_ratio",
+      "volatility_zscore",
+      "session_cluster",
+      "dist_to_ct_vwap_atr",
+      "vwap_side_aligned",
+      "ct_vwap_slope_20_atr",
+      "vwap_deviation_z_50"
+    ]
+  },
+  "evaluation_windows_days": [7, 14, 30, 90],
+  "promotion_requirements": [
+    "No live files changed",
+    "Candidate beats Meta-v7 on 30d and 90d Topstep-style PnL/DD",
+    "No worse than Meta-v7 on MLL failure behavior",
+    "Live feature builder parity test passes before any router wiring"
+  ]
+}

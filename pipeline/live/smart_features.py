@@ -3,6 +3,10 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
 
+FEATURE_LOOKBACK_DAYS = 10
+MIN_5M_BARS = 50
+
+
 class SMARTFeatureBuilder:
     """Computes features for SMART_1 (Meta-v7/v8) in real-time from buffer."""
     
@@ -11,9 +15,11 @@ class SMARTFeatureBuilder:
 
     def build_smart_features(self, symbol="MGC", now=None, st_val=None, entry_atr=None):
         """Build the feature vector for current market state."""
-        # Load 120 bars of 5m data for indicator stability
+        # Use trading bars, not a 24h calendar slice. A 24h slice is empty
+        # after the CME weekend halt and makes Monday reopen signals skip with
+        # features_unavailable even though Friday's warmup bars are valid.
         now = now or datetime.now(timezone.utc)
-        start = (now - pd.Timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+        start = (now - pd.Timedelta(days=FEATURE_LOOKBACK_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
         end = now.strftime("%Y-%m-%d %H:%M:%S")
         
         df_1m = self.buffer.get(start, end)
@@ -24,7 +30,7 @@ class SMARTFeatureBuilder:
             "open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"
         }).dropna()
         
-        if len(df_5m) < 50: return None
+        if len(df_5m) < MIN_5M_BARS: return None
         
         # 1. Base Indicators
         c = df_5m["close"].values

@@ -8,7 +8,7 @@ Usage:
 """
 from __future__ import annotations
 
-import json, time, traceback, urllib.parse, urllib.request, uuid
+import json, time, traceback, urllib.error, urllib.parse, urllib.request, uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -90,25 +90,40 @@ def _token() -> str:
         return json.loads(TOKEN_FILE.read_text())["access_token"]
     raise RuntimeError("No token file")
 
-def _api(body: dict) -> dict:
+
+def _request_json(url: str, *, method: str = "GET", body: dict | None = None,
+                  retry_auth: bool = True) -> dict | list:
+    """TopstepX REST request with one forced token refresh on HTTP 401."""
     token = _token()
     h = {**HEADERS, "Authorization": f"Bearer {token}"}
-    data = json.dumps(body).encode()
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(url, data=data, method=method, headers=h)
+    try:
+        resp = urllib.request.urlopen(req, timeout=10)
+    except urllib.error.HTTPError as exc:
+        if exc.code == 401 and retry_auth:
+            print("[SSExec] TopstepX 401 — refreshing token and retrying once", flush=True)
+            from pipeline.live.sources.topstepx import ensure_token
+            ensure_token(force=True)
+            return _request_json(url, method=method, body=body, retry_auth=False)
+        raise
+    raw = resp.read()
+    if not raw or not raw.strip():
+        return {"status": resp.status, "msg": "ok"}
+    return json.loads(raw)
+
+
+def _api(body: dict) -> dict:
     time.sleep(0.3)
-    req = urllib.request.Request(ORDER_URL, data=data, headers=h)
-    resp = urllib.request.urlopen(req, timeout=10)
-    return json.loads(resp.read())
+    result = _request_json(ORDER_URL, method="POST", body=body)
+    return result if isinstance(result, dict) else {"result": result}
 
 def _cancel_all_orders() -> dict:
     """Cancel all open orders for the account/symbol."""
-    token = _token()
-    h = {**HEADERS, "Authorization": f"Bearer {token}"}
     url = f"https://userapi.topstepx.com/Order/cancel/{ACCOUNT_ID}/symbol/{SYMBOL_ID}"
     time.sleep(0.2)
-    req = urllib.request.Request(url, method="DELETE", headers=h)
-    resp = urllib.request.urlopen(req, timeout=10)
-    body = resp.read()
-    return json.loads(body) if body and body.strip() else {"status": resp.status, "msg": "cancelled"}
+    result = _request_json(url, method="DELETE")
+    return result if isinstance(result, dict) else {"result": result}
 
 def _send_telegram(msg: str) -> bool:
     try:
@@ -135,23 +150,15 @@ def _send_telegram(msg: str) -> bool:
 
 def _flatten_all() -> dict:
     """Close ALL positions via TopstepX Position/close endpoint."""
-    token = _token()
-    h = {**HEADERS, "Authorization": f"Bearer {token}"}
     url = f"{USERAPI}/Position/close/{ACCOUNT_ID}"
     time.sleep(0.3)
-    req = urllib.request.Request(url, method="DELETE", headers=h)
-    resp = urllib.request.urlopen(req, timeout=10)
-    body = resp.read()
-    return json.loads(body) if body and body.strip() else {"status": resp.status, "msg": "flattened"}
+    result = _request_json(url, method="DELETE")
+    return result if isinstance(result, dict) else {"result": result}
 
 
 def _api_get(path: str) -> dict | list:
     """Generic GET to userapi with bearer auth. Returns parsed JSON."""
-    token = _token()
-    h = {**HEADERS, "Authorization": f"Bearer {token}"}
-    req = urllib.request.Request(f"{USERAPI}{path}", method="GET", headers=h)
-    resp = urllib.request.urlopen(req, timeout=10)
-    return json.loads(resp.read())
+    return _request_json(f"{USERAPI}{path}", method="GET")
 
 
 def _query_positions() -> list[dict] | None:
@@ -324,6 +331,10 @@ class SuperStructureExecutor:
         exchange_known = s.get("exchange_state_known", True)
         exchange_error = s.get("exchange_state_error", "")
         ADX_THR = 25; CCI_L = 100.0; CCI_S = -100.0
+        topstepx_status = "CONNECTED" if exchange_known else "DISCONNECTED"
+        topstepx_line = f"TopstepX Account `{ACCOUNT_ID}`: *{topstepx_status}*"
+        if not exchange_known and exchange_error:
+            topstepx_line += f" (`{exchange_error}`)"
 
         def mark(ok: bool) -> str:
             return "✅" if ok else "❌"
@@ -358,7 +369,7 @@ class SuperStructureExecutor:
         cons_lines = ["🎯 *CONS — Conservative ML*"]
         if not exchange_known:
             err = f" ({exchange_error})" if exchange_error else ""
-            cons_lines.append(f"  ⛔ Exchange state UNKNOWN{err} — entries blocked")
+            cons_lines.append(f"  ⛔ TopstepX account disconnected{err} — entries blocked")
         cons_lines.append(f"  {mark(adx_ok)} ADX `{adx}` `>` `{ADX_THR}`")
         cons_lines.append(f"  {mark(cci_ok)} CCI `{cci}` → `{cci_state}`")
         cons_lines.append(f"  • ST bias: {st_bias}")
@@ -478,7 +489,7 @@ class SuperStructureExecutor:
                 SEP,
                 "",
                 f"Position: *FLAT*",
-                f"Exchange: *{'KNOWN' if exchange_known else 'UNKNOWN'}*",
+                topstepx_line,
             ]
         else:
             side = "🟢 LONG" if pos == 1 else "🔴 SHORT"
@@ -517,7 +528,7 @@ class SuperStructureExecutor:
                 "",
                 *v8_block,
                 "",
-                f"Exchange: *{'KNOWN' if exchange_known else 'UNKNOWN'}*",
+                topstepx_line,
             ]
 
         # Filter only None (skip-conditional entries); keep "" so explicit

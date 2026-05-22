@@ -1506,6 +1506,8 @@ class SuperStructure:
                         self._executor.heartbeat({**self._heartbeat_state, "pos": self._pos,
                                                    "entry_price": self._entry_price,
                                                    "sl_price": self._sl_price,
+                                                   "exchange_state_known": self._exchange_state_known,
+                                                   "exchange_state_error": self._exchange_state_error,
                                                    **v8_state})
                     except Exception:
                         pass

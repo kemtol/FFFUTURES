@@ -1,0 +1,57 @@
+{
+  "generated_at_utc": "2026-05-17T16:49:42.090836+00:00",
+  "timezone": "Asia/Jakarta",
+  "buffer_path": "/home/kemal/futures/data/Live/topstepx_buffer.db",
+  "window_hours": 24,
+  "summary": {
+    "status": "WARN",
+    "checks_run": 6,
+    "checks_passed": 5,
+    "checks_warn": 1,
+    "checks_critical": 0,
+    "in_cme_halt": true,
+    "halt_label": "weekend halt (Sun, pre-17:00 CT reopen)"
+  },
+  "freshness": {
+    "severity": "WARN",
+    "latest_bar_ts": null,
+    "age_seconds": null,
+    "threshold_seconds": 600,
+    "in_cme_halt": true,
+    "note": "buffer empty during weekend halt (Sun, pre-17:00 CT reopen)"
+  },
+  "quantity": {
+    "severity": "PASS",
+    "actual_bars": 0,
+    "expected_bars": 1440,
+    "ratio": 0.0,
+    "threshold_ratio": 0.9,
+    "in_cme_halt": true,
+    "note": "0.0% of nominal \u2014 weekend halt (Sun, pre-17:00 CT reopen), expected"
+  },
+  "continuity": {
+    "severity": "PASS",
+    "gap_count": 0,
+    "max_gap_min": 0,
+    "max_effective_gap_min": 0,
+    "samples": [],
+    "note": "not enough rows to evaluate"
+  },
+  "ohlc_sanity": {
+    "severity": "PASS",
+    "violations": 0,
+    "samples": [],
+    "note": "no rows to check"
+  },
+  "price_plausibility": {
+    "severity": "PASS",
+    "latest_close": null,
+    "note": "no rows"
+  },
+  "duplicate_timestamps": {
+    "severity": "PASS",
+    "duplicate_count": 0,
+    "samples": [],
+    "note": "no rows"
+  }
+}

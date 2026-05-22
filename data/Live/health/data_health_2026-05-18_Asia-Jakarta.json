@@ -1,0 +1,87 @@
+{
+  "generated_at_utc": "2026-05-18T16:50:41.906523+00:00",
+  "timezone": "Asia/Jakarta",
+  "buffer_path": "/home/kemal/futures/data/Live/topstepx_buffer.db",
+  "window_hours": 24,
+  "summary": {
+    "status": "WARN",
+    "checks_run": 7,
+    "checks_passed": 6,
+    "checks_warn": 1,
+    "checks_critical": 0,
+    "in_cme_halt": false,
+    "halt_label": ""
+  },
+  "freshness": {
+    "severity": "PASS",
+    "latest_bar_ts": "2026-05-18T16:49:00+00:00",
+    "age_seconds": 101.9,
+    "threshold_seconds": 600,
+    "in_cme_halt": false,
+    "note": ""
+  },
+  "quantity": {
+    "severity": "WARN",
+    "actual_bars": 1118,
+    "expected_bars": 1440,
+    "ratio": 0.776,
+    "threshold_ratio": 0.9,
+    "in_cme_halt": false,
+    "note": "only 77.6% of expected (market halt acceptable)"
+  },
+  "continuity": {
+    "severity": "PASS",
+    "gap_count": 2,
+    "max_gap_min": 2.0,
+    "max_effective_gap_min": 2.0,
+    "samples": [
+      {
+        "from": "2026-05-18T03:58:00+00:00",
+        "to": "2026-05-18T04:00:00+00:00",
+        "gap_min": 2.0,
+        "cme_halt_min": 0.0,
+        "effective_gap_min": 2.0
+      },
+      {
+        "from": "2026-05-18T04:11:00+00:00",
+        "to": "2026-05-18T04:13:00+00:00",
+        "gap_min": 2.0,
+        "cme_halt_min": 0.0,
+        "effective_gap_min": 2.0
+      }
+    ],
+    "note": ""
+  },
+  "ohlc_sanity": {
+    "severity": "PASS",
+    "violations": 0,
+    "total_rows": 1118,
+    "samples": [],
+    "note": ""
+  },
+  "price_plausibility": {
+    "severity": "PASS",
+    "latest_close": 4552.3,
+    "range": [
+      1000.0,
+      10000.0
+    ],
+    "note": ""
+  },
+  "duplicate_timestamps": {
+    "severity": "PASS",
+    "duplicate_count": 0,
+    "samples": [],
+    "note": ""
+  },
+  "topstepx_account": {
+    "severity": "PASS",
+    "account_id": 22303383,
+    "status": "CONNECTED",
+    "known": true,
+    "error": "",
+    "saved_at": "2026-05-18T16:50:31.492679+00:00",
+    "state_age_seconds": 10.7,
+    "note": ""
+  }
+}

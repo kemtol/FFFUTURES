@@ -1,4 +1,4 @@
-# Inference Chain Health — 2026-05-16 07:33 WIB
+# Inference Chain Health — 2026-05-16 23:46 WIB
 
 **Status: ✅ PASS**
 
@@ -21,7 +21,7 @@ Refined thresholds: `{'0': 0.5, '1': 0.5, '2': 0.45}`
 ## C. L0 Raw ↔ L0 Live Sync
 Severity: ✅ PASS
 
-- Raw rows: `0`, Live rows: `145` (no overlap to compare)
+- Raw rows: `0`, Live rows: `0` (no overlap to compare)
 - Note: raw DB stale (batch-ingested, expected)
 
 ## D. Datamart Anchor Sterility

@@ -1,0 +1,202 @@
+{
+  "experiment": "meta_v8_cons_vwap",
+  "purpose": "Catalog existing Super Structure feature sets before training a CONS Meta-v7 + VWAP candidate.",
+  "live_router_current": {
+    "name": "V8 router live",
+    "note": "V8 is the live router/orchestrator name, not the CONS model version.",
+    "conservative_model": "model/SUPER_STRUCTURE/meta_v7/inference_model.txt",
+    "conservative_config": "model/SUPER_STRUCTURE/meta_v7/inference_config_refined.json",
+    "conservative_datamart": "data/Level_2_Datamart/super_structure_ml/v3_final_training.parquet",
+    "conservative_features": [
+      "entry_adx",
+      "cci_abs",
+      "st_gap_ratio",
+      "efficiency_ratio",
+      "volatility_zscore",
+      "session_cluster"
+    ],
+    "aggressive_mode": "Mechanical v1.12 pullback rule; no live ML brain."
+  },
+  "feature_sets": [
+    {
+      "name": "meta_v7_cons_live_baseline",
+      "mode": "CONS",
+      "status": "live_anchor",
+      "source": "pipeline/live/inference_router.py CONS_FEATURES",
+      "datamart": "data/Level_2_Datamart/super_structure_ml/v3_final_training.parquet",
+      "features": [
+        "entry_adx",
+        "cci_abs",
+        "st_gap_ratio",
+        "efficiency_ratio",
+        "volatility_zscore",
+        "session_cluster"
+      ]
+    },
+    {
+      "name": "meta_v3_v6_cons_advanced_lineage",
+      "mode": "CONS",
+      "status": "legacy_reference",
+      "source": "pipeline/super_structure_ml/features/generate_meta_features.py and v3/v6 datamarts",
+      "datamarts": [
+        "data/Level_2_Datamart/super_structure_ml/v3_final_training.parquet",
+        "data/Level_2_Datamart/super_structure_ml/v6_advanced_features.parquet"
+      ],
+      "feature_families": {
+        "baseline": [
+          "entry_adx",
+          "cci_abs",
+          "st_gap_ratio",
+          "efficiency_ratio",
+          "volatility_zscore",
+          "session_cluster"
+        ],
+        "entry_context": [
+          "entry_cci",
+          "entry_dema",
+          "entry_supertrend",
+          "entry_st_direction",
+          "entry_atr",
+          "dema_distance",
+          "dema_distance_atr",
+          "st_distance",
+          "st_distance_atr"
+        ],
+        "price_action": [
+          "wick_ratio",
+          "candle_body_atr",
+          "atr_pct",
+          "is_st_aligned",
+          "adx_delta"
+        ],
+        "trade_path_audit": [
+          "mae_atr_ratio",
+          "mfe_atr_ratio",
+          "mfe_points",
+          "mae_points"
+        ],
+        "time_session": [
+          "hour_utc",
+          "minute_utc",
+          "session",
+          "day_of_week"
+        ]
+      }
+    },
+    {
+      "name": "old_meta_v8_cons_candidate",
+      "mode": "CONS",
+      "status": "legacy_experiment",
+      "source": "pipeline/super_structure_ml/train/optimize_meta_v8.py",
+      "model_dir": "model/SUPER_STRUCTURE/meta_v8",
+      "features": [
+        "entry_adx",
+        "cci_abs",
+        "st_gap_ratio",
+        "efficiency_ratio",
+        "volatility_zscore",
+        "session_cluster",
+        "wick_ratio",
+        "candle_body_atr"
+      ],
+      "note": "This was an old feature/model experiment, not the currently live V8 router."
+    },
+    {
+      "name": "legacy_smart_1_dual_ml",
+      "mode": "CONS_AND_AGGR",
+      "status": "rollback_reference",
+      "source": "pipeline/live/super_structure.py legacy SMART_1 path",
+      "features": [
+        "entry_adx",
+        "cci_abs",
+        "st_gap_ratio",
+        "efficiency_ratio",
+        "volatility_zscore",
+        "wick_ratio",
+        "candle_body_atr",
+        "vol_ratio",
+        "st_slope",
+        "rsi_5"
+      ],
+      "note": "Legacy dual-ML path behind USE_V8_ROUTER=False; not current live path."
+    },
+    {
+      "name": "aggr_pullback_v1_12",
+      "mode": "AGGR",
+      "status": "current_aggr_research_baseline",
+      "source": "pipeline/super_structure_ml/train/build_training_datamart_v1_12.py",
+      "datamart": "data/Level_2_Datamart/super_structure_ml/v1_12_training_datamart.parquet",
+      "features": [
+        "dist_d50_atr",
+        "dist_d100_atr",
+        "dist_d200_atr",
+        "d50_slope",
+        "d100_slope",
+        "d200_slope",
+        "close_slope_5",
+        "dema_stack",
+        "entry_adx",
+        "entry_cci",
+        "cci_abs",
+        "rsi_7",
+        "wick_ratio",
+        "candle_body_atr",
+        "bar_range_atr",
+        "st_gap_ratio",
+        "touch_distance_atr",
+        "pullback_band_atr",
+        "hour_utc",
+        "dow",
+        "session_cluster"
+      ]
+    },
+    {
+      "name": "aggr_macro_v1_10_v1_11",
+      "mode": "AGGR",
+      "status": "retrospective",
+      "source": "pipeline/super_structure_ml/train/build_training_datamart_v1_10.py and v1_11 builders",
+      "datamarts": [
+        "data/Level_2_Datamart/super_structure_ml/v1_10_training_datamart.parquet",
+        "data/Level_2_Datamart/super_structure_ml/v1_11_training_datamart.parquet"
+      ],
+      "macro_features": [
+        "oil_return",
+        "us10y_change",
+        "dxy_return"
+      ],
+      "note": "v1.11 deep overfit in audit; keep for comparison, not as new baseline."
+    },
+    {
+      "name": "orb_live_feature_builder",
+      "mode": "ORB_RESEARCH",
+      "status": "separate_track",
+      "source": "pipeline/live/feature_builder.py",
+      "vwap_features": [
+        "vwap_at_breakout",
+        "price_vs_vwap_pct",
+        "price_vs_vwap_pct_abs",
+        "int_vwap_distance_x_atr14"
+      ],
+      "note": "VWAP exists in ORB feature code, but not in Super Structure CONS live features."
+    }
+  ],
+  "candidate_cons_v8_vwap": {
+    "baseline": "meta_v7_cons_live_baseline",
+    "datamart_target": "data/Level_2_Datamart/super_structure_ml/meta_v8_cons_vwap_training.parquet",
+    "model_dir_target": "model/SUPER_STRUCTURE/meta_v8_cons_vwap",
+    "features": [
+      "entry_adx",
+      "cci_abs",
+      "st_gap_ratio",
+      "efficiency_ratio",
+      "volatility_zscore",
+      "session_cluster",
+      "dist_to_ct_vwap_atr",
+      "vwap_side_aligned",
+      "ct_vwap_slope_20_atr",
+      "vwap_deviation_z_50"
+    ],
+    "new_feature_family": "CT trading-day VWAP context",
+    "promotion_rule": "Only compare offline first; do not replace meta_v7 live artifacts until walk-forward and replay beat the current live anchor."
+  }
+}

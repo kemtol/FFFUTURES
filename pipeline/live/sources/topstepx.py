@@ -9,6 +9,8 @@ Token persists in data/Live/topstepx_token.json.
 from __future__ import annotations
 
 import asyncio
+import base64
+import fcntl
 import json
 import os
 import ssl
@@ -20,9 +22,78 @@ from typing import Callable
 
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 TOKEN_FILE = ROOT / "data" / "Live" / "topstepx_token.json"
+TOKEN_LOCK_FILE = ROOT / "data" / "Live" / "topstepx_token.lock"
 CHART_WS = "wss://chartapi.topstepx.com/hubs/chart"
 SYMBOL = "F.US.MGC"
 RESOLUTION = "1"
+TOKEN_REFRESH_MARGIN_SECONDS = 600
+_TOKEN_REFRESH_LOCK = threading.Lock()
+
+
+def _decode_jwt_payload(token: str | None) -> dict:
+    """Return the JWT payload if this looks like a JWT, otherwise {}."""
+    if not token:
+        return {}
+    parts = token.split(".")
+    if len(parts) < 2:
+        return {}
+    try:
+        payload = parts[1]
+        padded = payload + "=" * ((4 - len(payload) % 4) % 4)
+        return json.loads(base64.urlsafe_b64decode(padded))
+    except Exception:
+        return {}
+
+
+def token_expires_at(token: str | None = None) -> int | None:
+    """Unix expiry timestamp from the TopstepX JWT, if available."""
+    if token is None and TOKEN_FILE.exists():
+        token = json.loads(TOKEN_FILE.read_text()).get("access_token")
+    payload = _decode_jwt_payload(token)
+    exp = payload.get("exp")
+    try:
+        return int(exp) if exp is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def token_needs_refresh(token: str | None = None, margin_seconds: int = TOKEN_REFRESH_MARGIN_SECONDS) -> bool:
+    """True when token is missing, expired, or close to expiry."""
+    if token is None and TOKEN_FILE.exists():
+        token = json.loads(TOKEN_FILE.read_text()).get("access_token")
+    if not token:
+        return True
+    exp = token_expires_at(token)
+    if exp is None:
+        return False
+    return exp <= int(time.time()) + margin_seconds
+
+
+def ensure_token(force: bool = False) -> str:
+    """Return a usable token, refreshing through Playwright when needed."""
+    token = json.loads(TOKEN_FILE.read_text()).get("access_token") if TOKEN_FILE.exists() else None
+    if not force and not token_needs_refresh(token):
+        return token
+    with _TOKEN_REFRESH_LOCK:
+        TOKEN_LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with TOKEN_LOCK_FILE.open("w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            try:
+                saved = json.loads(TOKEN_FILE.read_text()) if TOKEN_FILE.exists() else {}
+                token = saved.get("access_token")
+                saved_at = saved.get("saved_at")
+                recently_refreshed = False
+                if saved_at:
+                    try:
+                        ts = datetime.fromisoformat(saved_at.replace("Z", "+00:00"))
+                        recently_refreshed = (datetime.now(timezone.utc) - ts).total_seconds() < 120
+                    except Exception:
+                        recently_refreshed = False
+                if (not force or recently_refreshed) and not token_needs_refresh(token):
+                    return token
+                return _fetch_token_unlocked()
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 class TopstepXFeed:
@@ -152,12 +223,16 @@ class TopstepXFeed:
 
     def start(self) -> None:
         """Block and stream candles. Use in background thread."""
+        if token_needs_refresh(self.token):
+            self.token = ensure_token(force=not bool(self.token))
         if not self.token:
             raise RuntimeError("No token. Run login first.")
         asyncio.run(self._connect())
 
     def start_async(self) -> None:
         """Start in background daemon thread."""
+        if token_needs_refresh(self.token):
+            self.token = ensure_token(force=not bool(self.token))
         if not self.token:
             raise RuntimeError("No token.")
         threading.Thread(target=lambda: asyncio.run(self._connect()), daemon=True).start()
@@ -168,8 +243,8 @@ class TopstepXFeed:
 
 # ── helper: re-login when token expires ──────────────────────────────────────
 
-def fetch_token() -> str:
-    """Login via Playwright headless and save token. Returns the token."""
+def _fetch_token_unlocked() -> str:
+    """Login via Playwright headless and save token. Caller owns lock."""
     import asyncio as _a
     from playwright.async_api import async_playwright
 
@@ -214,6 +289,18 @@ def fetch_token() -> str:
         "saved_at": datetime.now(timezone.utc).isoformat(),
     }))
     return token
+
+
+def fetch_token() -> str:
+    """Login via Playwright headless and save token. Returns the token."""
+    TOKEN_LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with _TOKEN_REFRESH_LOCK:
+        with TOKEN_LOCK_FILE.open("w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            try:
+                return _fetch_token_unlocked()
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 # ── CLI test ─────────────────────────────────────────────────────────────────

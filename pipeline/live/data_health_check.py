@@ -35,6 +35,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 BUFFER_DB = ROOT / "data" / "Live" / "topstepx_buffer.db"
+STATE_PATH = ROOT / "data" / "Live" / "super_structure_state.json"
 OUT_DIR = ROOT / "data" / "Live" / "health"
 TELEGRAM_ENV_PATH = ROOT / "data" / "Live" / "telegram.env"
 
@@ -48,6 +49,7 @@ QUANTITY_WARN_RATIO = 0.90           # of expected 1440 bars in 24h
 WINDOW_HOURS = 24
 SYMBOL = "MICRO_GOLD"
 TIMEFRAME = "1m"
+TOPSTEPX_ACCOUNT_ID = 22303383
 TZ = "Asia/Jakarta"
 
 # CME futures maintenance windows (US Central Time):
@@ -370,6 +372,65 @@ def aggregate_summary(checks: dict) -> dict:
     }
 
 
+def check_topstepx_account() -> dict:
+    """Report whether live execution can verify TopstepX account state."""
+    if not STATE_PATH.exists():
+        return {
+            "severity": "CRITICAL",
+            "account_id": TOPSTEPX_ACCOUNT_ID,
+            "status": "DISCONNECTED",
+            "known": False,
+            "error": "state_file_missing",
+            "saved_at": "",
+            "note": "super_structure_state.json missing; account state unknown",
+        }
+    try:
+        state = json.loads(STATE_PATH.read_text())
+    except Exception as exc:
+        return {
+            "severity": "CRITICAL",
+            "account_id": TOPSTEPX_ACCOUNT_ID,
+            "status": "DISCONNECTED",
+            "known": False,
+            "error": f"state_read_failed: {exc}",
+            "saved_at": "",
+            "note": "cannot read super_structure_state.json; account state unknown",
+        }
+
+    known = bool(state.get("exchange_state_known"))
+    error = str(state.get("exchange_state_error") or "")
+    saved_at = str(state.get("saved_at") or "")
+    state_age_seconds = None
+    state_stale = False
+    if saved_at:
+        try:
+            saved_ts = datetime.fromisoformat(saved_at.replace("Z", "+00:00"))
+            state_age_seconds = round((datetime.now(timezone.utc) - saved_ts).total_seconds(), 1)
+            state_stale = state_age_seconds > FRESHNESS_THRESHOLD_S
+        except Exception:
+            state_stale = True
+    else:
+        state_stale = True
+
+    ok = known and not state_stale
+    if not known:
+        note = f"entries blocked; {error or 'exchange state unknown'}"
+    elif state_stale:
+        note = f"state stale ({state_age_seconds}s); super_structure may be down"
+    else:
+        note = ""
+    return {
+        "severity": "PASS" if ok else "CRITICAL",
+        "account_id": TOPSTEPX_ACCOUNT_ID,
+        "status": "CONNECTED" if ok else "DISCONNECTED",
+        "known": known,
+        "error": error,
+        "saved_at": saved_at,
+        "state_age_seconds": state_age_seconds,
+        "note": note,
+    }
+
+
 def build_report() -> dict:
     now_utc = datetime.now(timezone.utc)
     df = load_recent_bars(WINDOW_HOURS)
@@ -380,6 +441,7 @@ def build_report() -> dict:
         "ohlc_sanity": check_ohlc_sanity(df),
         "price_plausibility": check_price_plausibility(df),
         "duplicate_timestamps": check_duplicates(df),
+        "topstepx_account": check_topstepx_account(),
     }
     summary = aggregate_summary(checks)
     return {
@@ -432,10 +494,12 @@ def render_markdown(report: dict) -> str:
             lambda c: f"close {c['latest_close']} (range {c['range'][0]}-{c['range'][1]})",
         "duplicate_timestamps":
             lambda c: f"{c['duplicate_count']} dup row(s)",
+        "topstepx_account":
+            lambda c: f"account {c['account_id']} {c['status']}",
     }
     emoji = {"PASS": "✅", "WARN": "⚠️", "CRITICAL": "🛑"}
     for key in ("freshness", "quantity", "continuity", "ohlc_sanity",
-                "price_plausibility", "duplicate_timestamps"):
+                "price_plausibility", "duplicate_timestamps", "topstepx_account"):
         c = report[key]
         detail = detail_map[key](c)
         note = f" — {c['note']}" if c.get("note") else ""
@@ -468,9 +532,10 @@ def render_telegram(report: dict) -> str:
                                  f"/ `{c['total_rows']}` rows",
         "price_plausibility": lambda c: f"Price: `{c['latest_close']}`",
         "duplicate_timestamps": lambda c: f"Dup: `{c['duplicate_count']}` row(s)",
+        "topstepx_account": lambda c: f"TopstepX `{c['account_id']}`: *{c['status']}*",
     }
     for key in ("freshness", "quantity", "continuity", "ohlc_sanity",
-                "price_plausibility", "duplicate_timestamps"):
+                "price_plausibility", "duplicate_timestamps", "topstepx_account"):
         c = report[key]
         lines.append(f"{emoji[c['severity']]} {one_liners[key](c)}")
         if c.get("note") and c["severity"] != "PASS":

@@ -1,0 +1,79 @@
+{
+  "experiment": "m1_st_pullback_scalper",
+  "status": "ideation_research_only",
+  "live_safe": true,
+  "timeframe": "1m",
+  "source": {
+    "db": "data/Level_0_Raw/MGC_1m.db",
+    "table": "investing_ohlcv_1m",
+    "symbol": "MICRO_GOLD",
+    "timeframe": "1m",
+    "start_date": "2023-01-01"
+  },
+  "outputs": {
+    "l1_context": "data/Level_1_Features/super_structure_ml/m1_st_pullback_context.parquet",
+    "l1_manifest": "data/Level_1_Features/super_structure_ml/m1_st_pullback_context_manifest.json",
+    "events": "data/Level_2_Datamart/super_structure_ml/m1_st_pullback_scalper_events.parquet",
+    "events_manifest": "data/Level_2_Datamart/super_structure_ml/m1_st_pullback_scalper_events_manifest.json",
+    "training_gate_report": "data/Level_2_Datamart/super_structure_ml/m1_st_pullback_scalper_training_gate.json",
+    "model_dir": "model/SUPER_STRUCTURE/m1_st_pullback_scalper"
+  },
+  "indicators": {
+    "supertrend_factor": 3.0,
+    "atr_period": 14,
+    "adx_length": 14,
+    "cci_length": 14,
+    "cci_source": "hl2",
+    "dema_fast": 50,
+    "dema_mid": 100,
+    "dema_slow": 200,
+    "rsi_length": 7
+  },
+  "candidate_rules": {
+    "use_dema100_trend_filter": true,
+    "pullback_band_atr": 0.2,
+    "min_pullback_band_pts": 0.3,
+    "min_adx": 12.0,
+    "skip_long_rsi_gte": 72.0,
+    "skip_long_cci_gte": 180.0,
+    "skip_short_rsi_lte": 28.0,
+    "skip_short_cci_lte": -180.0,
+    "min_risk_pts": 0.4,
+    "max_risk_pts": 8.0
+  },
+  "exit_rules": {
+    "st_buffer_pts": 0.6,
+    "rr_target": 1.15,
+    "max_hold_bars": 60,
+    "take_profit_long_rsi_gte": 78.0,
+    "take_profit_long_cci_gte": 220.0,
+    "take_profit_short_rsi_lte": 22.0,
+    "take_profit_short_cci_lte": -220.0
+  },
+  "execution": {
+    "entry_timing": "next_m1_open_after_signal_close",
+    "max_entry_gap_minutes": 5
+  },
+  "data_quality": {
+    "expected_step_seconds": 60,
+    "short_gap_fail_seconds": 3600,
+    "quarantine_bars_after_unexpected_gap": 240,
+    "reject_outcome_window_gap_gt_seconds": 60
+  },
+  "costs": {
+    "point_value": 10.0,
+    "commission_round_turn_usd": 1.74,
+    "slippage_pts": 0.1
+  },
+  "frequency_target": {
+    "min_trades_per_day_after_ml": 1.0,
+    "max_trades_per_day_after_ml": 3.0
+  },
+  "promotion_requirements": [
+    "No live files changed",
+    "No dependency on 5m CONS signals",
+    "OOT positive expectancy after commission and slippage",
+    "Walk-forward windows beat risk-adjusted baseline",
+    "Daily trade cap and daily loss cap defined before live wiring"
+  ]
+}

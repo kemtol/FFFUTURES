@@ -23,12 +23,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pipeline.live.sources.topstepx import TopstepXFeed, fetch_token, \
+from pipeline.live.sources.topstepx import TopstepXFeed, ensure_token, \
     SYMBOL as TX_SYMBOL, RESOLUTION as TX_RES
 from pipeline.live.buffer import DataBuffer, CANARY_DB
 
 REPAIR_INTERVAL_SECONDS = 300  # 5 min
 STALE_THRESHOLD_MINUTES = 10
+
+
+def _is_auth_error(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return "401" in msg or "unauthorized" in msg or "token expired" in msg
 
 
 def backfill_if_stale(buffer: DataBuffer) -> None:
@@ -84,15 +89,19 @@ def main():
         repair_thread.start()
 
         try:
+            # Proactive refresh avoids spinning on a JWT that is already
+            # expired before the WebSocket handshake starts.
+            ensure_token()
             feed = TopstepXFeed()
             print(f"[Feed] Connected. Streaming {TX_SYMBOL} {TX_RES}m...", flush=True)
             feed.start()  # blocks until disconnect
         except RuntimeError as e:
-            if "No token" in str(e):
-                print(f"[Feed] Token expired → refreshing", flush=True)
+            if "No token" in str(e) or _is_auth_error(e):
+                print(f"[Feed] Token unavailable/expired → refreshing", flush=True)
                 try:
-                    token = fetch_token()
+                    ensure_token(force=True)
                     print(f"[Feed] New token acquired", flush=True)
+                    reconnect_delay = 5
                 except Exception as te:
                     print(f"[Feed] Token refresh failed: {te}", flush=True)
             else:
@@ -102,7 +111,16 @@ def main():
             repair_stop.set()
             break
         except Exception as e:
-            print(f"[Feed] Disconnected: {e}", flush=True)
+            if _is_auth_error(e):
+                print(f"[Feed] Auth disconnect ({e}) → refreshing token", flush=True)
+                try:
+                    ensure_token(force=True)
+                    print(f"[Feed] New token acquired", flush=True)
+                    reconnect_delay = 5
+                except Exception as te:
+                    print(f"[Feed] Token refresh failed: {te}", flush=True)
+            else:
+                print(f"[Feed] Disconnected: {e}", flush=True)
 
         # Stop periodic repair thread
         repair_stop.set()
