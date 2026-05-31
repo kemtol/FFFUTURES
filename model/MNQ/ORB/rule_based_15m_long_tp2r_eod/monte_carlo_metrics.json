@@ -1,0 +1,38 @@
+{
+  "100D": {
+    "horizon": 100,
+    "median_max_dd_usd": -4646.379999999999,
+    "median_pnl_usd": 1892.5099999999993,
+    "p5_max_dd_usd": -10288.907999999998,
+    "p5_pnl_usd": -6990.448999999994,
+    "p95_pnl_usd": 10128.303000000005,
+    "paths": 5000,
+    "prob_dd_breach_2000": 0.9596,
+    "prob_final_loss": 0.3546,
+    "prob_hit_3000": 0.6436
+  },
+  "200D": {
+    "horizon": 200,
+    "median_max_dd_usd": -6567.71,
+    "median_pnl_usd": 3729.8099999999986,
+    "p5_max_dd_usd": -13899.102999999983,
+    "p5_pnl_usd": -8746.338999999978,
+    "p95_pnl_usd": 15555.328000000023,
+    "paths": 5000,
+    "prob_dd_breach_2000": 0.9986,
+    "prob_final_loss": 0.311,
+    "prob_hit_3000": 0.7814
+  },
+  "30D": {
+    "horizon": 30,
+    "median_max_dd_usd": -2269.28,
+    "median_pnl_usd": 640.8499999999997,
+    "p5_max_dd_usd": -5817.668,
+    "p5_pnl_usd": -4348.268,
+    "p95_pnl_usd": 4960.130000000001,
+    "paths": 5000,
+    "prob_dd_breach_2000": 0.5794,
+    "prob_final_loss": 0.4032,
+    "prob_hit_3000": 0.2844
+  }
+}

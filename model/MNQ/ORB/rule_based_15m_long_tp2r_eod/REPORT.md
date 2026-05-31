@@ -1,16 +1,71 @@
-# MNQ ORB 15m Long TP2R/EOD Rule-Based Report
+# Strategi MNQ Opening Range Breakout Rule-Based Iterasi v1
+**Evaluasi Baseline 15m Long TP2R/EOD**
 
-Strategy ID: `rule_based_15m_long_tp2r_eod`
+Tanggal laporan: **2026-05-31**
 
-Generated: `2026-05-31T12:00:51+00:00`
+Model / strategy ID: `rule_based_15m_long_tp2r_eod`
 
-## Status
+Objective: **Topstep 50K research baseline** - mencari apakah breakout MNQ
+setelah 15 menit pertama New York open punya positive expectancy yang cukup
+untuk menjadi kandidat forward test.
 
-This is the current MNQ ORB rule-based research baseline. It is **not
-live-ready** yet. It is the control candidate that ML overlays and future rule
-variants must beat.
+Audience: trader futures, evaluator internal strategi MNQ, dan pembanding untuk
+overlay machine learning.
 
-## Contract
+---
+
+## 1. Ringkasan Eksekutif
+
+Laporan ini mengevaluasi strategi MNQ ORB v1 dari sudut pandang **baseline
+rule-based**, bukan machine learning.
+
+Aturan yang diuji sederhana: ambil posisi long setelah candle M1 pertama close
+di atas high opening range 15 menit, entry pada open M1 berikutnya, lalu exit
+di TP 2R atau time exit 15:00 New York. Strategi ini tidak memakai normal stop
+loss; OR low hanya menjadi referensi sizing.
+
+| Area | Hasil |
+| --- | ---: |
+| Periode sinyal | 2019-05-06 - 2026-05-26 |
+| Total trade | 1,296 |
+| Win rate | 56.48% |
+| Net PnL | $33,091 |
+| Max drawdown | -$12,124 |
+| Profit factor | 1.12 |
+| Daily Sharpe | 0.50 |
+| Daily Sortino | 0.64 |
+| 30D terakhir | 18 trade, $3,460 PnL, -$551 max DD |
+
+**Kesimpulan utama:** baseline ini layak dipertahankan sebagai control strategy
+karena window 30 hari terakhir menarik untuk objektif Topstep. Namun edge
+historis panjangnya masih tipis: PF 1.12 dan Sharpe 0.50. Strategi belum
+layak live tanpa simulasi MLL, consistency, catastrophic guard, dan forward
+test.
+
+---
+
+## 2. Latar Belakang Strategi
+
+Opening Range Breakout berangkat dari hipotesis bahwa rentang harga pada awal
+sesi New York menyimpan informasi tentang imbalance intraday. Untuk Nasdaq
+futures, tekanan order setelah cash open sering menjadi penentu arah sesi.
+
+Versi ini sengaja dibuat sederhana:
+
+1. Tidak memakai indikator tambahan.
+2. Tidak memakai filter ML.
+3. Tidak melakukan short continuation.
+4. Tidak melakukan reversal.
+5. Tidak memakai normal SL sebagai exit strategi.
+
+Tujuannya adalah mendapatkan **baseline bersih**. Jika baseline saja tidak
+punya edge, ML overlay akan mudah menjadi curve fitting. Jika baseline punya
+edge, ML dapat diuji sebagai risk adjuster, bukan sebagai alasan untuk memaksa
+trade.
+
+---
+
+## 3. Konteks Strategi
 
 | Field | Value |
 | --- | --- |
@@ -27,19 +82,65 @@ variants must beat.
 | Target risk | $500 |
 | Max trades | 1 per NY session |
 
-## Visuals
+Model ini disebut rule-based karena semua keputusan entry dan exit ditentukan
+oleh aturan eksplisit. Belum ada model probabilitas yang ikut menentukan trade.
 
-![Equity curve](charts/equity_curve.svg)
+---
 
-![Drawdown curve](charts/drawdown_curve.svg)
+## 4. Definisi Sizing
 
-![Monthly PnL](charts/monthly_pnl.svg)
+Baseline memakai target risk dollar tetap:
 
-![Rolling windows](charts/rolling_windows.svg)
+```text
+contracts_float = target_risk_usd / risk_per_contract_usd
+contracts_used = floor(contracts_float), minimum 1 contract
+```
 
-![Trade PnL distribution](charts/trade_pnl_distribution.svg)
+Dengan `target_risk_usd = $500`, jumlah kontrak otomatis turun saat OR/risk
+melebar dan naik saat risk menyempit. Karena kontrak harus integer, actual risk
+tidak selalu tepat $500.
 
-## Performance
+Catatan penting: OR low **bukan** normal stop loss strategi. OR low hanya
+referensi sizing. Exit tetap TP 2R atau time exit.
+
+---
+
+## 5. Hasil Historis 2019-2026
+
+### 5.1 Equity Curve
+
+![Equity Curve](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/equity_curve.png)
+
+Equity curve menunjukkan strategi menghasilkan PnL positif secara historis,
+tetapi jalurnya tidak linear. Ada fase panjang yang relatif datar dan beberapa
+periode drawdown besar.
+
+### 5.2 Drawdown
+
+![Drawdown Curve](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/drawdown_curve.png)
+
+Drawdown maksimum historis sebesar -$12,124. Ini jauh lebih
+besar daripada batas MLL Topstep 50K, sehingga evaluasi live tidak boleh hanya
+mengandalkan total PnL historis.
+
+### 5.3 Monthly PnL
+
+![Monthly PnL](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/monthly_pnl.png)
+
+Grafik bulanan membantu melihat bahwa strategi tidak menghasilkan distribusi
+profit yang stabil setiap bulan. Ada bulan kuat, bulan kosong, dan bulan rugi.
+
+### 5.4 Distribusi PnL Per Trade
+
+![Trade PnL Distribution](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/trade_pnl_distribution.png)
+
+Rata-rata loss per trade masih lebih besar daripada rata-rata win. Edge muncul
+dari kombinasi win rate 56.48%, sizing, dan beberapa periode momentum yang
+produktif.
+
+---
+
+## 6. Metrik Historis
 
 | Metric | Value |
 | --- | ---: |
@@ -61,7 +162,9 @@ variants must beat.
 | Max consecutive wins | 10 |
 | Max consecutive losses | 6 |
 
-## Cost Model
+---
+
+## 7. Cost Model
 
 | Cost | Value |
 | --- | ---: |
@@ -71,7 +174,12 @@ variants must beat.
 | Total commission paid | $5,590 |
 | Total modeled slippage | $4,508 |
 
-## Daily Quality
+Biaya sudah dimasukkan pada `pnl_net_usd`: TopstepX MNQ $1.24 round-turn per
+contract dan modeled slippage 1 tick per side.
+
+---
+
+## 8. Daily Quality
 
 Sharpe and Sortino are computed from daily dollar PnL over MNQ NY session days,
 with zero PnL on no-trade days, annualized by `sqrt(252)`.
@@ -91,7 +199,11 @@ with zero PnL on no-trade days, annualized by `sqrt(252)`.
 | Best-day profit share | 2.99% |
 | 50% consistency flag | Pass |
 
-## Rolling Windows
+---
+
+## 9. Rolling Window Terakhir
+
+![Rolling Windows](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/rolling_windows.png)
 
 | Window | Trades | Win Rate | PnL | Max DD |
 | ---: | ---: | ---: | ---: | ---: |
@@ -103,19 +215,160 @@ with zero PnL on no-trade days, annualized by `sqrt(252)`.
 | 100D | 54 | 55.56% | $4,035 | -$4,085 |
 | 200D | 94 | 61.70% | $5,385 | -$4,561 |
 
-## Readout
+Interpretasi:
 
-- This is a rule-based strategy, not ML.
-- The edge is positive but still shallow: PF is 1.12 and long-run Sharpe is 0.50.
-- Recent 30D window is the attractive part: 18 trades, $3,460 PnL, -$551 max DD.
-- The strategy has no normal SL; OR low is used for position sizing only.
-- Live promotion still needs Topstep MLL simulation, first-$3000 path review,
-  catastrophic guard choice, and forward-test execution plumbing.
+- 30D terakhir adalah bagian paling menarik: 18 trade dan $3,460 PnL.
+- 5D dan 10D masih terlalu pendek untuk menjadi bukti edge.
+- 100D dan 200D tetap positif, tetapi DD historisnya mulai berat untuk Topstep.
 
-## Source Artifacts
+---
+
+## 10. Monte Carlo dan Stress Test
+
+Monte Carlo dilakukan dengan bootstrap dari daily PnL historis. Ini bukan
+prediksi masa depan, tetapi stress test distribusi jika pola daily PnL historis
+muncul dalam urutan yang berbeda.
+
+| Horizon | Median PnL | P5 PnL | Prob. Akhir Rugi | Median MaxDD | Prob. DD <= -$2k | Prob. Hit +$3k |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 30D | $641 | -$4,348 | 40.32% | -$2,269 | 57.94% | 28.44% |
+| 100D | $1,893 | -$6,990 | 35.46% | -$4,646 | 95.96% | 64.36% |
+| 200D | $3,730 | -$8,746 | 31.10% | -$6,568 | 99.86% | 78.14% |
+
+### 10.1 Fan Chart 30D
+
+![Monte Carlo PnL Fan 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_30d.png)
+
+### 10.2 Distribusi Final PnL 30D
+
+![Monte Carlo Final PnL CDF 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_final_pnl_cdf_30d.png)
+
+### 10.3 Max Drawdown 30D
+
+![Monte Carlo MaxDD 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_maxdd_hist_30d.png)
+
+### 10.4 Fan Chart 100D
+
+![Monte Carlo PnL Fan 100D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_100d.png)
+
+Kesimpulan Monte Carlo: strategi punya upside untuk mencapai +$3,000 dalam
+sebagian path 30D, tetapi risiko drawdown terhadap batas -$2,000 tetap perlu
+diuji lebih ketat dengan simulator Topstep yang memperhitungkan aturan akun.
+
+---
+
+## 11. Penilaian Risiko
+
+### 11.1 Risiko Drawdown
+
+Max drawdown historis -$12,124 jauh lebih besar daripada MLL
+Topstep 50K. Ini tidak otomatis membatalkan strategi, karena evaluasi Topstep
+berjalan pada window pendek, tetapi artinya strategi membutuhkan guard dan
+monitoring harian.
+
+### 11.2 Risiko No Normal SL
+
+Strategi ini tidak memakai SL normal. Exit loss terjadi lewat time exit.
+Konsekuensinya, flash drop atau trend day yang berlawanan bisa menghasilkan
+kerugian lebih besar dari target risk teoritis. Catastrophic guard harus
+dipilih sebagai layer operasional terpisah.
+
+### 11.3 Risiko Curve Fit
+
+Baseline ini cukup bersih karena hanya memakai OR 15m, long only, TP 2R/time
+exit, dan risk $500. Namun pemilihan parameter tetap berasal dari sweep, jadi
+forward test diperlukan sebelum dianggap valid.
+
+### 11.4 Risiko Eksekusi Live
+
+Live version harus memastikan:
+
+- M1 candle close sudah final sebelum entry.
+- Entry dilakukan pada open M1 berikutnya.
+- Jam New York dan daylight saving benar.
+- Tidak ada duplicate trade per hari.
+- Tidak ada posisi tanpa catastrophic guard.
+- Data feed dan broker connection punya heartbeat.
+
+---
+
+## 12. Rekomendasi Sementara
+
+| Area | Rekomendasi |
+| --- | --- |
+| Baseline research | Pertahankan sebagai control strategy |
+| Live trading | Belum live-ready |
+| Forward test | Layak dibuat paper/forward-test setelah Topstep simulator selesai |
+| ML overlay | Hanya boleh menjadi risk adjuster, bukan filter trade utama dulu |
+| Sizing default | Tetap $500 sampai MLL/consistency simulator selesai |
+| Guard | Wajib desain catastrophic guard sebelum live |
+
+Rekomendasi utama:
+
+1. Jadikan `rule_based_15m_long_tp2r_eod` sebagai benchmark MNQ ORB.
+2. Jangan mengganti baseline dengan ML sebelum ML terbukti memperbaiki risk
+   adjusted return terhadap baseline ini.
+3. Prioritas berikutnya adalah Topstep-specific simulator: MLL, consistency,
+   first +$3,000 path, dan daily loss guard.
+
+---
+
+## 13. Keputusan Sementara
+
+| Area | Status |
+| --- | --- |
+| Baseline edge | Ada, tetapi tipis |
+| 30D Topstep-style potential | Menarik |
+| Long-run robustness | Perlu guard dan regime review |
+| Live readiness | Belum |
+| Model package | Siap sebagai baseline report |
+
+Keputusan sementara: **strategi dipertahankan sebagai baseline MNQ ORB v1**.
+Belum ada approval untuk live execution.
+
+---
+
+## 14. Artifact Register
+
+### Model Package
+
+| File | Keterangan |
+| --- | --- |
+| `README.md` | Model card singkat |
+| `REPORT.md` | Laporan utama ini |
+| `metrics.json` | Ringkasan metrik machine-readable |
+| `manifest.json` | Lineage source/output |
+| `charts/equity_curve.png` | Equity curve |
+| `charts/drawdown_curve.png` | Drawdown curve |
+| `charts/monthly_pnl.png` | Monthly PnL |
+| `charts/rolling_windows.png` | Rolling window PnL/DD |
+| `charts/trade_pnl_distribution.png` | Distribusi PnL trade |
+| `monte_carlo/monte_pnl_fan_30d.png` | Monte Carlo fan chart 30D |
+| `monte_carlo/monte_final_pnl_cdf_30d.png` | Monte Carlo final PnL CDF 30D |
+| `monte_carlo/monte_maxdd_hist_30d.png` | Monte Carlo MaxDD histogram 30D |
+| `monte_carlo/monte_pnl_fan_100d.png` | Monte Carlo fan chart 100D |
+
+### Canonical Data
 
 ```text
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/events.parquet
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/summary.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/manifest.json
 ```
+
+---
+
+## 15. Lampiran A - 10 Trade Terakhir
+
+| NY Date | Signal UTC | Exit | Contracts | Net PnL |
+| --- | --- | --- | ---: | ---: |
+| 2026-05-08 | 2026-05-08 13:46 | TIME_EXIT | 1 | $397 |
+| 2026-05-11 | 2026-05-11 15:44 | TIME_EXIT | 1 | -$102 |
+| 2026-05-13 | 2026-05-13 14:53 | TP_2R | 2 | $885 |
+| 2026-05-14 | 2026-05-14 13:46 | TIME_EXIT | 1 | $98 |
+| 2026-05-15 | 2026-05-15 14:15 | TIME_EXIT | 1 | $175 |
+| 2026-05-19 | 2026-05-19 17:10 | TIME_EXIT | 1 | -$222 |
+| 2026-05-20 | 2026-05-20 13:47 | TIME_EXIT | 1 | $213 |
+| 2026-05-21 | 2026-05-21 13:55 | TP_2R | 2 | $979 |
+| 2026-05-22 | 2026-05-22 17:30 | TIME_EXIT | 1 | -$175 |
+| 2026-05-26 | 2026-05-26 13:46 | TIME_EXIT | 1 | $101 |

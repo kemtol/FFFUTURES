@@ -33,12 +33,17 @@ Included model-package artifacts:
 | --- | --- |
 | `REPORT.md` | Human-readable report with PnL, DD, Sharpe, Sortino, rolling windows, and chart links |
 | `metrics.json` | Machine-readable copy of the canonical performance summary |
+| `monte_carlo_metrics.json` | Bootstrap stress-test summary for 30D/100D/200D horizons |
 | `manifest.json` | Source/output lineage for this model package |
-| `charts/equity_curve.svg` | Equity curve |
-| `charts/drawdown_curve.svg` | Drawdown curve |
-| `charts/monthly_pnl.svg` | Monthly net PnL |
-| `charts/rolling_windows.svg` | 5D/10D/20D/30D/50D/100D/200D PnL and DD |
-| `charts/trade_pnl_distribution.svg` | Trade PnL histogram |
+| `charts/equity_curve.png` | Equity curve |
+| `charts/drawdown_curve.png` | Drawdown curve |
+| `charts/monthly_pnl.png` | Monthly net PnL |
+| `charts/rolling_windows.png` | 5D/10D/20D/30D/50D/100D/200D PnL and DD |
+| `charts/trade_pnl_distribution.png` | Trade PnL histogram |
+| `monte_carlo/monte_pnl_fan_30d.png` | 30D Monte Carlo PnL fan chart |
+| `monte_carlo/monte_final_pnl_cdf_30d.png` | 30D final PnL CDF |
+| `monte_carlo/monte_maxdd_hist_30d.png` | 30D Monte Carlo max drawdown histogram |
+| `monte_carlo/monte_pnl_fan_100d.png` | 100D Monte Carlo PnL fan chart |
 
 ## Strategy Contract
 
