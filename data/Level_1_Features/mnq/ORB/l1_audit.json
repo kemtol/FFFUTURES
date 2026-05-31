@@ -1,0 +1,41 @@
+{
+  "bad_ohlc_rows": 0,
+  "columns": 18,
+  "complete_orb_days_wrong_bar_count": 0,
+  "continuity": {
+    "gaps_gt_expected": 5491,
+    "max_gap_seconds": 284460,
+    "median_step_seconds": 60.0
+  },
+  "created_at": "2026-05-28T02:04:50.868388+00:00",
+  "duplicate_timestamps": 0,
+  "eligible_rows_bad_quality": 0,
+  "eligible_rows_before_or_end": 0,
+  "expected_orb_bars": 30,
+  "expected_step_seconds": 60,
+  "failures": {},
+  "hard_nulls": {},
+  "incomplete_orb_days_with_eligible_rows": 0,
+  "l0_summary": {
+    "max_ts": "2026-05-28T01:53:00+00:00",
+    "min_ts": "2019-05-05T22:04:00+00:00",
+    "rows": 2487265
+  },
+  "l1_audit_pass": true,
+  "l1_path": "/home/kemal/futures/data/Level_1_Features/mnq/ORB/context.parquet",
+  "manifest_checks": {
+    "max_ts_match": true,
+    "min_ts_match": true,
+    "output_match": true,
+    "rows_match": true
+  },
+  "max_ts": "2026-05-28T01:53:00+00:00",
+  "min_ts": "2019-05-05T22:04:00+00:00",
+  "ny_days": 2199,
+  "orb_complete_days": 1815,
+  "pre_or_rows_with_or_values": 0,
+  "quality_flag_mismatches": 0,
+  "rows": 2487265,
+  "source_path": "/home/kemal/futures/data/Level_0_Raw/MNQ_1m.duckdb",
+  "status": "PASS"
+}

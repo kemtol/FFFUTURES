@@ -1,0 +1,15 @@
+{
+  "thresholds": {
+    "0": 0.5,
+    "1": 0.4,
+    "2": 0.35
+  },
+  "features": [
+    "entry_adx",
+    "cci_abs",
+    "st_gap_ratio",
+    "efficiency_ratio",
+    "volatility_zscore",
+    "session_cluster"
+  ]
+}

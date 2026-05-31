@@ -1,0 +1,67 @@
+{
+  "experiment": "mnq_orb",
+  "status": "research_candidate_not_live_ready",
+  "live_safe": false,
+  "source": {
+    "engine": "duckdb",
+    "db": "data/Level_0_Raw/MNQ_1m.duckdb",
+    "table": "ohlcv_1m",
+    "timeframe": "1m",
+    "required_columns": [
+      "timestamp_utc",
+      "open",
+      "high",
+      "low",
+      "close",
+      "volume"
+    ]
+  },
+  "outputs": {
+    "l1_context": "data/Level_1_Features/mnq/ORB/context.parquet",
+    "l1_manifest": "data/Level_1_Features/mnq/ORB/context_manifest.json",
+    "daily_confluence": "data/Level_1_Features/mnq/ORB/daily_confluence.parquet",
+    "daily_confluence_manifest": "data/Level_1_Features/mnq/ORB/daily_confluence_manifest.json",
+    "daily_confluence_audit": "data/Level_1_Features/mnq/ORB/daily_confluence_audit.json",
+    "events": "data/Level_2_Datamart/mnq/ORB/events.parquet",
+    "events_manifest": "data/Level_2_Datamart/mnq/ORB/events_manifest.json",
+    "training_gate_report": "data/Level_2_Datamart/mnq/ORB/training_gate.json",
+    "model_dir": "model/MNQ/ORB"
+  },
+  "session": {
+    "timezone": "America/New_York",
+    "market_open": "09:30",
+    "orb_end": "10:00",
+    "time_exit": "15:00",
+    "decision_timeframe_minutes": 1
+  },
+  "rules": {
+    "side": "LONG_ONLY",
+    "max_trades_per_day": 1,
+    "breakout_rule": "close_gt_orb_high",
+    "stop_rule": "opening_range_low_for_position_sizing",
+    "exit_rule": "time_exit_only",
+    "min_orb_range_pts": 10.0,
+    "max_orb_range_pts": 250.0,
+    "min_entry_risk_pts": 5.0,
+    "max_entry_risk_pts": 300.0
+  },
+  "costs": {
+    "point_value_usd": 2.0,
+    "commission_round_turn_usd": 1.24,
+    "commission_status": "official_topstepx_help_center_mnq_round_turn_2026-05-31",
+    "slippage_ticks_per_side": 1,
+    "tick_size": 0.25
+  },
+  "position_sizing": {
+    "target_risk_usd": 500.0,
+    "max_contracts": 20,
+    "min_contracts": 1
+  },
+  "promotion_requirements": [
+    "No dependency on Gold/MGC datamarts or models",
+    "No live files changed",
+    "L1/L2 gate passes",
+    "Baseline positive expectancy after realistic commission and slippage",
+    "Walk-forward validation survives 2022-2026 regimes"
+  ]
+}

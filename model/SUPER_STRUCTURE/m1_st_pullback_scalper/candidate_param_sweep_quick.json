@@ -1,0 +1,730 @@
+{
+  "start_date": "2026-01-01",
+  "end_date": null,
+  "max_combos": 40,
+  "seed": 42,
+  "total_grid_size": 1944,
+  "swept": 40,
+  "top": [
+    {
+      "params_id": "c4140ad4cc",
+      "params": {
+        "min_adx": 12.0,
+        "pullback_band_atr": 0.1,
+        "min_pullback_band_pts": 0.2,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.4,
+        "max_risk_pts": 6.0,
+        "st_buffer_pts": 0.8,
+        "rr_target": 1.0,
+        "max_hold_bars": 30
+      },
+      "metrics_2024_now": {
+        "events": 571,
+        "trade_days": 93,
+        "events_per_day": 6.139784946236559,
+        "pnl_usd": -1347.4150569883268,
+        "avg_trade": -2.3597461593490836,
+        "win_rate": 0.500875656742557,
+        "max_drawdown": -1593.2740091119222,
+        "long_events": 254,
+        "short_events": 317
+      },
+      "metrics_2026": {
+        "events": 571,
+        "trade_days": 93,
+        "events_per_day": 6.139784946236559,
+        "pnl_usd": -1347.4150569883268,
+        "avg_trade": -2.3597461593490836,
+        "win_rate": 0.500875656742557,
+        "max_drawdown": -1593.2740091119222,
+        "long_events": 254,
+        "short_events": 317
+      },
+      "metrics_2026_apr_may": {
+        "events": 181,
+        "trade_days": 30,
+        "events_per_day": 6.033333333333333,
+        "pnl_usd": -377.0877409944328,
+        "avg_trade": -2.083357685052115,
+        "win_rate": 0.4972375690607735,
+        "max_drawdown": -574.5634550289984,
+        "long_events": 89,
+        "short_events": 92
+      },
+      "score": -4625.62242901166
+    },
+    {
+      "params_id": "f96fd01f91",
+      "params": {
+        "min_adx": 20.0,
+        "pullback_band_atr": 0.1,
+        "min_pullback_band_pts": 0.3,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.4,
+        "max_risk_pts": 6.0,
+        "st_buffer_pts": 0.4,
+        "rr_target": 1.15,
+        "max_hold_bars": 30
+      },
+      "metrics_2024_now": {
+        "events": 364,
+        "trade_days": 89,
+        "events_per_day": 4.089887640449438,
+        "pnl_usd": -362.73826965159714,
+        "avg_trade": -0.996533707834058,
+        "win_rate": 0.48626373626373626,
+        "max_drawdown": -788.4978348908444,
+        "long_events": 149,
+        "short_events": 215
+      },
+      "metrics_2026": {
+        "events": 364,
+        "trade_days": 89,
+        "events_per_day": 4.089887640449438,
+        "pnl_usd": -362.73826965159714,
+        "avg_trade": -0.996533707834058,
+        "win_rate": 0.48626373626373626,
+        "max_drawdown": -788.4978348908444,
+        "long_events": 149,
+        "short_events": 215
+      },
+      "metrics_2026_apr_may": {
+        "events": 124,
+        "trade_days": 28,
+        "events_per_day": 4.428571428571429,
+        "pnl_usd": -285.94779414693204,
+        "avg_trade": -2.3060305979591296,
+        "win_rate": 0.47580645161290325,
+        "max_drawdown": -455.46487289356173,
+        "long_events": 59,
+        "short_events": 65
+      },
+      "score": -5029.4159740755
+    },
+    {
+      "params_id": "5f9675f119",
+      "params": {
+        "min_adx": 20.0,
+        "pullback_band_atr": 0.1,
+        "min_pullback_band_pts": 0.3,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.4,
+        "max_risk_pts": 8.0,
+        "st_buffer_pts": 0.4,
+        "rr_target": 1.15,
+        "max_hold_bars": 30
+      },
+      "metrics_2024_now": {
+        "events": 392,
+        "trade_days": 90,
+        "events_per_day": 4.355555555555555,
+        "pnl_usd": -310.29327104732533,
+        "avg_trade": -0.7915644669574626,
+        "win_rate": 0.4923469387755102,
+        "max_drawdown": -892.447821713764,
+        "long_events": 160,
+        "short_events": 232
+      },
+      "metrics_2026": {
+        "events": 392,
+        "trade_days": 90,
+        "events_per_day": 4.355555555555555,
+        "pnl_usd": -310.29327104732533,
+        "avg_trade": -0.7915644669574626,
+        "win_rate": 0.4923469387755102,
+        "max_drawdown": -892.447821713764,
+        "long_events": 160,
+        "short_events": 232
+      },
+      "metrics_2026_apr_may": {
+        "events": 131,
+        "trade_days": 28,
+        "events_per_day": 4.678571428571429,
+        "pnl_usd": -483.1008291682079,
+        "avg_trade": -3.6877925890702894,
+        "win_rate": 0.4732824427480916,
+        "max_drawdown": -664.3709503607549,
+        "long_events": 62,
+        "short_events": 69
+      },
+      "score": -5625.757225597826
+    },
+    {
+      "params_id": "db57c96b1c",
+      "params": {
+        "min_adx": 16.0,
+        "pullback_band_atr": 0.1,
+        "min_pullback_band_pts": 0.2,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.4,
+        "max_risk_pts": 6.0,
+        "st_buffer_pts": 0.4,
+        "rr_target": 0.8,
+        "max_hold_bars": 30
+      },
+      "metrics_2024_now": {
+        "events": 477,
+        "trade_days": 92,
+        "events_per_day": 5.184782608695652,
+        "pnl_usd": -1054.0375013469607,
+        "avg_trade": -2.2097222250460393,
+        "win_rate": 0.5471698113207547,
+        "max_drawdown": -1246.586260150929,
+        "long_events": 205,
+        "short_events": 272
+      },
+      "metrics_2026": {
+        "events": 477,
+        "trade_days": 92,
+        "events_per_day": 5.184782608695652,
+        "pnl_usd": -1054.0375013469607,
+        "avg_trade": -2.2097222250460393,
+        "win_rate": 0.5471698113207547,
+        "max_drawdown": -1246.586260150929,
+        "long_events": 205,
+        "short_events": 272
+      },
+      "metrics_2026_apr_may": {
+        "events": 143,
+        "trade_days": 30,
+        "events_per_day": 4.766666666666667,
+        "pnl_usd": -428.3927672855718,
+        "avg_trade": -2.995753617381621,
+        "win_rate": 0.5174825174825175,
+        "max_drawdown": -550.1284143749702,
+        "long_events": 66,
+        "short_events": 77
+      },
+      "score": -5691.981219397044
+    },
+    {
+      "params_id": "1db35c2d7f",
+      "params": {
+        "min_adx": 16.0,
+        "pullback_band_atr": 0.2,
+        "min_pullback_band_pts": 0.2,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.3,
+        "max_risk_pts": 6.0,
+        "st_buffer_pts": 0.4,
+        "rr_target": 1.15,
+        "max_hold_bars": 60
+      },
+      "metrics_2024_now": {
+        "events": 630,
+        "trade_days": 91,
+        "events_per_day": 6.923076923076923,
+        "pnl_usd": -1755.3932363081835,
+        "avg_trade": -2.78633847033045,
+        "win_rate": 0.4666666666666667,
+        "max_drawdown": -2020.9568001801276,
+        "long_events": 267,
+        "short_events": 363
+      },
+      "metrics_2026": {
+        "events": 630,
+        "trade_days": 91,
+        "events_per_day": 6.923076923076923,
+        "pnl_usd": -1755.3932363081835,
+        "avg_trade": -2.78633847033045,
+        "win_rate": 0.4666666666666667,
+        "max_drawdown": -2020.9568001801276,
+        "long_events": 267,
+        "short_events": 363
+      },
+      "metrics_2026_apr_may": {
+        "events": 184,
+        "trade_days": 29,
+        "events_per_day": 6.344827586206897,
+        "pnl_usd": -499.6266974178834,
+        "avg_trade": -2.7153624859667578,
+        "win_rate": 0.45652173913043476,
+        "max_drawdown": -770.1216466280047,
+        "long_events": 83,
+        "short_events": 101
+      },
+      "score": -5890.91161460804
+    },
+    {
+      "params_id": "fad034c5ab",
+      "params": {
+        "min_adx": 20.0,
+        "pullback_band_atr": 0.1,
+        "min_pullback_band_pts": 0.2,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.3,
+        "max_risk_pts": 8.0,
+        "st_buffer_pts": 0.8,
+        "rr_target": 1.0,
+        "max_hold_bars": 60
+      },
+      "metrics_2024_now": {
+        "events": 352,
+        "trade_days": 88,
+        "events_per_day": 4.0,
+        "pnl_usd": -520.01179728531,
+        "avg_trade": -1.4773062422878125,
+        "win_rate": 0.5113636363636364,
+        "max_drawdown": -967.4925528754004,
+        "long_events": 141,
+        "short_events": 211
+      },
+      "metrics_2026": {
+        "events": 352,
+        "trade_days": 88,
+        "events_per_day": 4.0,
+        "pnl_usd": -520.01179728531,
+        "avg_trade": -1.4773062422878125,
+        "win_rate": 0.5113636363636364,
+        "max_drawdown": -967.4925528754004,
+        "long_events": 141,
+        "short_events": 211
+      },
+      "metrics_2026_apr_may": {
+        "events": 112,
+        "trade_days": 27,
+        "events_per_day": 4.148148148148148,
+        "pnl_usd": -358.04898090733957,
+        "avg_trade": -3.196865900958389,
+        "win_rate": 0.49107142857142855,
+        "max_drawdown": -618.1560473838985,
+        "long_events": 54,
+        "short_events": 58
+      },
+      "score": -6173.11666505967
+    },
+    {
+      "params_id": "330506af45",
+      "params": {
+        "min_adx": 16.0,
+        "pullback_band_atr": 0.2,
+        "min_pullback_band_pts": 0.2,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.3,
+        "max_risk_pts": 8.0,
+        "st_buffer_pts": 0.4,
+        "rr_target": 1.0,
+        "max_hold_bars": 60
+      },
+      "metrics_2024_now": {
+        "events": 699,
+        "trade_days": 92,
+        "events_per_day": 7.5978260869565215,
+        "pnl_usd": -2049.9038093164545,
+        "avg_trade": -2.932623475416959,
+        "win_rate": 0.49642346208869814,
+        "max_drawdown": -2292.861254962937,
+        "long_events": 296,
+        "short_events": 403
+      },
+      "metrics_2026": {
+        "events": 699,
+        "trade_days": 92,
+        "events_per_day": 7.5978260869565215,
+        "pnl_usd": -2049.9038093164545,
+        "avg_trade": -2.932623475416959,
+        "win_rate": 0.49642346208869814,
+        "max_drawdown": -2292.861254962937,
+        "long_events": 296,
+        "short_events": 403
+      },
+      "metrics_2026_apr_may": {
+        "events": 195,
+        "trade_days": 29,
+        "events_per_day": 6.724137931034483,
+        "pnl_usd": -511.1333859038285,
+        "avg_trade": -2.621196850788864,
+        "win_rate": 0.49230769230769234,
+        "max_drawdown": -880.8615560001614,
+        "long_events": 89,
+        "short_events": 106
+      },
+      "score": -6316.344769067743
+    },
+    {
+      "params_id": "2d58ca72ee",
+      "params": {
+        "min_adx": 12.0,
+        "pullback_band_atr": 0.2,
+        "min_pullback_band_pts": 0.2,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.3,
+        "max_risk_pts": 6.0,
+        "st_buffer_pts": 0.6,
+        "rr_target": 1.0,
+        "max_hold_bars": 60
+      },
+      "metrics_2024_now": {
+        "events": 756,
+        "trade_days": 92,
+        "events_per_day": 8.217391304347826,
+        "pnl_usd": -2406.389868236485,
+        "avg_trade": -3.1830553812651923,
+        "win_rate": 0.4894179894179894,
+        "max_drawdown": -2589.23963348035,
+        "long_events": 336,
+        "short_events": 420
+      },
+      "metrics_2026": {
+        "events": 756,
+        "trade_days": 92,
+        "events_per_day": 8.217391304347826,
+        "pnl_usd": -2406.389868236485,
+        "avg_trade": -3.1830553812651923,
+        "win_rate": 0.4894179894179894,
+        "max_drawdown": -2589.23963348035,
+        "long_events": 336,
+        "short_events": 420
+      },
+      "metrics_2026_apr_may": {
+        "events": 226,
+        "trade_days": 29,
+        "events_per_day": 7.793103448275862,
+        "pnl_usd": -480.3557826594571,
+        "avg_trade": -2.1254680648648545,
+        "win_rate": 0.49557522123893805,
+        "max_drawdown": -667.001187385763,
+        "long_events": 108,
+        "short_events": 118
+      },
+      "score": -6499.133548202494
+    },
+    {
+      "params_id": "3156e41378",
+      "params": {
+        "min_adx": 20.0,
+        "pullback_band_atr": 0.3,
+        "min_pullback_band_pts": 0.3,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.3,
+        "max_risk_pts": 8.0,
+        "st_buffer_pts": 0.4,
+        "rr_target": 1.15,
+        "max_hold_bars": 60
+      },
+      "metrics_2024_now": {
+        "events": 659,
+        "trade_days": 92,
+        "events_per_day": 7.163043478260869,
+        "pnl_usd": -2341.706567405844,
+        "avg_trade": -3.5534242297509016,
+        "win_rate": 0.4628224582701062,
+        "max_drawdown": -2758.9666287560385,
+        "long_events": 263,
+        "short_events": 396
+      },
+      "metrics_2026": {
+        "events": 659,
+        "trade_days": 92,
+        "events_per_day": 7.163043478260869,
+        "pnl_usd": -2341.706567405844,
+        "avg_trade": -3.5534242297509016,
+        "win_rate": 0.4628224582701062,
+        "max_drawdown": -2758.9666287560385,
+        "long_events": 263,
+        "short_events": 396
+      },
+      "metrics_2026_apr_may": {
+        "events": 194,
+        "trade_days": 29,
+        "events_per_day": 6.689655172413793,
+        "pnl_usd": -402.67300461063013,
+        "avg_trade": -2.0756340443846915,
+        "win_rate": 0.4793814432989691,
+        "max_drawdown": -857.8954347090694,
+        "long_events": 90,
+        "short_events": 104
+      },
+      "score": -6569.407167553514
+    },
+    {
+      "params_id": "66533c334f",
+      "params": {
+        "min_adx": 20.0,
+        "pullback_band_atr": 0.1,
+        "min_pullback_band_pts": 0.3,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.4,
+        "max_risk_pts": 6.0,
+        "st_buffer_pts": 0.4,
+        "rr_target": 0.8,
+        "max_hold_bars": 30
+      },
+      "metrics_2024_now": {
+        "events": 364,
+        "trade_days": 89,
+        "events_per_day": 4.089887640449438,
+        "pnl_usd": -883.5800441131569,
+        "avg_trade": -2.4274177036075737,
+        "win_rate": 0.5412087912087912,
+        "max_drawdown": -924.3292551393729,
+        "long_events": 149,
+        "short_events": 215
+      },
+      "metrics_2026": {
+        "events": 364,
+        "trade_days": 89,
+        "events_per_day": 4.089887640449438,
+        "pnl_usd": -883.5800441131569,
+        "avg_trade": -2.4274177036075737,
+        "win_rate": 0.5412087912087912,
+        "max_drawdown": -924.3292551393729,
+        "long_events": 149,
+        "short_events": 215
+      },
+      "metrics_2026_apr_may": {
+        "events": 124,
+        "trade_days": 28,
+        "events_per_day": 4.428571428571429,
+        "pnl_usd": -363.67581116835913,
+        "avg_trade": -2.932869444906122,
+        "win_rate": 0.5241935483870968,
+        "max_drawdown": -383.88315941816444,
+        "long_events": 59,
+        "short_events": 65
+      },
+      "score": -6701.40296543654
+    },
+    {
+      "params_id": "51983aa906",
+      "params": {
+        "min_adx": 20.0,
+        "pullback_band_atr": 0.2,
+        "min_pullback_band_pts": 0.2,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.3,
+        "max_risk_pts": 12.0,
+        "st_buffer_pts": 0.4,
+        "rr_target": 0.8,
+        "max_hold_bars": 60
+      },
+      "metrics_2024_now": {
+        "events": 518,
+        "trade_days": 91,
+        "events_per_day": 5.6923076923076925,
+        "pnl_usd": -1818.0971205475405,
+        "avg_trade": -3.509840001057028,
+        "win_rate": 0.5463320463320464,
+        "max_drawdown": -2215.451270285034,
+        "long_events": 200,
+        "short_events": 318
+      },
+      "metrics_2026": {
+        "events": 518,
+        "trade_days": 91,
+        "events_per_day": 5.6923076923076925,
+        "pnl_usd": -1818.0971205475405,
+        "avg_trade": -3.509840001057028,
+        "win_rate": 0.5463320463320464,
+        "max_drawdown": -2215.451270285034,
+        "long_events": 200,
+        "short_events": 318
+      },
+      "metrics_2026_apr_may": {
+        "events": 150,
+        "trade_days": 28,
+        "events_per_day": 5.357142857142857,
+        "pnl_usd": -441.83400176893497,
+        "avg_trade": -2.9455600117929,
+        "win_rate": 0.5333333333333333,
+        "max_drawdown": -753.7238131717593,
+        "long_events": 67,
+        "short_events": 83
+      },
+      "score": -6746.986296865211
+    },
+    {
+      "params_id": "17f0b78547",
+      "params": {
+        "min_adx": 12.0,
+        "pullback_band_atr": 0.2,
+        "min_pullback_band_pts": 0.3,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.3,
+        "max_risk_pts": 8.0,
+        "st_buffer_pts": 0.4,
+        "rr_target": 1.0,
+        "max_hold_bars": 30
+      },
+      "metrics_2024_now": {
+        "events": 863,
+        "trade_days": 93,
+        "events_per_day": 9.279569892473118,
+        "pnl_usd": -2697.0282561088497,
+        "avg_trade": -3.125177585294148,
+        "win_rate": 0.49710312862108924,
+        "max_drawdown": -2904.3286842789753,
+        "long_events": 389,
+        "short_events": 474
+      },
+      "metrics_2026": {
+        "events": 863,
+        "trade_days": 93,
+        "events_per_day": 9.279569892473118,
+        "pnl_usd": -2697.0282561088497,
+        "avg_trade": -3.125177585294148,
+        "win_rate": 0.49710312862108924,
+        "max_drawdown": -2904.3286842789753,
+        "long_events": 389,
+        "short_events": 474
+      },
+      "metrics_2026_apr_may": {
+        "events": 247,
+        "trade_days": 30,
+        "events_per_day": 8.233333333333333,
+        "pnl_usd": -502.01657165539393,
+        "avg_trade": -2.032455755689854,
+        "win_rate": 0.5060728744939271,
+        "max_drawdown": -819.5713036305383,
+        "long_events": 117,
+        "short_events": 130
+      },
+      "score": -6855.6069120288985
+    },
+    {
+      "params_id": "34b63d2538",
+      "params": {
+        "min_adx": 20.0,
+        "pullback_band_atr": 0.1,
+        "min_pullback_band_pts": 0.3,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.3,
+        "max_risk_pts": 12.0,
+        "st_buffer_pts": 0.4,
+        "rr_target": 1.15,
+        "max_hold_bars": 30
+      },
+      "metrics_2024_now": {
+        "events": 416,
+        "trade_days": 91,
+        "events_per_day": 4.571428571428571,
+        "pnl_usd": -1438.5030323772119,
+        "avg_trade": -3.45793998167599,
+        "win_rate": 0.47836538461538464,
+        "max_drawdown": -1826.5189547148925,
+        "long_events": 171,
+        "short_events": 245
+      },
+      "metrics_2026": {
+        "events": 416,
+        "trade_days": 91,
+        "events_per_day": 4.571428571428571,
+        "pnl_usd": -1438.5030323772119,
+        "avg_trade": -3.45793998167599,
+        "win_rate": 0.47836538461538464,
+        "max_drawdown": -1826.5189547148925,
+        "long_events": 171,
+        "short_events": 245
+      },
+      "metrics_2026_apr_may": {
+        "events": 135,
+        "trade_days": 28,
+        "events_per_day": 4.821428571428571,
+        "pnl_usd": -327.81287143888443,
+        "avg_trade": -2.4282434921398846,
+        "win_rate": 0.4740740740740741,
+        "max_drawdown": -755.9218751019964,
+        "long_events": 63,
+        "short_events": 72
+      },
+      "score": -7179.680144202768
+    },
+    {
+      "params_id": "411fa60f58",
+      "params": {
+        "min_adx": 20.0,
+        "pullback_band_atr": 0.3,
+        "min_pullback_band_pts": 0.2,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.3,
+        "max_risk_pts": 6.0,
+        "st_buffer_pts": 0.8,
+        "rr_target": 1.15,
+        "max_hold_bars": 60
+      },
+      "metrics_2024_now": {
+        "events": 586,
+        "trade_days": 90,
+        "events_per_day": 6.511111111111111,
+        "pnl_usd": -2172.043905063866,
+        "avg_trade": -3.706559564955403,
+        "win_rate": 0.45563139931740615,
+        "max_drawdown": -2411.1359154933343,
+        "long_events": 235,
+        "short_events": 351
+      },
+      "metrics_2026": {
+        "events": 586,
+        "trade_days": 90,
+        "events_per_day": 6.511111111111111,
+        "pnl_usd": -2172.043905063866,
+        "avg_trade": -3.706559564955403,
+        "win_rate": 0.45563139931740615,
+        "max_drawdown": -2411.1359154933343,
+        "long_events": 235,
+        "short_events": 351
+      },
+      "metrics_2026_apr_may": {
+        "events": 179,
+        "trade_days": 29,
+        "events_per_day": 6.172413793103448,
+        "pnl_usd": -575.3082275632851,
+        "avg_trade": -3.214012444487626,
+        "win_rate": 0.44692737430167595,
+        "max_drawdown": -772.857310355084,
+        "long_events": 83,
+        "short_events": 96
+      },
+      "score": -7209.3766273354995
+    },
+    {
+      "params_id": "58b7bd2e5d",
+      "params": {
+        "min_adx": 20.0,
+        "pullback_band_atr": 0.1,
+        "min_pullback_band_pts": 0.2,
+        "use_dema100_trend_filter": true,
+        "min_risk_pts": 0.4,
+        "max_risk_pts": 8.0,
+        "st_buffer_pts": 0.4,
+        "rr_target": 0.8,
+        "max_hold_bars": 60
+      },
+      "metrics_2024_now": {
+        "events": 356,
+        "trade_days": 89,
+        "events_per_day": 4.0,
+        "pnl_usd": -726.06502623044,
+        "avg_trade": -2.0395085006473033,
+        "win_rate": 0.5561797752808989,
+        "max_drawdown": -966.8294185468875,
+        "long_events": 143,
+        "short_events": 213
+      },
+      "metrics_2026": {
+        "events": 356,
+        "trade_days": 89,
+        "events_per_day": 4.0,
+        "pnl_usd": -726.06502623044,
+        "avg_trade": -2.0395085006473033,
+        "win_rate": 0.5561797752808989,
+        "max_drawdown": -966.8294185468875,
+        "long_events": 143,
+        "short_events": 213
+      },
+      "metrics_2026_apr_may": {
+        "events": 112,
+        "trade_days": 27,
+        "events_per_day": 4.148148148148148,
+        "pnl_usd": -468.9061852318599,
+        "avg_trade": -4.186662368141606,
+        "win_rate": 0.5267857142857143,
+        "max_drawdown": -550.7600926429059,
+        "long_events": 54,
+        "short_events": 58
+      },
+      "score": -7301.103649974933
+    }
+  ]
+}

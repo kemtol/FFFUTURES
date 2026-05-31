@@ -1,0 +1,1182 @@
+[
+  {
+    "trade_no": 3424,
+    "entry_ts": "2026-02-10 14:25",
+    "side": "Long",
+    "pnl": -305.11,
+    "balance": 49694.89,
+    "mll_floor": 48000.0,
+    "drawdown": -305.11,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3425,
+    "entry_ts": "2026-02-10 14:50",
+    "side": "Short",
+    "pnl": -82.55,
+    "balance": 49612.34,
+    "mll_floor": 48000.0,
+    "drawdown": -387.66,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3426,
+    "entry_ts": "2026-02-10 23:30",
+    "side": "Long",
+    "pnl": 375.4,
+    "balance": 49987.74,
+    "mll_floor": 48000.0,
+    "drawdown": -12.26,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3428,
+    "entry_ts": "2026-02-12 05:15",
+    "side": "Long",
+    "pnl": -208.43,
+    "balance": 49779.31,
+    "mll_floor": 48000.0,
+    "drawdown": -220.69,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3430,
+    "entry_ts": "2026-02-13 01:20",
+    "side": "Long",
+    "pnl": -104.47,
+    "balance": 49674.84,
+    "mll_floor": 48000.0,
+    "drawdown": -325.16,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3431,
+    "entry_ts": "2026-02-13 06:00",
+    "side": "Short",
+    "pnl": -393.37,
+    "balance": 49281.46,
+    "mll_floor": 48000.0,
+    "drawdown": -718.54,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3434,
+    "entry_ts": "2026-02-13 14:20",
+    "side": "Long",
+    "pnl": 167.1,
+    "balance": 49448.57,
+    "mll_floor": 48000.0,
+    "drawdown": -551.43,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3435,
+    "entry_ts": "2026-02-15 23:50",
+    "side": "Short",
+    "pnl": 149.07,
+    "balance": 49597.64,
+    "mll_floor": 48000.0,
+    "drawdown": -402.36,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3439,
+    "entry_ts": "2026-02-18 02:10",
+    "side": "Long",
+    "pnl": 211.71,
+    "balance": 49809.34,
+    "mll_floor": 48000.0,
+    "drawdown": -190.66,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3442,
+    "entry_ts": "2026-02-18 19:40",
+    "side": "Short",
+    "pnl": -13.77,
+    "balance": 49795.57,
+    "mll_floor": 48000.0,
+    "drawdown": -204.43,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3445,
+    "entry_ts": "2026-02-19 14:55",
+    "side": "Long",
+    "pnl": -245.05,
+    "balance": 49550.52,
+    "mll_floor": 48000.0,
+    "drawdown": -449.48,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3446,
+    "entry_ts": "2026-02-19 18:25",
+    "side": "Short",
+    "pnl": -248.8,
+    "balance": 49301.71,
+    "mll_floor": 48000.0,
+    "drawdown": -698.29,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3447,
+    "entry_ts": "2026-02-20 06:15",
+    "side": "Long",
+    "pnl": -71.67,
+    "balance": 49230.05,
+    "mll_floor": 48000.0,
+    "drawdown": -769.95,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3451,
+    "entry_ts": "2026-02-20 14:50",
+    "side": "Long",
+    "pnl": -340.8,
+    "balance": 48889.25,
+    "mll_floor": 48000.0,
+    "drawdown": -1110.75,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3452,
+    "entry_ts": "2026-02-20 15:10",
+    "side": "Short",
+    "pnl": -442.84,
+    "balance": 48446.41,
+    "mll_floor": 48000.0,
+    "drawdown": -1553.59,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3453,
+    "entry_ts": "2026-02-20 20:30",
+    "side": "Long",
+    "pnl": 477.1,
+    "balance": 48923.51,
+    "mll_floor": 48000.0,
+    "drawdown": -1076.49,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3454,
+    "entry_ts": "2026-02-23 07:05",
+    "side": "Short",
+    "pnl": -124.34,
+    "balance": 48799.18,
+    "mll_floor": 48000.0,
+    "drawdown": -1200.82,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3457,
+    "entry_ts": "2026-02-24 23:05",
+    "side": "Short",
+    "pnl": -219.42,
+    "balance": 48579.75,
+    "mll_floor": 48000.0,
+    "drawdown": -1420.25,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3466,
+    "entry_ts": "2026-02-26 15:20",
+    "side": "Short",
+    "pnl": -295.23,
+    "balance": 48284.52,
+    "mll_floor": 48000.0,
+    "drawdown": -1715.48,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3467,
+    "entry_ts": "2026-02-26 15:55",
+    "side": "Long",
+    "pnl": -96.95,
+    "balance": 48187.57,
+    "mll_floor": 48000.0,
+    "drawdown": -1812.43,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3468,
+    "entry_ts": "2026-02-27 00:05",
+    "side": "Short",
+    "pnl": -169.49,
+    "balance": 48018.08,
+    "mll_floor": 48000.0,
+    "drawdown": -1981.92,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3472,
+    "entry_ts": "2026-02-27 16:20",
+    "side": "Long",
+    "pnl": 685.52,
+    "balance": 48703.59,
+    "mll_floor": 48000.0,
+    "drawdown": -1296.41,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3473,
+    "entry_ts": "2026-03-02 01:30",
+    "side": "Short",
+    "pnl": -678.02,
+    "balance": 48025.58,
+    "mll_floor": 48000.0,
+    "drawdown": -1974.42,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3474,
+    "entry_ts": "2026-03-02 06:20",
+    "side": "Long",
+    "pnl": 62.61,
+    "balance": 48088.19,
+    "mll_floor": 48000.0,
+    "drawdown": -1911.81,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3476,
+    "entry_ts": "2026-03-03 01:10",
+    "side": "Long",
+    "pnl": -252.75,
+    "balance": 47835.44,
+    "mll_floor": 48000.0,
+    "drawdown": -2164.56,
+    "is_failed": true
+  },
+  {
+    "trade_no": 3477,
+    "entry_ts": "2026-03-03 02:00",
+    "side": "Short",
+    "pnl": 2013.34,
+    "balance": 49848.78,
+    "mll_floor": 48000.0,
+    "drawdown": -151.22,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3478,
+    "entry_ts": "2026-03-03 21:40",
+    "side": "Short",
+    "pnl": -417.21,
+    "balance": 49431.56,
+    "mll_floor": 48000.0,
+    "drawdown": -568.44,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3483,
+    "entry_ts": "2026-03-05 05:55",
+    "side": "Short",
+    "pnl": -87.65,
+    "balance": 49343.91,
+    "mll_floor": 48000.0,
+    "drawdown": -656.09,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3484,
+    "entry_ts": "2026-03-05 07:00",
+    "side": "Long",
+    "pnl": -167.36,
+    "balance": 49176.55,
+    "mll_floor": 48000.0,
+    "drawdown": -823.45,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3486,
+    "entry_ts": "2026-03-05 23:45",
+    "side": "Long",
+    "pnl": -345.61,
+    "balance": 48830.94,
+    "mll_floor": 48000.0,
+    "drawdown": -1169.06,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3487,
+    "entry_ts": "2026-03-06 01:35",
+    "side": "Long",
+    "pnl": 177.06,
+    "balance": 49007.99,
+    "mll_floor": 48000.0,
+    "drawdown": -992.01,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3491,
+    "entry_ts": "2026-03-08 22:45",
+    "side": "Short",
+    "pnl": 241.34,
+    "balance": 49249.34,
+    "mll_floor": 48000.0,
+    "drawdown": -750.66,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3494,
+    "entry_ts": "2026-03-09 18:50",
+    "side": "Long",
+    "pnl": 430.67,
+    "balance": 49680.01,
+    "mll_floor": 48000.0,
+    "drawdown": -319.99,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3495,
+    "entry_ts": "2026-03-10 07:25",
+    "side": "Short",
+    "pnl": -215.26,
+    "balance": 49464.75,
+    "mll_floor": 48000.0,
+    "drawdown": -535.25,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3498,
+    "entry_ts": "2026-03-10 15:40",
+    "side": "Long",
+    "pnl": -244.89,
+    "balance": 49219.85,
+    "mll_floor": 48000.0,
+    "drawdown": -780.15,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3499,
+    "entry_ts": "2026-03-10 18:25",
+    "side": "Short",
+    "pnl": -177.53,
+    "balance": 49042.32,
+    "mll_floor": 48000.0,
+    "drawdown": -957.68,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3501,
+    "entry_ts": "2026-03-12 01:45",
+    "side": "Long",
+    "pnl": -222.27,
+    "balance": 48820.05,
+    "mll_floor": 48000.0,
+    "drawdown": -1179.95,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3502,
+    "entry_ts": "2026-03-12 04:40",
+    "side": "Short",
+    "pnl": -124.69,
+    "balance": 48695.36,
+    "mll_floor": 48000.0,
+    "drawdown": -1304.64,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3503,
+    "entry_ts": "2026-03-12 07:35",
+    "side": "Long",
+    "pnl": 12.98,
+    "balance": 48708.34,
+    "mll_floor": 48000.0,
+    "drawdown": -1291.66,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3508,
+    "entry_ts": "2026-03-13 12:50",
+    "side": "Long",
+    "pnl": -293.08,
+    "balance": 48415.26,
+    "mll_floor": 48000.0,
+    "drawdown": -1584.74,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3509,
+    "entry_ts": "2026-03-13 14:15",
+    "side": "Short",
+    "pnl": 685.26,
+    "balance": 49100.51,
+    "mll_floor": 48000.0,
+    "drawdown": -899.49,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3518,
+    "entry_ts": "2026-03-18 03:10",
+    "side": "Short",
+    "pnl": -76.57,
+    "balance": 49023.94,
+    "mll_floor": 48000.0,
+    "drawdown": -976.06,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3519,
+    "entry_ts": "2026-03-18 05:55",
+    "side": "Long",
+    "pnl": -45.38,
+    "balance": 48978.56,
+    "mll_floor": 48000.0,
+    "drawdown": -1021.44,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3520,
+    "entry_ts": "2026-03-18 07:55",
+    "side": "Short",
+    "pnl": 938.45,
+    "balance": 49917.02,
+    "mll_floor": 48000.0,
+    "drawdown": -82.98,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3521,
+    "entry_ts": "2026-03-18 17:40",
+    "side": "Long",
+    "pnl": -286.92,
+    "balance": 49630.1,
+    "mll_floor": 48000.0,
+    "drawdown": -369.9,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3522,
+    "entry_ts": "2026-03-18 19:00",
+    "side": "Short",
+    "pnl": 11.85,
+    "balance": 49641.95,
+    "mll_floor": 48000.0,
+    "drawdown": -358.05,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3523,
+    "entry_ts": "2026-03-19 06:00",
+    "side": "Short",
+    "pnl": 1990.86,
+    "balance": 51632.81,
+    "mll_floor": 49632.81,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3524,
+    "entry_ts": "2026-03-19 20:15",
+    "side": "Long",
+    "pnl": -216.37,
+    "balance": 51416.44,
+    "mll_floor": 49632.81,
+    "drawdown": -216.37,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3525,
+    "entry_ts": "2026-03-20 02:50",
+    "side": "Long",
+    "pnl": -10.33,
+    "balance": 51406.11,
+    "mll_floor": 49632.81,
+    "drawdown": -226.7,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3528,
+    "entry_ts": "2026-03-20 13:55",
+    "side": "Short",
+    "pnl": 994.42,
+    "balance": 52400.53,
+    "mll_floor": 50400.53,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3529,
+    "entry_ts": "2026-03-22 23:50",
+    "side": "Short",
+    "pnl": 158.34,
+    "balance": 52558.87,
+    "mll_floor": 50558.87,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3530,
+    "entry_ts": "2026-03-23 02:35",
+    "side": "Short",
+    "pnl": 1323.25,
+    "balance": 53882.12,
+    "mll_floor": 51882.12,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3531,
+    "entry_ts": "2026-03-23 09:15",
+    "side": "Long",
+    "pnl": 1216.66,
+    "balance": 55098.78,
+    "mll_floor": 53098.78,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3532,
+    "entry_ts": "2026-03-24 00:35",
+    "side": "Short",
+    "pnl": 48.94,
+    "balance": 55147.72,
+    "mll_floor": 53147.72,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3533,
+    "entry_ts": "2026-03-24 07:00",
+    "side": "Long",
+    "pnl": -111.81,
+    "balance": 55035.9,
+    "mll_floor": 53147.72,
+    "drawdown": -111.81,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3543,
+    "entry_ts": "2026-03-26 16:25",
+    "side": "Short",
+    "pnl": 88.47,
+    "balance": 55124.37,
+    "mll_floor": 53147.72,
+    "drawdown": -23.35,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3544,
+    "entry_ts": "2026-03-26 20:20",
+    "side": "Long",
+    "pnl": 765.23,
+    "balance": 55889.6,
+    "mll_floor": 53889.6,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3548,
+    "entry_ts": "2026-03-30 05:55",
+    "side": "Long",
+    "pnl": 146.93,
+    "balance": 56036.52,
+    "mll_floor": 54036.52,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3549,
+    "entry_ts": "2026-03-30 14:00",
+    "side": "Short",
+    "pnl": 2.85,
+    "balance": 56039.38,
+    "mll_floor": 54039.38,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3550,
+    "entry_ts": "2026-03-31 01:20",
+    "side": "Long",
+    "pnl": -185.29,
+    "balance": 55854.09,
+    "mll_floor": 54039.38,
+    "drawdown": -185.29,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3553,
+    "entry_ts": "2026-04-01 06:35",
+    "side": "Long",
+    "pnl": 227.3,
+    "balance": 56081.39,
+    "mll_floor": 54081.39,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3554,
+    "entry_ts": "2026-04-01 15:40",
+    "side": "Long",
+    "pnl": -171.91,
+    "balance": 55909.48,
+    "mll_floor": 54081.39,
+    "drawdown": -171.91,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3555,
+    "entry_ts": "2026-04-01 18:15",
+    "side": "Short",
+    "pnl": -106.82,
+    "balance": 55802.66,
+    "mll_floor": 54081.39,
+    "drawdown": -278.73,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3556,
+    "entry_ts": "2026-04-01 23:20",
+    "side": "Long",
+    "pnl": -293.68,
+    "balance": 55508.98,
+    "mll_floor": 54081.39,
+    "drawdown": -572.41,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3557,
+    "entry_ts": "2026-04-02 01:20",
+    "side": "Short",
+    "pnl": 917.46,
+    "balance": 56426.45,
+    "mll_floor": 54426.45,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3559,
+    "entry_ts": "2026-04-05 22:10",
+    "side": "Short",
+    "pnl": -203.99,
+    "balance": 56222.46,
+    "mll_floor": 54426.45,
+    "drawdown": -203.99,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3561,
+    "entry_ts": "2026-04-06 08:05",
+    "side": "Long",
+    "pnl": -118.08,
+    "balance": 56104.37,
+    "mll_floor": 54426.45,
+    "drawdown": -322.07,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3562,
+    "entry_ts": "2026-04-06 12:30",
+    "side": "Short",
+    "pnl": -261.44,
+    "balance": 55842.94,
+    "mll_floor": 54426.45,
+    "drawdown": -583.51,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3566,
+    "entry_ts": "2026-04-07 10:50",
+    "side": "Short",
+    "pnl": -141.99,
+    "balance": 55700.95,
+    "mll_floor": 54426.45,
+    "drawdown": -725.5,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3567,
+    "entry_ts": "2026-04-07 17:05",
+    "side": "Long",
+    "pnl": 1464.13,
+    "balance": 57165.08,
+    "mll_floor": 55165.08,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3568,
+    "entry_ts": "2026-04-08 08:40",
+    "side": "Short",
+    "pnl": 789.18,
+    "balance": 57954.26,
+    "mll_floor": 55954.26,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3571,
+    "entry_ts": "2026-04-09 18:45",
+    "side": "Short",
+    "pnl": -121.29,
+    "balance": 57832.97,
+    "mll_floor": 55954.26,
+    "drawdown": -121.29,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3575,
+    "entry_ts": "2026-04-10 09:20",
+    "side": "Long",
+    "pnl": 22.37,
+    "balance": 57855.34,
+    "mll_floor": 55954.26,
+    "drawdown": -98.92,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3576,
+    "entry_ts": "2026-04-10 16:05",
+    "side": "Short",
+    "pnl": 634.45,
+    "balance": 58489.79,
+    "mll_floor": 56489.79,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3577,
+    "entry_ts": "2026-04-13 01:15",
+    "side": "Long",
+    "pnl": 3.96,
+    "balance": 58493.75,
+    "mll_floor": 56493.75,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3579,
+    "entry_ts": "2026-04-13 15:15",
+    "side": "Short",
+    "pnl": -293.6,
+    "balance": 58200.15,
+    "mll_floor": 56493.75,
+    "drawdown": -293.6,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3580,
+    "entry_ts": "2026-04-13 16:45",
+    "side": "Long",
+    "pnl": 213.15,
+    "balance": 58413.3,
+    "mll_floor": 56493.75,
+    "drawdown": -80.45,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3582,
+    "entry_ts": "2026-04-14 14:05",
+    "side": "Long",
+    "pnl": 366.52,
+    "balance": 58779.82,
+    "mll_floor": 56779.82,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3583,
+    "entry_ts": "2026-04-15 01:20",
+    "side": "Long",
+    "pnl": -347.55,
+    "balance": 58432.26,
+    "mll_floor": 56779.82,
+    "drawdown": -347.55,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3588,
+    "entry_ts": "2026-04-16 05:05",
+    "side": "Long",
+    "pnl": -135.18,
+    "balance": 58297.09,
+    "mll_floor": 56779.82,
+    "drawdown": -482.73,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3589,
+    "entry_ts": "2026-04-16 06:40",
+    "side": "Short",
+    "pnl": -21.36,
+    "balance": 58275.72,
+    "mll_floor": 56779.82,
+    "drawdown": -504.09,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3590,
+    "entry_ts": "2026-04-16 14:05",
+    "side": "Short",
+    "pnl": -88.55,
+    "balance": 58187.18,
+    "mll_floor": 56779.82,
+    "drawdown": -592.64,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3595,
+    "entry_ts": "2026-04-17 20:40",
+    "side": "Short",
+    "pnl": 601.14,
+    "balance": 58788.31,
+    "mll_floor": 56788.31,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3597,
+    "entry_ts": "2026-04-20 22:15",
+    "side": "Long",
+    "pnl": -133.9,
+    "balance": 58654.42,
+    "mll_floor": 56788.31,
+    "drawdown": -133.9,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3599,
+    "entry_ts": "2026-04-21 13:10",
+    "side": "Short",
+    "pnl": 534.93,
+    "balance": 59189.35,
+    "mll_floor": 57189.35,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3600,
+    "entry_ts": "2026-04-21 23:10",
+    "side": "Long",
+    "pnl": 304.48,
+    "balance": 59493.83,
+    "mll_floor": 57493.83,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3601,
+    "entry_ts": "2026-04-22 15:25",
+    "side": "Short",
+    "pnl": -133.48,
+    "balance": 59360.35,
+    "mll_floor": 57493.83,
+    "drawdown": -133.48,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3603,
+    "entry_ts": "2026-04-23 02:15",
+    "side": "Short",
+    "pnl": -104.84,
+    "balance": 59255.51,
+    "mll_floor": 57493.83,
+    "drawdown": -238.32,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3604,
+    "entry_ts": "2026-04-23 09:10",
+    "side": "Short",
+    "pnl": -145.08,
+    "balance": 59110.43,
+    "mll_floor": 57493.83,
+    "drawdown": -383.4,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3605,
+    "entry_ts": "2026-04-23 11:55",
+    "side": "Long",
+    "pnl": -3.38,
+    "balance": 59107.06,
+    "mll_floor": 57493.83,
+    "drawdown": -386.77,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3606,
+    "entry_ts": "2026-04-23 17:20",
+    "side": "Short",
+    "pnl": -122.56,
+    "balance": 58984.5,
+    "mll_floor": 57493.83,
+    "drawdown": -509.33,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3607,
+    "entry_ts": "2026-04-23 20:20",
+    "side": "Short",
+    "pnl": -129.5,
+    "balance": 58855.0,
+    "mll_floor": 57493.83,
+    "drawdown": -638.84,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3612,
+    "entry_ts": "2026-04-24 20:25",
+    "side": "Short",
+    "pnl": 138.93,
+    "balance": 58993.93,
+    "mll_floor": 57493.83,
+    "drawdown": -499.9,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3613,
+    "entry_ts": "2026-04-27 01:05",
+    "side": "Long",
+    "pnl": 64.08,
+    "balance": 59058.01,
+    "mll_floor": 57493.83,
+    "drawdown": -435.82,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3615,
+    "entry_ts": "2026-04-27 23:20",
+    "side": "Long",
+    "pnl": -35.23,
+    "balance": 59022.78,
+    "mll_floor": 57493.83,
+    "drawdown": -471.05,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3616,
+    "entry_ts": "2026-04-28 01:35",
+    "side": "Short",
+    "pnl": 927.63,
+    "balance": 59950.42,
+    "mll_floor": 57950.42,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3617,
+    "entry_ts": "2026-04-28 17:30",
+    "side": "Long",
+    "pnl": -3.43,
+    "balance": 59946.99,
+    "mll_floor": 57950.42,
+    "drawdown": -3.43,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3619,
+    "entry_ts": "2026-04-29 18:35",
+    "side": "Short",
+    "pnl": -378.26,
+    "balance": 59568.73,
+    "mll_floor": 57950.42,
+    "drawdown": -381.68,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3620,
+    "entry_ts": "2026-04-30 00:00",
+    "side": "Long",
+    "pnl": -24.94,
+    "balance": 59543.79,
+    "mll_floor": 57950.42,
+    "drawdown": -406.63,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3621,
+    "entry_ts": "2026-04-30 04:25",
+    "side": "Short",
+    "pnl": -99.09,
+    "balance": 59444.7,
+    "mll_floor": 57950.42,
+    "drawdown": -505.71,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3622,
+    "entry_ts": "2026-04-30 05:35",
+    "side": "Long",
+    "pnl": 561.51,
+    "balance": 60006.21,
+    "mll_floor": 58006.21,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3623,
+    "entry_ts": "2026-04-30 14:00",
+    "side": "Short",
+    "pnl": -199.88,
+    "balance": 59806.33,
+    "mll_floor": 58006.21,
+    "drawdown": -199.88,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3624,
+    "entry_ts": "2026-04-30 22:15",
+    "side": "Long",
+    "pnl": -107.07,
+    "balance": 59699.27,
+    "mll_floor": 58006.21,
+    "drawdown": -306.94,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3626,
+    "entry_ts": "2026-05-01 12:25",
+    "side": "Long",
+    "pnl": 189.35,
+    "balance": 59888.62,
+    "mll_floor": 58006.21,
+    "drawdown": -117.59,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3628,
+    "entry_ts": "2026-05-04 01:30",
+    "side": "Short",
+    "pnl": 299.0,
+    "balance": 60187.62,
+    "mll_floor": 58187.62,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3630,
+    "entry_ts": "2026-05-05 01:20",
+    "side": "Long",
+    "pnl": -91.13,
+    "balance": 60096.49,
+    "mll_floor": 58187.62,
+    "drawdown": -91.13,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3631,
+    "entry_ts": "2026-05-05 05:35",
+    "side": "Long",
+    "pnl": -65.84,
+    "balance": 60030.65,
+    "mll_floor": 58187.62,
+    "drawdown": -156.97,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3632,
+    "entry_ts": "2026-05-05 14:30",
+    "side": "Long",
+    "pnl": -271.76,
+    "balance": 59758.89,
+    "mll_floor": 58187.62,
+    "drawdown": -428.73,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3633,
+    "entry_ts": "2026-05-05 16:40",
+    "side": "Short",
+    "pnl": -28.05,
+    "balance": 59730.84,
+    "mll_floor": 58187.62,
+    "drawdown": -456.78,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3634,
+    "entry_ts": "2026-05-05 23:00",
+    "side": "Long",
+    "pnl": 1194.87,
+    "balance": 60925.71,
+    "mll_floor": 58925.71,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3635,
+    "entry_ts": "2026-05-06 12:05",
+    "side": "Short",
+    "pnl": -197.32,
+    "balance": 60728.39,
+    "mll_floor": 58925.71,
+    "drawdown": -197.32,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3636,
+    "entry_ts": "2026-05-06 14:05",
+    "side": "Long",
+    "pnl": -211.71,
+    "balance": 60516.68,
+    "mll_floor": 58925.71,
+    "drawdown": -409.03,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3637,
+    "entry_ts": "2026-05-07 01:55",
+    "side": "Long",
+    "pnl": -235.37,
+    "balance": 60281.31,
+    "mll_floor": 58925.71,
+    "drawdown": -644.4,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3638,
+    "entry_ts": "2026-05-07 04:35",
+    "side": "Short",
+    "pnl": -152.17,
+    "balance": 60129.14,
+    "mll_floor": 58925.71,
+    "drawdown": -796.57,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3639,
+    "entry_ts": "2026-05-07 06:30",
+    "side": "Long",
+    "pnl": 69.26,
+    "balance": 60198.4,
+    "mll_floor": 58925.71,
+    "drawdown": -727.31,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3641,
+    "entry_ts": "2026-05-08 02:10",
+    "side": "Long",
+    "pnl": -194.54,
+    "balance": 60003.85,
+    "mll_floor": 58925.71,
+    "drawdown": -921.85,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3642,
+    "entry_ts": "2026-05-08 07:30",
+    "side": "Short",
+    "pnl": -194.01,
+    "balance": 59809.84,
+    "mll_floor": 58925.71,
+    "drawdown": -1115.86,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3643,
+    "entry_ts": "2026-05-08 13:40",
+    "side": "Long",
+    "pnl": -267.56,
+    "balance": 59542.28,
+    "mll_floor": 58925.71,
+    "drawdown": -1383.42,
+    "is_failed": false
+  }
+]

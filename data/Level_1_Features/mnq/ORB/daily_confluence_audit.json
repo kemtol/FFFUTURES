@@ -1,0 +1,15 @@
+{
+  "columns": 31,
+  "created_at": "2026-05-30T10:05:17.939395+00:00",
+  "failures": {},
+  "feature_count": 29,
+  "feature_path": "/home/kemal/futures/data/Level_1_Features/mnq/ORB/daily_confluence.parquet",
+  "lookahead_contract": "daily_confluence_feature_date must be strictly earlier than ny_date",
+  "max_feature_date": "2026-05-26",
+  "max_ny_date": "2026-05-27",
+  "min_feature_date": "2019-05-03",
+  "min_ny_date": "2019-05-05",
+  "rows": 2199,
+  "source_db": "/home/kemal/futures/data/Level_0_Raw/yfinance_daily.duckdb",
+  "status": "PASS"
+}

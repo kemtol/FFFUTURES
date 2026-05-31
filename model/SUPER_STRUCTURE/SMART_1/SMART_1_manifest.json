@@ -1,0 +1,14 @@
+{
+  "name": "SMART_1",
+  "components": {
+    "regime_dispatcher": "regime_dispatcher.txt",
+    "conservative_brain": "conservative_brain.txt",
+    "aggressive_brain": "aggressive_brain.txt"
+  },
+  "regime_features": [
+    "efficiency_ratio",
+    "volatility_zscore",
+    "entry_adx",
+    "cci_abs"
+  ]
+}

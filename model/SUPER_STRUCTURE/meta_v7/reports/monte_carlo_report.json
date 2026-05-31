@@ -1,0 +1,8 @@
+{
+  "iterations": 5000,
+  "prob_of_ruin_pct": 16.94,
+  "avg_expected_pnl": 2451.01,
+  "median_max_dd": -1270.71,
+  "worst_case_dd": -5635.48,
+  "best_case_pnl": 10389.88
+}

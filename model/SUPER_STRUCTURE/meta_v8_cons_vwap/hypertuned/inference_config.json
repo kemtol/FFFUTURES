@@ -1,0 +1,35 @@
+{
+  "name": "Meta-v8 CONS VWAP Hypertuned Candidate",
+  "status": "RESEARCH_ONLY",
+  "split": {
+    "train": "2023-2024",
+    "validation_tuning": "2025",
+    "oot_report_only": "2026"
+  },
+  "features": [
+    "entry_adx",
+    "cci_abs",
+    "st_gap_ratio",
+    "efficiency_ratio",
+    "volatility_zscore",
+    "session_cluster",
+    "dist_to_ct_vwap_atr",
+    "ct_vwap_slope_20_atr",
+    "vwap_deviation_z_50"
+  ],
+  "thresholds": {
+    "0": 0.45,
+    "1": 0.4,
+    "2": 0.35
+  },
+  "daily_loss_limit": -400.0,
+  "params": {
+    "learning_rate": 0.03,
+    "num_leaves": 15,
+    "min_data_in_leaf": 80,
+    "lambda_l2": 5.0,
+    "feature_fraction": 0.85,
+    "bagging_fraction": 0.85
+  },
+  "datamart": "data/Level_2_Datamart/super_structure_ml/meta_v8_cons_vwap_training.parquet"
+}

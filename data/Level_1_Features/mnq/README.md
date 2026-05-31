@@ -8,7 +8,7 @@ flat namespace.
 
 | Folder | Status | Main artifact | Notes |
 | --- | --- | --- | --- |
-| `orb_vol_target/` | active baseline | `context.parquet` | M1 New York ORB context |
+| `ORB/` | active baseline | `context.parquet` | M1 New York ORB context |
 | `m1_pullback_scalper/` | scaffold | pending | M1 pullback idea, no L1 artifact yet |
 
 ## Namespace Contract

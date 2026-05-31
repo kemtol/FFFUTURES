@@ -1,0 +1,6 @@
+{
+  "desc": "Strict thresholds across all sessions.",
+  "thresholds": {"0": 0.55, "1": 0.55, "2": 0.55},
+  "daily_limit": null,
+  "result": "✅ SAFE but TOO SLOW"
+}

@@ -27,8 +27,8 @@ Current best candidate: 15m OR, long only, TP 2R or 15:00 NY time exit, risk $50
 Latest MNQ sweep artifacts:
 
 ```text
-data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_results.parquet
-data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_events.parquet
+data/Level_2_Datamart/mnq/ORB/sweeps/sweep_results.parquet
+data/Level_2_Datamart/mnq/ORB/sweeps/sweep_events.parquet
 ```
 
 Best short-window candidate as of the latest sweep:
@@ -42,10 +42,10 @@ This is **research evidence**, not live approval. Next required checks are Topst
 Current risk-adjusted ML state:
 
 ```text
-Dataset: data/Level_2_Datamart/mnq/orb_vol_target/orb_risk_adjusted_model/breakout_quality_features.parquet
+Dataset: data/Level_2_Datamart/mnq/ORB/orb_risk_adjusted_model/breakout_quality_features.parquet
 Rows/columns/features: 2,559 / 77 / 62
-Model report: model/MNQ/orb_vol_target/orb_risk_adjusted_model/risk_adjusted_v2_report.md
-Kelly report: model/MNQ/orb_vol_target/orb_risk_adjusted_model/risk_adjusted_v2_kelly_overlay_report.md
+Model report: model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_report.md
+Kelly report: model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_kelly_overlay_report.md
 ```
 
 P0 confluence result:
@@ -59,8 +59,8 @@ See:
 
 - `PROGRAM.md`
 - `_MEMORY/20260530.md`
-- `pipeline/mnq_ml/experiments/orb_vol_target/README.md`
-- `data/Level_2_Datamart/mnq/orb_vol_target/sweeps/README.md`
+- `pipeline/mnq_ml/experiments/ORB/README.md`
+- `data/Level_2_Datamart/mnq/ORB/sweeps/README.md`
 
 ## Historical MGC Context
 

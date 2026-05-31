@@ -1,0 +1,234 @@
+{
+  "experiment": "meta_v8_cons_vwap",
+  "status": "trained_research_candidate",
+  "train_rows": 3333,
+  "test_rows": 310,
+  "date_split": "train < 2026-01-01, test >= 2026-01-01",
+  "features": [
+    "entry_adx",
+    "cci_abs",
+    "st_gap_ratio",
+    "efficiency_ratio",
+    "volatility_zscore",
+    "session_cluster",
+    "dist_to_ct_vwap_atr",
+    "vwap_side_aligned",
+    "ct_vwap_slope_20_atr",
+    "vwap_deviation_z_50"
+  ],
+  "best_iteration": 82,
+  "daily_limit": 400.0,
+  "thresholds": {
+    "0": 0.5,
+    "1": 0.4,
+    "2": 0.45
+  },
+  "test_full_window": {
+    "trades": 18,
+    "pnl": 5516.42,
+    "max_dd": -465.27,
+    "win_rate": 0.6111,
+    "avg_trade": 306.47
+  },
+  "test_rolling_windows": {
+    "7": {
+      "trades": 1,
+      "pnl": -211.71,
+      "max_dd": -211.71,
+      "win_rate": 0.0,
+      "avg_trade": -211.71
+    },
+    "14": {
+      "trades": 3,
+      "pnl": -76.84,
+      "max_dd": -211.71,
+      "win_rate": 0.3333,
+      "avg_trade": -25.61
+    },
+    "30": {
+      "trades": 4,
+      "pnl": 300.87,
+      "max_dd": -211.71,
+      "win_rate": 0.5,
+      "avg_trade": 75.22
+    },
+    "90": {
+      "trades": 15,
+      "pnl": 3723.35,
+      "max_dd": -465.27,
+      "win_rate": 0.6,
+      "avg_trade": 248.22
+    }
+  },
+  "baseline_meta_v7_same_window": {
+    "full_window": {
+      "trades": 56,
+      "pnl": 6315.88,
+      "max_dd": -1787.36,
+      "win_rate": 0.4286,
+      "avg_trade": 112.78
+    },
+    "rolling_windows": {
+      "7": {
+        "trades": 3,
+        "pnl": -201.28,
+        "max_dd": -201.28,
+        "win_rate": 0.0,
+        "avg_trade": -67.09
+      },
+      "14": {
+        "trades": 7,
+        "pnl": 554.27,
+        "max_dd": -201.28,
+        "win_rate": 0.1429,
+        "avg_trade": 79.18
+      },
+      "30": {
+        "trades": 14,
+        "pnl": 820.02,
+        "max_dd": -604.41,
+        "win_rate": 0.2143,
+        "avg_trade": 58.57
+      },
+      "90": {
+        "trades": 44,
+        "pnl": 3729.34,
+        "max_dd": -1787.36,
+        "win_rate": 0.3864,
+        "avg_trade": 84.76
+      }
+    }
+  },
+  "top_threshold_sweep": [
+    {
+      "thresholds": {
+        "0": 0.5,
+        "1": 0.4,
+        "2": 0.45
+      },
+      "score": 11.830956,
+      "trades": 18,
+      "pnl": 5516.42,
+      "max_dd": -465.27,
+      "win_rate": 0.6111,
+      "avg_trade": 306.47
+    },
+    {
+      "thresholds": {
+        "0": 0.5,
+        "1": 0.4,
+        "2": 0.5
+      },
+      "score": 10.546533,
+      "trades": 12,
+      "pnl": 3894.94,
+      "max_dd": -368.31,
+      "win_rate": 0.6667,
+      "avg_trade": 324.58
+    },
+    {
+      "thresholds": {
+        "0": 0.55,
+        "1": 0.4,
+        "2": 0.5
+      },
+      "score": 9.47012,
+      "trades": 11,
+      "pnl": 3497.41,
+      "max_dd": -368.31,
+      "win_rate": 0.6364,
+      "avg_trade": 317.95
+    },
+    {
+      "thresholds": {
+        "0": 0.5,
+        "1": 0.45,
+        "2": 0.45
+      },
+      "score": 8.938806,
+      "trades": 13,
+      "pnl": 3066.1,
+      "max_dd": -342.01,
+      "win_rate": 0.6154,
+      "avg_trade": 235.85
+    },
+    {
+      "thresholds": {
+        "0": 0.5,
+        "1": 0.5,
+        "2": 0.45
+      },
+      "score": 8.535757,
+      "trades": 12,
+      "pnl": 2927.85,
+      "max_dd": -342.01,
+      "win_rate": 0.5833,
+      "avg_trade": 243.99
+    },
+    {
+      "thresholds": {
+        "0": 0.5,
+        "1": 0.55,
+        "2": 0.45
+      },
+      "score": 8.535757,
+      "trades": 12,
+      "pnl": 2927.85,
+      "max_dd": -342.01,
+      "win_rate": 0.5833,
+      "avg_trade": 243.99
+    },
+    {
+      "thresholds": {
+        "0": 0.55,
+        "1": 0.4,
+        "2": 0.45
+      },
+      "score": 7.321591,
+      "trades": 17,
+      "pnl": 5118.89,
+      "max_dd": -698.15,
+      "win_rate": 0.5882,
+      "avg_trade": 301.11
+    },
+    {
+      "thresholds": {
+        "0": 0.5,
+        "1": 0.4,
+        "2": 0.4
+      },
+      "score": 5.275571,
+      "trades": 27,
+      "pnl": 5646.76,
+      "max_dd": -1069.36,
+      "win_rate": 0.5185,
+      "avg_trade": 209.14
+    },
+    {
+      "thresholds": {
+        "0": 0.55,
+        "1": 0.45,
+        "2": 0.45
+      },
+      "score": 4.633802,
+      "trades": 12,
+      "pnl": 2668.56,
+      "max_dd": -574.89,
+      "win_rate": 0.5833,
+      "avg_trade": 222.38
+    },
+    {
+      "thresholds": {
+        "0": 0.45,
+        "1": 0.4,
+        "2": 0.45
+      },
+      "score": 4.482633,
+      "trades": 22,
+      "pnl": 4777.59,
+      "max_dd": -1064.8,
+      "win_rate": 0.5455,
+      "avg_trade": 217.16
+    }
+  ]
+}

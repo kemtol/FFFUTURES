@@ -1,0 +1,43 @@
+{
+  "anchor_ts": "2026-05-28T01:53:00+00:00",
+  "base_rows": 4604,
+  "created_at": "2026-05-30T23:21:43.454608+00:00",
+  "entry_modes": [
+    "touch_next_open",
+    "close_next_open"
+  ],
+  "event_rows": 23240,
+  "extension_r": [
+    0.5,
+    1.0,
+    1.5,
+    2.0
+  ],
+  "l1_context": "data/Level_1_Features/mnq/ORB/context.parquet",
+  "orb_minutes": [
+    15
+  ],
+  "outputs": {
+    "base_opportunities": "/home/kemal/futures/data/Level_2_Datamart/mnq/ORB/downside_extension_reversal/downside_reversal_base_opportunities.parquet",
+    "events": "/home/kemal/futures/data/Level_2_Datamart/mnq/ORB/downside_extension_reversal/downside_reversal_events.parquet",
+    "manifest": "/home/kemal/futures/data/Level_2_Datamart/mnq/ORB/downside_extension_reversal/downside_reversal_manifest.json",
+    "report": "/home/kemal/futures/data/Level_2_Datamart/mnq/ORB/downside_extension_reversal/README.md",
+    "results": "/home/kemal/futures/data/Level_2_Datamart/mnq/ORB/downside_extension_reversal/downside_reversal_results.parquet"
+  },
+  "result_rows": 48,
+  "stop_r": [
+    1.0
+  ],
+  "strategy": "mnq_orb_downside_extension_long_reversal",
+  "target_risks": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600
+  ],
+  "tp_r": [
+    2.0
+  ]
+}

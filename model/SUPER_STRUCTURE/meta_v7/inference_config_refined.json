@@ -1,0 +1,23 @@
+{
+  "name": "Meta-v7 Refined (The Professional)",
+  "status": "LOCKED_PASS",
+  "daily_loss_limit": -300.0,
+  "thresholds": {
+    "0": 0.50,
+    "1": 0.50,
+    "2": 0.45
+  },
+  "features": [
+    "entry_adx",
+    "cci_abs",
+    "st_gap_ratio",
+    "efficiency_ratio",
+    "volatility_zscore",
+    "session_cluster"
+  ],
+  "performance_2026_ytd": {
+    "pnl": 2426.58,
+    "max_dd": -1154.0,
+    "pass_status": true
+  }
+}

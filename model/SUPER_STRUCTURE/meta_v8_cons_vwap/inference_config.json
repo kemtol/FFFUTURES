@@ -1,0 +1,23 @@
+{
+  "name": "Meta-v8 CONS VWAP Candidate",
+  "status": "RESEARCH_ONLY",
+  "features": [
+    "entry_adx",
+    "cci_abs",
+    "st_gap_ratio",
+    "efficiency_ratio",
+    "volatility_zscore",
+    "session_cluster",
+    "dist_to_ct_vwap_atr",
+    "vwap_side_aligned",
+    "ct_vwap_slope_20_atr",
+    "vwap_deviation_z_50"
+  ],
+  "thresholds": {
+    "0": 0.5,
+    "1": 0.4,
+    "2": 0.45
+  },
+  "daily_loss_limit": -400.0,
+  "datamart": "data/Level_2_Datamart/super_structure_ml/meta_v8_cons_vwap_training.parquet"
+}

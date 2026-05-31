@@ -1,0 +1,66 @@
+{
+  "baseline_candidate": {
+    "exit_mode": "tp_2r_or_time",
+    "orb_minutes": 15,
+    "side_mode": "long",
+    "target_risk_usd": 500
+  },
+  "columns": 27,
+  "created_at": "2026-05-28T07:34:45.964904+00:00",
+  "experiment": "mnq_orb_15m_rule_based_ml_filter",
+  "feature_columns": [
+    "signal_minutes_from_open",
+    "orb_range_pts",
+    "entry_risk_pts",
+    "risk_per_contract_usd",
+    "breakout_pts",
+    "breakout_to_orb_range",
+    "entry_risk_to_orb_range",
+    "contracts_used",
+    "ny_day_of_week",
+    "ny_month"
+  ],
+  "input": "/home/kemal/futures/data/Level_2_Datamart/mnq/ORB/sweeps/sweep_events.parquet",
+  "label_columns": [
+    "label_good_trade",
+    "pnl_per_contract_usd",
+    "pnl_usd",
+    "r_multiple"
+  ],
+  "max_signal_ts": "2026-05-26T13:46:00+00:00",
+  "metadata_columns": [
+    "event_id",
+    "base_event_id",
+    "ny_date",
+    "signal_ts",
+    "entry_ts",
+    "exit_ts",
+    "side",
+    "orb_minutes",
+    "side_mode",
+    "exit_mode",
+    "target_risk_usd",
+    "exit_reason"
+  ],
+  "min_signal_ts": "2019-05-06T13:46:00+00:00",
+  "model_dir": "/home/kemal/futures/model/MNQ/ORB/ml_filter",
+  "no_lookahead_note": "Feature columns use rule state known at signal/entry time; exit/pnl fields are labels or metadata only.",
+  "output": "/home/kemal/futures/data/Level_2_Datamart/mnq/ORB/ml_filter/candidate_a_dataset.parquet",
+  "rows": 1296,
+  "split_counts": {
+    "holdout": 72,
+    "train": 1049,
+    "validation": 175
+  },
+  "split_pnl_usd": {
+    "holdout": 6234.0,
+    "train": 31206.0,
+    "validation": 1241.0
+  },
+  "split_win_rate": {
+    "holdout": 0.5972222222222222,
+    "train": 0.553860819828408,
+    "validation": 0.6285714285714286
+  },
+  "status": "PASS"
+}

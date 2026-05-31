@@ -1,0 +1,2417 @@
+{
+  "compare_metrics": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v1_metrics.json",
+  "created_at": "2026-05-30T10:06:02.502320+00:00",
+  "dataset": {
+    "columns": 77,
+    "daily_confluence_lookahead_violations": 0,
+    "path": "/home/kemal/futures/data/Level_2_Datamart/mnq/ORB/orb_risk_adjusted_model/breakout_quality_features.parquet",
+    "rows": 2559,
+    "split_counts": {
+      "holdout": 140,
+      "train": 2068,
+      "validation": 351
+    }
+  },
+  "experiment": "mnq_orb_risk_adjusted_probability",
+  "feature_columns": [
+    "prior_day_range_pts",
+    "atr5_daily_range_pts",
+    "atr14_daily_range_pts",
+    "atr20_daily_range_pts",
+    "orb_range_to_atr14",
+    "signal_risk_to_atr14",
+    "pre_60m_range_pts",
+    "pre_60m_return_pts",
+    "pre_60m_realized_vol_pts",
+    "or_close_dist_to_or_vwap_pts",
+    "signal_close_dist_to_vwap_pts",
+    "vwap_slope_or_to_signal_pts",
+    "side_aligned_with_vwap",
+    "overnight_range_pts",
+    "overnight_return_pts",
+    "or_high_to_overnight_high_pts",
+    "or_low_to_overnight_low_pts",
+    "side_distance_to_overnight_extreme_pts",
+    "side_is_up",
+    "signal_minutes_from_open",
+    "breakout_close_distance_pts",
+    "breakout_close_distance_to_orb",
+    "breakout_body_pts",
+    "breakout_range_pts",
+    "breakout_close_position",
+    "breakout_wick_against_pts",
+    "breakout_volume",
+    "breakout_volume_to_or_mean",
+    "breakout_volume_to_pre60_mean",
+    "prior_day_trend_pts",
+    "prior_close_gap_pts",
+    "or_mid_to_prior_close_pts",
+    "side_distance_to_prior_extreme_pts",
+    "dc_spy_return_1d",
+    "dc_spy_return_5d",
+    "dc_spy_return_20d",
+    "dc_spy_dist_sma20",
+    "dc_spy_dist_sma50",
+    "dc_spy_realized_vol_20d",
+    "dc_qqq_return_1d",
+    "dc_qqq_return_5d",
+    "dc_qqq_return_20d",
+    "dc_qqq_dist_sma20",
+    "dc_qqq_dist_sma50",
+    "dc_qqq_realized_vol_20d",
+    "dc_qqq_minus_spy_return_1d",
+    "dc_qqq_minus_spy_return_5d",
+    "dc_qqq_minus_spy_return_20d",
+    "dc_qqq_spy_beta_60d",
+    "dc_qqq_beta_residual_5d",
+    "dc_qqq_beta_residual_20d",
+    "dc_vix_prev_close",
+    "dc_vix_change_1d",
+    "dc_vix_change_5d",
+    "dc_vix_percentile_20d",
+    "dc_vix_percentile_60d",
+    "dc_vix_dist_sma20",
+    "dc_tnx_prev_close",
+    "dc_tnx_change_1d",
+    "dc_tnx_change_5d",
+    "dc_dxy_return_1d",
+    "dc_dxy_return_5d"
+  ],
+  "feature_families": {
+    "breakout_quality": [
+      "side_is_up",
+      "signal_minutes_from_open",
+      "breakout_close_distance_pts",
+      "breakout_close_distance_to_orb",
+      "breakout_body_pts",
+      "breakout_range_pts",
+      "breakout_close_position",
+      "breakout_wick_against_pts",
+      "breakout_volume",
+      "breakout_volume_to_or_mean",
+      "breakout_volume_to_pre60_mean"
+    ],
+    "daily_confluence": [
+      "dc_spy_return_1d",
+      "dc_spy_return_5d",
+      "dc_spy_return_20d",
+      "dc_spy_dist_sma20",
+      "dc_spy_dist_sma50",
+      "dc_spy_realized_vol_20d",
+      "dc_qqq_return_1d",
+      "dc_qqq_return_5d",
+      "dc_qqq_return_20d",
+      "dc_qqq_dist_sma20",
+      "dc_qqq_dist_sma50",
+      "dc_qqq_realized_vol_20d",
+      "dc_qqq_minus_spy_return_1d",
+      "dc_qqq_minus_spy_return_5d",
+      "dc_qqq_minus_spy_return_20d",
+      "dc_qqq_spy_beta_60d",
+      "dc_qqq_beta_residual_5d",
+      "dc_qqq_beta_residual_20d",
+      "dc_vix_prev_close",
+      "dc_vix_change_1d",
+      "dc_vix_change_5d",
+      "dc_vix_percentile_20d",
+      "dc_vix_percentile_60d",
+      "dc_vix_dist_sma20",
+      "dc_tnx_prev_close",
+      "dc_tnx_change_1d",
+      "dc_tnx_change_5d",
+      "dc_dxy_return_1d",
+      "dc_dxy_return_5d"
+    ],
+    "overnight_structure": [
+      "overnight_range_pts",
+      "overnight_return_pts",
+      "or_high_to_overnight_high_pts",
+      "or_low_to_overnight_low_pts",
+      "side_distance_to_overnight_extreme_pts"
+    ],
+    "prior_day_context": [
+      "prior_day_trend_pts",
+      "prior_close_gap_pts",
+      "or_mid_to_prior_close_pts",
+      "side_distance_to_prior_extreme_pts"
+    ],
+    "volatility_atr": [
+      "prior_day_range_pts",
+      "atr5_daily_range_pts",
+      "atr14_daily_range_pts",
+      "atr20_daily_range_pts",
+      "orb_range_to_atr14",
+      "signal_risk_to_atr14",
+      "pre_60m_range_pts",
+      "pre_60m_return_pts",
+      "pre_60m_realized_vol_pts"
+    ],
+    "vwap_context": [
+      "or_close_dist_to_or_vwap_pts",
+      "signal_close_dist_to_vwap_pts",
+      "vwap_slope_or_to_signal_pts",
+      "side_aligned_with_vwap"
+    ]
+  },
+  "feature_importance": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_feature_importance.csv",
+  "model_version": "v2_confluence",
+  "status": "PASS",
+  "targets": {
+    "positive_eod": {
+      "models": {
+        "lgbm_shallow": {
+          "artifact": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_positive_eod_lgbm_shallow.joblib",
+          "feature_family_importance": [
+            {
+              "family": "daily_confluence",
+              "feature_count": 29,
+              "importance_mean": 8.569285853155728,
+              "importance_sum": 248.5092897415161
+            },
+            {
+              "family": "breakout_quality",
+              "feature_count": 11,
+              "importance_mean": 13.138650980862705,
+              "importance_sum": 144.52516078948975
+            },
+            {
+              "family": "vwap_context",
+              "feature_count": 4,
+              "importance_mean": 29.63859260082245,
+              "importance_sum": 118.5543704032898
+            },
+            {
+              "family": "volatility_atr",
+              "feature_count": 9,
+              "importance_mean": 4.748708963394165,
+              "importance_sum": 42.738380670547485
+            },
+            {
+              "family": "prior_day_context",
+              "feature_count": 4,
+              "importance_mean": 5.949332356452942,
+              "importance_sum": 23.797329425811768
+            },
+            {
+              "family": "overnight_structure",
+              "feature_count": 5,
+              "importance_mean": 2.606678009033203,
+              "importance_sum": 13.033390045166016
+            }
+          ],
+          "holdout_diagnostics": {
+            "regime_slices": {
+              "dxy_trend_5d": [
+                {
+                  "auc": 0.47478991596638653,
+                  "avg_pnl_per_contract_usd": 73.19090909090909,
+                  "avg_probability": 0.5499442575687528,
+                  "brier": 0.24399878647696124,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -887.5,
+                  "rows": 55,
+                  "sum_pnl_per_contract_usd": 4025.5,
+                  "target_rate": 0.6181818181818182
+                },
+                {
+                  "auc": 0.5560640732265446,
+                  "avg_pnl_per_contract_usd": 40.23809523809524,
+                  "avg_probability": 0.571108931239546,
+                  "brier": 0.2453760530749475,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -1403.0,
+                  "rows": 42,
+                  "sum_pnl_per_contract_usd": 1690.0,
+                  "target_rate": 0.5476190476190477
+                },
+                {
+                  "auc": 0.5423913043478261,
+                  "avg_pnl_per_contract_usd": 20.674418604651162,
+                  "avg_probability": 0.5585478035864089,
+                  "brier": 0.2457293799182688,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -1171.0,
+                  "rows": 43,
+                  "sum_pnl_per_contract_usd": 889.0,
+                  "target_rate": 0.5348837209302325
+                }
+              ],
+              "qqq_relative_strength_5d": [
+                {
+                  "auc": 0.6294117647058823,
+                  "avg_pnl_per_contract_usd": 23.194915254237287,
+                  "avg_probability": 0.5601476849181929,
+                  "brier": 0.2337104332292236,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -1393.5,
+                  "rows": 59,
+                  "sum_pnl_per_contract_usd": 1368.5,
+                  "target_rate": 0.576271186440678
+                },
+                {
+                  "auc": 0.37777777777777777,
+                  "avg_pnl_per_contract_usd": 122.28571428571429,
+                  "avg_probability": 0.5617568538803127,
+                  "brier": 0.24480234059802514,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -581.0,
+                  "rows": 28,
+                  "sum_pnl_per_contract_usd": 3424.0,
+                  "target_rate": 0.6428571428571429
+                },
+                {
+                  "auc": 0.43285714285714283,
+                  "avg_pnl_per_contract_usd": 34.18867924528302,
+                  "avg_probability": 0.5560973493157697,
+                  "brier": 0.25752282499240237,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -1078.0,
+                  "rows": 53,
+                  "sum_pnl_per_contract_usd": 1812.0,
+                  "target_rate": 0.5283018867924528
+                }
+              ],
+              "vix_level": [
+                {
+                  "auc": 0.30526315789473685,
+                  "avg_pnl_per_contract_usd": 59.161764705882355,
+                  "avg_probability": 0.5646714231826685,
+                  "brier": 0.2657889686120352,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -1371.0,
+                  "rows": 34,
+                  "sum_pnl_per_contract_usd": 2011.5,
+                  "target_rate": 0.5588235294117647
+                },
+                {
+                  "auc": 0.5208333333333334,
+                  "avg_pnl_per_contract_usd": 64.93181818181819,
+                  "avg_probability": 0.5578249900879815,
+                  "brier": 0.22708292988530812,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -880.5,
+                  "rows": 22,
+                  "sum_pnl_per_contract_usd": 1428.5,
+                  "target_rate": 0.7272727272727273
+                },
+                {
+                  "auc": 0.6054131054131054,
+                  "avg_pnl_per_contract_usd": 37.67261904761905,
+                  "avg_probability": 0.556905793600138,
+                  "brier": 0.2411838265664315,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -2006.0,
+                  "rows": 84,
+                  "sum_pnl_per_contract_usd": 3164.5,
+                  "target_rate": 0.5357142857142857
+                }
+              ]
+            },
+            "side": [
+              {
+                "auc": 0.5630929791271345,
+                "avg_pnl_per_contract_usd": 37.715384615384615,
+                "avg_probability": 0.5202606580167018,
+                "brier": 0.24686238021990214,
+                "group": "DOWN",
+                "max_dd_per_contract_usd": -2894.5,
+                "rows": 65,
+                "sum_pnl_per_contract_usd": 2451.5,
+                "target_rate": 0.5230769230769231
+              },
+              {
+                "auc": 0.38230884557721134,
+                "avg_pnl_per_contract_usd": 55.373333333333335,
+                "avg_probability": 0.5924549608196306,
+                "brier": 0.24328048143430106,
+                "group": "UP",
+                "max_dd_per_contract_usd": -2530.5,
+                "rows": 75,
+                "sum_pnl_per_contract_usd": 4153.0,
+                "target_rate": 0.6133333333333333
+              }
+            ]
+          },
+          "holdout_predictions": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_positive_eod_lgbm_shallow_holdout_predictions.csv",
+          "holdout_threshold_table": [
+            {
+              "avg_pnl_per_contract_usd": 47.175,
+              "max_dd_per_contract_usd": -1614.5,
+              "selected_rows": 140,
+              "sum_pnl_per_contract_usd": 6604.5,
+              "target_rate": 0.5714285714285714,
+              "threshold": 0.2
+            },
+            {
+              "avg_pnl_per_contract_usd": 47.175,
+              "max_dd_per_contract_usd": -1614.5,
+              "selected_rows": 140,
+              "sum_pnl_per_contract_usd": 6604.5,
+              "target_rate": 0.5714285714285714,
+              "threshold": 0.3
+            },
+            {
+              "avg_pnl_per_contract_usd": 47.175,
+              "max_dd_per_contract_usd": -1614.5,
+              "selected_rows": 140,
+              "sum_pnl_per_contract_usd": 6604.5,
+              "target_rate": 0.5714285714285714,
+              "threshold": 0.4
+            },
+            {
+              "avg_pnl_per_contract_usd": 60.8034188034188,
+              "max_dd_per_contract_usd": -2352.5,
+              "selected_rows": 117,
+              "sum_pnl_per_contract_usd": 7114.0,
+              "target_rate": 0.6068376068376068,
+              "threshold": 0.5
+            },
+            {
+              "avg_pnl_per_contract_usd": 29.085714285714285,
+              "max_dd_per_contract_usd": -2118.5,
+              "selected_rows": 35,
+              "sum_pnl_per_contract_usd": 1018.0,
+              "target_rate": 0.5714285714285714,
+              "threshold": 0.6
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.7
+            }
+          ],
+          "metrics": {
+            "holdout": {
+              "auc": 0.5153125000000001,
+              "average_precision": 0.588327874789065,
+              "avg_probability": 0.5589361773754138,
+              "brier": 0.24494350587047303,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 53.2047619047619,
+                  "avg_prob": 0.5374997108403381,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -2217.0,
+                  "rows": 105,
+                  "sum_pnl_per_contract_usd": 5586.5,
+                  "target_rate": 0.5714285714285714
+                },
+                {
+                  "avg_pnl_per_contract_usd": 29.085714285714285,
+                  "avg_prob": 0.6232455769806405,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -2118.5,
+                  "rows": 35,
+                  "sum_pnl_per_contract_usd": 1018.0,
+                  "target_rate": 0.5714285714285714
+                }
+              ],
+              "log_loss": 0.6830912467801001,
+              "positive_rate": 0.5714285714285714,
+              "rows": 140,
+              "split": "holdout"
+            },
+            "train": {
+              "auc": 0.6610192895491928,
+              "average_precision": 0.665921020532247,
+              "avg_probability": 0.5658362313752275,
+              "brier": 0.23976465044069395,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": -13.207432432432432,
+                  "avg_prob": 0.5399974740014363,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -20337.5,
+                  "rows": 1480,
+                  "sum_pnl_per_contract_usd": -19547.0,
+                  "target_rate": 0.4466216216216216
+                },
+                {
+                  "avg_pnl_per_contract_usd": 44.84268707482993,
+                  "avg_prob": 0.6308725594589195,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -1505.0,
+                  "rows": 588,
+                  "sum_pnl_per_contract_usd": 26367.5,
+                  "target_rate": 0.6870748299319728
+                }
+              ],
+              "log_loss": 0.672209363401155,
+              "positive_rate": 0.5149903288201161,
+              "rows": 2068,
+              "split": "train"
+            },
+            "validation": {
+              "auc": 0.5759886446160957,
+              "average_precision": 0.6035391009868837,
+              "avg_probability": 0.5640942912322368,
+              "brier": 0.2418751711931997,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 17.567391304347826,
+                  "avg_prob": 0.5280147854288763,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -2584.0,
+                  "rows": 230,
+                  "sum_pnl_per_contract_usd": 4040.5,
+                  "target_rate": 0.5347826086956522
+                },
+                {
+                  "avg_pnl_per_contract_usd": -22.454545454545453,
+                  "avg_prob": 0.6326751700320128,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -3788.5,
+                  "rows": 121,
+                  "sum_pnl_per_contract_usd": -2717.0,
+                  "target_rate": 0.6198347107438017
+                }
+              ],
+              "log_loss": 0.6769280917095005,
+              "positive_rate": 0.5641025641025641,
+              "rows": 351,
+              "split": "validation"
+            }
+          },
+          "top_features": [
+            {
+              "feature": "signal_close_dist_to_vwap_pts",
+              "importance": 114.4236102104187,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "breakout_range_pts",
+              "importance": 42.13629913330078,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_vix_dist_sma20",
+              "importance": 38.25196075439453,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "signal_minutes_from_open",
+              "importance": 34.265750885009766,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_tnx_change_5d",
+              "importance": 33.08186960220337,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_qqq_beta_residual_20d",
+              "importance": 27.343650341033936,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_spy_return_1d",
+              "importance": 25.97189998626709,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_qqq_spy_beta_60d",
+              "importance": 24.86814022064209,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "prior_day_trend_pts",
+              "importance": 23.797329425811768,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_qqq_dist_sma50",
+              "importance": 21.099379539489746,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "atr20_daily_range_pts",
+              "importance": 17.973910331726074,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "breakout_volume_to_pre60_mean",
+              "importance": 17.115660190582275,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_dxy_return_5d",
+              "importance": 16.2428297996521,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "signal_risk_to_atr14",
+              "importance": 14.575799942016602,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "breakout_volume",
+              "importance": 14.03816032409668,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "breakout_close_position",
+              "importance": 12.66087007522583,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_spy_return_20d",
+              "importance": 9.82332992553711,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_vix_change_1d",
+              "importance": 9.671019554138184,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "pre_60m_return_pts",
+              "importance": 8.25277042388916,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "breakout_close_distance_pts",
+              "importance": 7.227670192718506,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "or_low_to_overnight_low_pts",
+              "importance": 7.088019847869873,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_vix_percentile_20d",
+              "importance": 6.784850120544434,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "breakout_close_distance_to_orb",
+              "importance": 6.4985198974609375,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_qqq_return_5d",
+              "importance": 6.472390174865723,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "breakout_volume_to_or_mean",
+              "importance": 6.469389915466309,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "positive_eod"
+            }
+          ]
+        },
+        "logistic": {
+          "artifact": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_positive_eod_logistic.joblib",
+          "feature_family_importance": [
+            {
+              "family": "daily_confluence",
+              "feature_count": 29,
+              "importance_mean": 0.06746892952624663,
+              "importance_sum": 1.956598956261152
+            },
+            {
+              "family": "volatility_atr",
+              "feature_count": 9,
+              "importance_mean": 0.09391003592966839,
+              "importance_sum": 0.8451903233670155
+            },
+            {
+              "family": "prior_day_context",
+              "feature_count": 4,
+              "importance_mean": 0.1431550187893073,
+              "importance_sum": 0.5726200751572292
+            },
+            {
+              "family": "breakout_quality",
+              "feature_count": 11,
+              "importance_mean": 0.041932101582079155,
+              "importance_sum": 0.4612531174028707
+            },
+            {
+              "family": "overnight_structure",
+              "feature_count": 5,
+              "importance_mean": 0.08353639855410869,
+              "importance_sum": 0.41768199277054346
+            },
+            {
+              "family": "vwap_context",
+              "feature_count": 4,
+              "importance_mean": 0.015817237926653387,
+              "importance_sum": 0.06326895170661355
+            }
+          ],
+          "holdout_diagnostics": {
+            "regime_slices": {
+              "dxy_trend_5d": [
+                {
+                  "auc": 0.453781512605042,
+                  "avg_pnl_per_contract_usd": 73.19090909090909,
+                  "avg_probability": 0.49424135980465794,
+                  "brier": 0.2741606857003347,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -887.5,
+                  "rows": 55,
+                  "sum_pnl_per_contract_usd": 4025.5,
+                  "target_rate": 0.6181818181818182
+                },
+                {
+                  "auc": 0.6407322654462243,
+                  "avg_pnl_per_contract_usd": 40.23809523809524,
+                  "avg_probability": 0.49995229400604124,
+                  "brier": 0.22848748249192652,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -1403.0,
+                  "rows": 42,
+                  "sum_pnl_per_contract_usd": 1690.0,
+                  "target_rate": 0.5476190476190477
+                },
+                {
+                  "auc": 0.7326086956521738,
+                  "avg_pnl_per_contract_usd": 20.674418604651162,
+                  "avg_probability": 0.47800556866308513,
+                  "brier": 0.22607424141662608,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -1171.0,
+                  "rows": 43,
+                  "sum_pnl_per_contract_usd": 889.0,
+                  "target_rate": 0.5348837209302325
+                }
+              ],
+              "qqq_relative_strength_5d": [
+                {
+                  "auc": 0.6376470588235293,
+                  "avg_pnl_per_contract_usd": 23.194915254237287,
+                  "avg_probability": 0.4839956302114492,
+                  "brier": 0.2400774489262941,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -1393.5,
+                  "rows": 59,
+                  "sum_pnl_per_contract_usd": 1368.5,
+                  "target_rate": 0.576271186440678
+                },
+                {
+                  "auc": 0.48333333333333334,
+                  "avg_pnl_per_contract_usd": 122.28571428571429,
+                  "avg_probability": 0.4838096146484232,
+                  "brier": 0.27465904280544634,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -581.0,
+                  "rows": 28,
+                  "sum_pnl_per_contract_usd": 3424.0,
+                  "target_rate": 0.6428571428571429
+                },
+                {
+                  "auc": 0.5800000000000001,
+                  "avg_pnl_per_contract_usd": 34.18867924528302,
+                  "avg_probability": 0.5025113056111553,
+                  "brier": 0.23663172969604518,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -1078.0,
+                  "rows": 53,
+                  "sum_pnl_per_contract_usd": 1812.0,
+                  "target_rate": 0.5283018867924528
+                }
+              ],
+              "vix_level": [
+                {
+                  "auc": 0.44912280701754387,
+                  "avg_pnl_per_contract_usd": 59.161764705882355,
+                  "avg_probability": 0.5311924325761255,
+                  "brier": 0.26488857441250024,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -1371.0,
+                  "rows": 34,
+                  "sum_pnl_per_contract_usd": 2011.5,
+                  "target_rate": 0.5588235294117647
+                },
+                {
+                  "auc": 0.5833333333333334,
+                  "avg_pnl_per_contract_usd": 64.93181818181819,
+                  "avg_probability": 0.5190489324085263,
+                  "brier": 0.23780189440453367,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -880.5,
+                  "rows": 22,
+                  "sum_pnl_per_contract_usd": 1428.5,
+                  "target_rate": 0.7272727272727273
+                },
+                {
+                  "auc": 0.6245014245014245,
+                  "avg_pnl_per_contract_usd": 37.67261904761905,
+                  "avg_probability": 0.46733204011246104,
+                  "brier": 0.23998394228773207,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -2006.0,
+                  "rows": 84,
+                  "sum_pnl_per_contract_usd": 3164.5,
+                  "target_rate": 0.5357142857142857
+                }
+              ]
+            },
+            "side": [
+              {
+                "auc": 0.6878557874762808,
+                "avg_pnl_per_contract_usd": 37.715384615384615,
+                "avg_probability": 0.44401885137576225,
+                "brier": 0.23294509710986666,
+                "group": "DOWN",
+                "max_dd_per_contract_usd": -2894.5,
+                "rows": 65,
+                "sum_pnl_per_contract_usd": 2451.5,
+                "target_rate": 0.5230769230769231
+              },
+              {
+                "auc": 0.49400299850074963,
+                "avg_pnl_per_contract_usd": 55.373333333333335,
+                "avg_probability": 0.5316571366746404,
+                "brier": 0.25673430729270547,
+                "group": "UP",
+                "max_dd_per_contract_usd": -2530.5,
+                "rows": 75,
+                "sum_pnl_per_contract_usd": 4153.0,
+                "target_rate": 0.6133333333333333
+              }
+            ]
+          },
+          "holdout_predictions": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_positive_eod_logistic_holdout_predictions.csv",
+          "holdout_threshold_table": [
+            {
+              "avg_pnl_per_contract_usd": 48.701438848920866,
+              "max_dd_per_contract_usd": -1614.5,
+              "selected_rows": 139,
+              "sum_pnl_per_contract_usd": 6769.5,
+              "target_rate": 0.5755395683453237,
+              "threshold": 0.2
+            },
+            {
+              "avg_pnl_per_contract_usd": 55.830827067669176,
+              "max_dd_per_contract_usd": -1393.5,
+              "selected_rows": 133,
+              "sum_pnl_per_contract_usd": 7425.5,
+              "target_rate": 0.5864661654135338,
+              "threshold": 0.3
+            },
+            {
+              "avg_pnl_per_contract_usd": 59.62719298245614,
+              "max_dd_per_contract_usd": -1504.0,
+              "selected_rows": 114,
+              "sum_pnl_per_contract_usd": 6797.5,
+              "target_rate": 0.6052631578947368,
+              "threshold": 0.4
+            },
+            {
+              "avg_pnl_per_contract_usd": 49.21774193548387,
+              "max_dd_per_contract_usd": -2582.0,
+              "selected_rows": 62,
+              "sum_pnl_per_contract_usd": 3051.5,
+              "target_rate": 0.5967741935483871,
+              "threshold": 0.5
+            },
+            {
+              "avg_pnl_per_contract_usd": 72.69444444444444,
+              "max_dd_per_contract_usd": -774.5,
+              "selected_rows": 18,
+              "sum_pnl_per_contract_usd": 1308.5,
+              "target_rate": 0.6111111111111112,
+              "threshold": 0.6
+            },
+            {
+              "avg_pnl_per_contract_usd": 164.91666666666666,
+              "max_dd_per_contract_usd": -125.5,
+              "selected_rows": 6,
+              "sum_pnl_per_contract_usd": 989.5,
+              "target_rate": 0.6666666666666666,
+              "threshold": 0.7
+            }
+          ],
+          "metrics": {
+            "holdout": {
+              "auc": 0.5841666666666666,
+              "average_precision": 0.6407514176813454,
+              "avg_probability": 0.4909679327858755,
+              "brier": 0.24568931685067322,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": -165.0,
+                  "avg_prob": 0.17930777296567357,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -165.0,
+                  "rows": 1,
+                  "sum_pnl_per_contract_usd": -165.0,
+                  "target_rate": 0.0
+                },
+                {
+                  "avg_pnl_per_contract_usd": -1.12,
+                  "avg_prob": 0.33704091345265474,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -1223.0,
+                  "rows": 25,
+                  "sum_pnl_per_contract_usd": -28.0,
+                  "target_rate": 0.44
+                },
+                {
+                  "avg_pnl_per_contract_usd": 57.177083333333336,
+                  "avg_prob": 0.4947207009705637,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -1585.5,
+                  "rows": 96,
+                  "sum_pnl_per_contract_usd": 5489.0,
+                  "target_rate": 0.6041666666666666
+                },
+                {
+                  "avg_pnl_per_contract_usd": 44.53125,
+                  "avg_prob": 0.6674556353568708,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -1370.5,
+                  "rows": 16,
+                  "sum_pnl_per_contract_usd": 712.5,
+                  "target_rate": 0.5625
+                },
+                {
+                  "avg_pnl_per_contract_usd": 298.0,
+                  "avg_prob": 0.9788512609282394,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": 0.0,
+                  "rows": 2,
+                  "sum_pnl_per_contract_usd": 596.0,
+                  "target_rate": 1.0
+                }
+              ],
+              "log_loss": 0.6820462205706282,
+              "positive_rate": 0.5714285714285714,
+              "rows": 140,
+              "split": "holdout"
+            },
+            "train": {
+              "auc": 0.5926417929310659,
+              "average_precision": 0.6126836262749729,
+              "avg_probability": 0.5004582957713967,
+              "brier": 0.24226453249877078,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": -458.1666666666667,
+                  "avg_prob": 0.15753579394487796,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -1374.5,
+                  "rows": 3,
+                  "sum_pnl_per_contract_usd": -1374.5,
+                  "target_rate": 0.0
+                },
+                {
+                  "avg_pnl_per_contract_usd": -22.346153846153847,
+                  "avg_prob": 0.3631447967472323,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -6030.0,
+                  "rows": 221,
+                  "sum_pnl_per_contract_usd": -4938.5,
+                  "target_rate": 0.39819004524886875
+                },
+                {
+                  "avg_pnl_per_contract_usd": -0.023514851485148515,
+                  "avg_prob": 0.4977928055321469,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -5097.0,
+                  "rows": 1616,
+                  "sum_pnl_per_contract_usd": -38.0,
+                  "target_rate": 0.5080445544554455
+                },
+                {
+                  "avg_pnl_per_contract_usd": 54.48847926267281,
+                  "avg_prob": 0.6457217399614583,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -2539.0,
+                  "rows": 217,
+                  "sum_pnl_per_contract_usd": 11824.0,
+                  "target_rate": 0.6774193548387096
+                },
+                {
+                  "avg_pnl_per_contract_usd": 122.5,
+                  "avg_prob": 0.8786688073354306,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": -218.0,
+                  "rows": 11,
+                  "sum_pnl_per_contract_usd": 1347.5,
+                  "target_rate": 0.8181818181818182
+                }
+              ],
+              "log_loss": 0.6769075346455448,
+              "positive_rate": 0.5149903288201161,
+              "rows": 2068,
+              "split": "train"
+            },
+            "validation": {
+              "auc": 0.550637089852776,
+              "average_precision": 0.6182106950832578,
+              "avg_probability": 0.5003984611308395,
+              "brier": 0.24973906633968293,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": -266.75,
+                  "avg_prob": 0.17221472317911748,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -828.0,
+                  "rows": 2,
+                  "sum_pnl_per_contract_usd": -533.5,
+                  "target_rate": 0.5
+                },
+                {
+                  "avg_pnl_per_contract_usd": 25.948979591836736,
+                  "avg_prob": 0.34994702393609195,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -1446.0,
+                  "rows": 49,
+                  "sum_pnl_per_contract_usd": 1271.5,
+                  "target_rate": 0.5306122448979592
+                },
+                {
+                  "avg_pnl_per_contract_usd": 3.974903474903475,
+                  "avg_prob": 0.5052898806549041,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -3249.0,
+                  "rows": 259,
+                  "sum_pnl_per_contract_usd": 1029.5,
+                  "target_rate": 0.555984555984556
+                },
+                {
+                  "avg_pnl_per_contract_usd": 21.82051282051282,
+                  "avg_prob": 0.6526310385596751,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -2094.0,
+                  "rows": 39,
+                  "sum_pnl_per_contract_usd": 851.0,
+                  "target_rate": 0.6666666666666666
+                },
+                {
+                  "avg_pnl_per_contract_usd": -647.5,
+                  "avg_prob": 0.9126683221252201,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": -1529.5,
+                  "rows": 2,
+                  "sum_pnl_per_contract_usd": -1295.0,
+                  "target_rate": 0.5
+                }
+              ],
+              "log_loss": 0.6929783057232628,
+              "positive_rate": 0.5641025641025641,
+              "rows": 351,
+              "split": "validation"
+            }
+          },
+          "top_features": [
+            {
+              "feature": "dc_vix_prev_close",
+              "importance": 0.27131752404223086,
+              "model": "logistic",
+              "signed_value": 0.27131752404223086,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "prior_close_gap_pts",
+              "importance": 0.22614585750598976,
+              "model": "logistic",
+              "signed_value": 0.22614585750598976,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "pre_60m_realized_vol_pts",
+              "importance": 0.21834364576957688,
+              "model": "logistic",
+              "signed_value": 0.21834364576957688,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_qqq_dist_sma50",
+              "importance": 0.2156588079634301,
+              "model": "logistic",
+              "signed_value": -0.2156588079634301,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "overnight_range_pts",
+              "importance": 0.18146939773824616,
+              "model": "logistic",
+              "signed_value": -0.18146939773824616,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "prior_day_range_pts",
+              "importance": 0.14594587632875114,
+              "model": "logistic",
+              "signed_value": 0.14594587632875114,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "breakout_body_pts",
+              "importance": 0.14501647551826774,
+              "model": "logistic",
+              "signed_value": -0.14501647551826774,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "overnight_return_pts",
+              "importance": 0.14132967876343883,
+              "model": "logistic",
+              "signed_value": -0.14132967876343883,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "side_is_up",
+              "importance": 0.13986757010137954,
+              "model": "logistic",
+              "signed_value": 0.13986757010137954,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "atr20_daily_range_pts",
+              "importance": 0.13968494109515686,
+              "model": "logistic",
+              "signed_value": 0.13968494109515686,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "prior_day_trend_pts",
+              "importance": 0.13362389858906484,
+              "model": "logistic",
+              "signed_value": 0.13362389858906484,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_vix_percentile_20d",
+              "importance": 0.13283340654308923,
+              "model": "logistic",
+              "signed_value": 0.13283340654308923,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "or_mid_to_prior_close_pts",
+              "importance": 0.1319627020702762,
+              "model": "logistic",
+              "signed_value": -0.1319627020702762,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "atr14_daily_range_pts",
+              "importance": 0.12856045587588485,
+              "model": "logistic",
+              "signed_value": -0.12856045587588485,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_spy_realized_vol_20d",
+              "importance": 0.12586664023283886,
+              "model": "logistic",
+              "signed_value": -0.12586664023283886,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "atr5_daily_range_pts",
+              "importance": 0.12113898237986942,
+              "model": "logistic",
+              "signed_value": -0.12113898237986942,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_tnx_prev_close",
+              "importance": 0.11352150839901667,
+              "model": "logistic",
+              "signed_value": 0.11352150839901667,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_qqq_spy_beta_60d",
+              "importance": 0.10027466537311062,
+              "model": "logistic",
+              "signed_value": -0.10027466537311062,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_qqq_beta_residual_5d",
+              "importance": 0.09982849981397389,
+              "model": "logistic",
+              "signed_value": -0.09982849981397389,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_qqq_minus_spy_return_1d",
+              "importance": 0.09444042082830956,
+              "model": "logistic",
+              "signed_value": -0.09444042082830956,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_qqq_minus_spy_return_5d",
+              "importance": 0.08639161935961961,
+              "model": "logistic",
+              "signed_value": 0.08639161935961961,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_vix_change_5d",
+              "importance": 0.08400775473059259,
+              "model": "logistic",
+              "signed_value": -0.08400775473059259,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_vix_dist_sma20",
+              "importance": 0.08118756678214954,
+              "model": "logistic",
+              "signed_value": 0.08118756678214954,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "side_distance_to_prior_extreme_pts",
+              "importance": 0.08088761699189842,
+              "model": "logistic",
+              "signed_value": -0.08088761699189842,
+              "target": "positive_eod"
+            },
+            {
+              "feature": "dc_qqq_realized_vol_20d",
+              "importance": 0.07023755206848725,
+              "model": "logistic",
+              "signed_value": -0.07023755206848725,
+              "target": "positive_eod"
+            }
+          ]
+        }
+      }
+    },
+    "success_2r": {
+      "models": {
+        "lgbm_shallow": {
+          "artifact": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_success_2r_lgbm_shallow.joblib",
+          "feature_family_importance": [
+            {
+              "family": "volatility_atr",
+              "feature_count": 9,
+              "importance_mean": 60.87475479973687,
+              "importance_sum": 547.8727931976318
+            },
+            {
+              "family": "breakout_quality",
+              "feature_count": 11,
+              "importance_mean": 28.176300048828125,
+              "importance_sum": 309.9393005371094
+            },
+            {
+              "family": "vwap_context",
+              "feature_count": 4,
+              "importance_mean": 39.29294967651367,
+              "importance_sum": 157.1717987060547
+            },
+            {
+              "family": "daily_confluence",
+              "feature_count": 29,
+              "importance_mean": 3.068386275192787,
+              "importance_sum": 88.98320198059082
+            },
+            {
+              "family": "prior_day_context",
+              "feature_count": 4,
+              "importance_mean": 0.0,
+              "importance_sum": 0.0
+            },
+            {
+              "family": "overnight_structure",
+              "feature_count": 5,
+              "importance_mean": 0.0,
+              "importance_sum": 0.0
+            }
+          ],
+          "holdout_diagnostics": {
+            "regime_slices": {
+              "dxy_trend_5d": [
+                {
+                  "auc": 0.5851063829787234,
+                  "avg_pnl_per_contract_usd": 73.19090909090909,
+                  "avg_probability": 0.13454599382953344,
+                  "brier": 0.12420554632979658,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -887.5,
+                  "rows": 55,
+                  "sum_pnl_per_contract_usd": 4025.5,
+                  "target_rate": 0.14545454545454545
+                },
+                {
+                  "auc": 0.6341911764705882,
+                  "avg_pnl_per_contract_usd": 40.23809523809524,
+                  "avg_probability": 0.16830630696563492,
+                  "brier": 0.145040279747746,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -1403.0,
+                  "rows": 42,
+                  "sum_pnl_per_contract_usd": 1690.0,
+                  "target_rate": 0.19047619047619047
+                },
+                {
+                  "auc": 0.6535714285714286,
+                  "avg_pnl_per_contract_usd": 20.674418604651162,
+                  "avg_probability": 0.13845183657376364,
+                  "brier": 0.14871195518302704,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -1171.0,
+                  "rows": 43,
+                  "sum_pnl_per_contract_usd": 889.0,
+                  "target_rate": 0.18604651162790697
+                }
+              ],
+              "qqq_relative_strength_5d": [
+                {
+                  "auc": 0.639795918367347,
+                  "avg_pnl_per_contract_usd": 23.194915254237287,
+                  "avg_probability": 0.1515747892059661,
+                  "brier": 0.13442767071883852,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -1393.5,
+                  "rows": 59,
+                  "sum_pnl_per_contract_usd": 1368.5,
+                  "target_rate": 0.1694915254237288
+                },
+                {
+                  "auc": 0.6217391304347826,
+                  "avg_pnl_per_contract_usd": 122.28571428571429,
+                  "avg_probability": 0.15092647557473576,
+                  "brier": 0.14794439390267838,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -581.0,
+                  "rows": 28,
+                  "sum_pnl_per_contract_usd": 3424.0,
+                  "target_rate": 0.17857142857142858
+                },
+                {
+                  "auc": 0.6338383838383838,
+                  "avg_pnl_per_contract_usd": 34.18867924528302,
+                  "avg_probability": 0.13685791786053286,
+                  "brier": 0.13667802393826112,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -1078.0,
+                  "rows": 53,
+                  "sum_pnl_per_contract_usd": 1812.0,
+                  "target_rate": 0.16981132075471697
+                }
+              ],
+              "vix_level": [
+                {
+                  "auc": 0.4470899470899471,
+                  "avg_pnl_per_contract_usd": 59.161764705882355,
+                  "avg_probability": 0.17973321277366375,
+                  "brier": 0.1772244572305592,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -1371.0,
+                  "rows": 34,
+                  "sum_pnl_per_contract_usd": 2011.5,
+                  "target_rate": 0.20588235294117646
+                },
+                {
+                  "auc": 0.6666666666666666,
+                  "avg_pnl_per_contract_usd": 64.93181818181819,
+                  "avg_probability": 0.12812170498987827,
+                  "brier": 0.11481136516572273,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -880.5,
+                  "rows": 22,
+                  "sum_pnl_per_contract_usd": 1428.5,
+                  "target_rate": 0.13636363636363635
+                },
+                {
+                  "auc": 0.7229591836734693,
+                  "avg_pnl_per_contract_usd": 37.67261904761905,
+                  "avg_probability": 0.13681805692584467,
+                  "brier": 0.12816820584439753,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -2006.0,
+                  "rows": 84,
+                  "sum_pnl_per_contract_usd": 3164.5,
+                  "target_rate": 0.16666666666666666
+                }
+              ]
+            },
+            "side": [
+              {
+                "auc": 0.5414201183431953,
+                "avg_pnl_per_contract_usd": 37.715384615384615,
+                "avg_probability": 0.16443733761888932,
+                "brier": 0.16325606119523114,
+                "group": "DOWN",
+                "max_dd_per_contract_usd": -2894.5,
+                "rows": 65,
+                "sum_pnl_per_contract_usd": 2451.5,
+                "target_rate": 0.2
+              },
+              {
+                "auc": 0.7052556818181819,
+                "avg_pnl_per_contract_usd": 55.373333333333335,
+                "avg_probability": 0.12978528774166712,
+                "brier": 0.11607955856965707,
+                "group": "UP",
+                "max_dd_per_contract_usd": -2530.5,
+                "rows": 75,
+                "sum_pnl_per_contract_usd": 4153.0,
+                "target_rate": 0.14666666666666667
+              }
+            ]
+          },
+          "holdout_predictions": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_success_2r_lgbm_shallow_holdout_predictions.csv",
+          "holdout_threshold_table": [
+            {
+              "avg_pnl_per_contract_usd": 36.71153846153846,
+              "max_dd_per_contract_usd": -1050.5,
+              "selected_rows": 52,
+              "sum_pnl_per_contract_usd": 1909.0,
+              "target_rate": 0.23076923076923078,
+              "threshold": 0.2
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.3
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.4
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.5
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.6
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.7
+            }
+          ],
+          "metrics": {
+            "holdout": {
+              "auc": 0.6329022988505747,
+              "average_precision": 0.2359099551162862,
+              "avg_probability": 0.14587373947037743,
+              "brier": 0.13798293478867363,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 53.35795454545455,
+                  "avg_prob": 0.09352847812735736,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -1590.5,
+                  "rows": 88,
+                  "sum_pnl_per_contract_usd": 4695.5,
+                  "target_rate": 0.13636363636363635
+                },
+                {
+                  "avg_pnl_per_contract_usd": 36.71153846153846,
+                  "avg_prob": 0.23445802789702672,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -1050.5,
+                  "rows": 52,
+                  "sum_pnl_per_contract_usd": 1909.0,
+                  "target_rate": 0.23076923076923078
+                }
+              ],
+              "log_loss": 0.4433480492436484,
+              "positive_rate": 0.17142857142857143,
+              "rows": 140,
+              "split": "holdout"
+            },
+            "train": {
+              "auc": 0.6928134602140283,
+              "average_precision": 0.276892327814094,
+              "avg_probability": 0.15301538346859617,
+              "brier": 0.13234046975120506,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 1.055078125,
+                  "avg_prob": 0.10253511296423232,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -4247.0,
+                  "rows": 1280,
+                  "sum_pnl_per_contract_usd": 1350.5,
+                  "target_rate": 0.1078125
+                },
+                {
+                  "avg_pnl_per_contract_usd": 6.941624365482234,
+                  "avg_prob": 0.2350137924096948,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -3432.5,
+                  "rows": 788,
+                  "sum_pnl_per_contract_usd": 5470.0,
+                  "target_rate": 0.2715736040609137
+                }
+              ],
+              "log_loss": 0.42041674371703275,
+              "positive_rate": 0.1702127659574468,
+              "rows": 2068,
+              "split": "train"
+            },
+            "validation": {
+              "auc": 0.6895577395577395,
+              "average_precision": 0.2650589025114434,
+              "avg_probability": 0.15677600092916047,
+              "brier": 0.1259773665972144,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 7.413043478260869,
+                  "avg_prob": 0.10482381542828004,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -2246.0,
+                  "rows": 207,
+                  "sum_pnl_per_contract_usd": 1534.5,
+                  "target_rate": 0.10628019323671498
+                },
+                {
+                  "avg_pnl_per_contract_usd": -1.4652777777777777,
+                  "avg_prob": 0.23145726758667606,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -3173.5,
+                  "rows": 144,
+                  "sum_pnl_per_contract_usd": -211.0,
+                  "target_rate": 0.22916666666666666
+                }
+              ],
+              "log_loss": 0.40943456013129154,
+              "positive_rate": 0.15669515669515668,
+              "rows": 351,
+              "split": "validation"
+            }
+          },
+          "top_features": [
+            {
+              "feature": "orb_range_to_atr14",
+              "importance": 547.8727931976318,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "signal_minutes_from_open",
+              "importance": 309.9393005371094,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "signal_close_dist_to_vwap_pts",
+              "importance": 157.1717987060547,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_tnx_prev_close",
+              "importance": 67.68060111999512,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_vix_dist_sma20",
+              "importance": 21.302600860595703,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "atr5_daily_range_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "signal_risk_to_atr14",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "pre_60m_range_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "pre_60m_realized_vol_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "pre_60m_return_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "or_close_dist_to_or_vwap_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "vwap_slope_or_to_signal_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "atr20_daily_range_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "atr14_daily_range_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "overnight_range_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "overnight_return_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "or_low_to_overnight_low_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "or_high_to_overnight_high_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "side_distance_to_overnight_extreme_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "side_is_up",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "breakout_close_distance_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "breakout_close_distance_to_orb",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "breakout_body_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "breakout_range_pts",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            },
+            {
+              "feature": "breakout_close_position",
+              "importance": 0.0,
+              "model": "lgbm_shallow",
+              "signed_value": null,
+              "target": "success_2r"
+            }
+          ]
+        },
+        "logistic": {
+          "artifact": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_success_2r_logistic.joblib",
+          "feature_family_importance": [
+            {
+              "family": "daily_confluence",
+              "feature_count": 29,
+              "importance_mean": 0.1677759804768507,
+              "importance_sum": 4.86550343382867
+            },
+            {
+              "family": "volatility_atr",
+              "feature_count": 9,
+              "importance_mean": 0.28360560243951327,
+              "importance_sum": 2.552450421955619
+            },
+            {
+              "family": "overnight_structure",
+              "feature_count": 5,
+              "importance_mean": 0.3878682320069316,
+              "importance_sum": 1.939341160034658
+            },
+            {
+              "family": "breakout_quality",
+              "feature_count": 11,
+              "importance_mean": 0.1339592775892754,
+              "importance_sum": 1.4735520534820292
+            },
+            {
+              "family": "vwap_context",
+              "feature_count": 4,
+              "importance_mean": 0.08775069256245938,
+              "importance_sum": 0.3510027702498375
+            },
+            {
+              "family": "prior_day_context",
+              "feature_count": 4,
+              "importance_mean": 0.0689955229574184,
+              "importance_sum": 0.2759820918296736
+            }
+          ],
+          "holdout_diagnostics": {
+            "regime_slices": {
+              "dxy_trend_5d": [
+                {
+                  "auc": 0.6728723404255319,
+                  "avg_pnl_per_contract_usd": 73.19090909090909,
+                  "avg_probability": 0.417133407214124,
+                  "brier": 0.21994152255896096,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -887.5,
+                  "rows": 55,
+                  "sum_pnl_per_contract_usd": 4025.5,
+                  "target_rate": 0.14545454545454545
+                },
+                {
+                  "auc": 0.7683823529411764,
+                  "avg_pnl_per_contract_usd": 40.23809523809524,
+                  "avg_probability": 0.48515958453203145,
+                  "brier": 0.22430368284128357,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -1403.0,
+                  "rows": 42,
+                  "sum_pnl_per_contract_usd": 1690.0,
+                  "target_rate": 0.19047619047619047
+                },
+                {
+                  "auc": 0.7607142857142857,
+                  "avg_pnl_per_contract_usd": 20.674418604651162,
+                  "avg_probability": 0.3999041459855284,
+                  "brier": 0.19063238509994504,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -1171.0,
+                  "rows": 43,
+                  "sum_pnl_per_contract_usd": 889.0,
+                  "target_rate": 0.18604651162790697
+                }
+              ],
+              "qqq_relative_strength_5d": [
+                {
+                  "auc": 0.6591836734693878,
+                  "avg_pnl_per_contract_usd": 23.194915254237287,
+                  "avg_probability": 0.4698292203114723,
+                  "brier": 0.2463013589692054,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -1393.5,
+                  "rows": 59,
+                  "sum_pnl_per_contract_usd": 1368.5,
+                  "target_rate": 0.1694915254237288
+                },
+                {
+                  "auc": 0.7130434782608696,
+                  "avg_pnl_per_contract_usd": 122.28571428571429,
+                  "avg_probability": 0.3957205212926996,
+                  "brier": 0.192881978277926,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -581.0,
+                  "rows": 28,
+                  "sum_pnl_per_contract_usd": 3424.0,
+                  "target_rate": 0.17857142857142858
+                },
+                {
+                  "auc": 0.7424242424242423,
+                  "avg_pnl_per_contract_usd": 34.18867924528302,
+                  "avg_probability": 0.4097135779231588,
+                  "brier": 0.18457085676244067,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -1078.0,
+                  "rows": 53,
+                  "sum_pnl_per_contract_usd": 1812.0,
+                  "target_rate": 0.16981132075471697
+                }
+              ],
+              "vix_level": [
+                {
+                  "auc": 0.671957671957672,
+                  "avg_pnl_per_contract_usd": 59.161764705882355,
+                  "avg_probability": 0.5795056711346875,
+                  "brier": 0.2996225034077844,
+                  "group": "high",
+                  "max_dd_per_contract_usd": -1371.0,
+                  "rows": 34,
+                  "sum_pnl_per_contract_usd": 2011.5,
+                  "target_rate": 0.20588235294117646
+                },
+                {
+                  "auc": 0.7017543859649122,
+                  "avg_pnl_per_contract_usd": 64.93181818181819,
+                  "avg_probability": 0.3410219923521995,
+                  "brier": 0.1755032176309344,
+                  "group": "low",
+                  "max_dd_per_contract_usd": -880.5,
+                  "rows": 22,
+                  "sum_pnl_per_contract_usd": 1428.5,
+                  "target_rate": 0.13636363636363635
+                },
+                {
+                  "auc": 0.7530612244897958,
+                  "avg_pnl_per_contract_usd": 37.67261904761905,
+                  "avg_probability": 0.3965385901687154,
+                  "brier": 0.1865058937574902,
+                  "group": "mid",
+                  "max_dd_per_contract_usd": -2006.0,
+                  "rows": 84,
+                  "sum_pnl_per_contract_usd": 3164.5,
+                  "target_rate": 0.16666666666666666
+                }
+              ]
+            },
+            "side": [
+              {
+                "auc": 0.6035502958579881,
+                "avg_pnl_per_contract_usd": 37.715384615384615,
+                "avg_probability": 0.5170732059635063,
+                "brier": 0.2813037337859685,
+                "group": "DOWN",
+                "max_dd_per_contract_usd": -2894.5,
+                "rows": 65,
+                "sum_pnl_per_contract_usd": 2451.5,
+                "target_rate": 0.2
+              },
+              {
+                "auc": 0.8352272727272727,
+                "avg_pnl_per_contract_usd": 55.373333333333335,
+                "avg_probability": 0.3587354644916261,
+                "brier": 0.15239984377715263,
+                "group": "UP",
+                "max_dd_per_contract_usd": -2530.5,
+                "rows": 75,
+                "sum_pnl_per_contract_usd": 4153.0,
+                "target_rate": 0.14666666666666667
+              }
+            ]
+          },
+          "holdout_predictions": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_success_2r_logistic_holdout_predictions.csv",
+          "holdout_threshold_table": [
+            {
+              "avg_pnl_per_contract_usd": 37.07017543859649,
+              "max_dd_per_contract_usd": -2052.0,
+              "selected_rows": 114,
+              "sum_pnl_per_contract_usd": 4226.0,
+              "target_rate": 0.20175438596491227,
+              "threshold": 0.2
+            },
+            {
+              "avg_pnl_per_contract_usd": 37.47938144329897,
+              "max_dd_per_contract_usd": -2052.0,
+              "selected_rows": 97,
+              "sum_pnl_per_contract_usd": 3635.5,
+              "target_rate": 0.2268041237113402,
+              "threshold": 0.3
+            },
+            {
+              "avg_pnl_per_contract_usd": 68.32,
+              "max_dd_per_contract_usd": -1987.5,
+              "selected_rows": 75,
+              "sum_pnl_per_contract_usd": 5124.0,
+              "target_rate": 0.26666666666666666,
+              "threshold": 0.4
+            },
+            {
+              "avg_pnl_per_contract_usd": 70.27777777777777,
+              "max_dd_per_contract_usd": -1508.5,
+              "selected_rows": 54,
+              "sum_pnl_per_contract_usd": 3795.0,
+              "target_rate": 0.2962962962962963,
+              "threshold": 0.5
+            },
+            {
+              "avg_pnl_per_contract_usd": 12.027027027027026,
+              "max_dd_per_contract_usd": -2066.0,
+              "selected_rows": 37,
+              "sum_pnl_per_contract_usd": 445.0,
+              "target_rate": 0.2702702702702703,
+              "threshold": 0.6
+            },
+            {
+              "avg_pnl_per_contract_usd": 46.23809523809524,
+              "max_dd_per_contract_usd": -971.5,
+              "selected_rows": 21,
+              "sum_pnl_per_contract_usd": 971.0,
+              "target_rate": 0.3333333333333333,
+              "threshold": 0.7
+            }
+          ],
+          "metrics": {
+            "holdout": {
+              "auc": 0.7155172413793104,
+              "average_precision": 0.3639230284226648,
+              "avg_probability": 0.4322494158892847,
+              "brier": 0.21224807842410287,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 91.48076923076923,
+                  "avg_prob": 0.1063731708845225,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -1379.0,
+                  "rows": 26,
+                  "sum_pnl_per_contract_usd": 2378.5,
+                  "target_rate": 0.038461538461538464
+                },
+                {
+                  "avg_pnl_per_contract_usd": -23.025641025641026,
+                  "avg_prob": 0.30892300900276287,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -2155.0,
+                  "rows": 39,
+                  "sum_pnl_per_contract_usd": -898.0,
+                  "target_rate": 0.07692307692307693
+                },
+                {
+                  "avg_pnl_per_contract_usd": 123.13157894736842,
+                  "avg_prob": 0.4952792125700968,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -2166.5,
+                  "rows": 38,
+                  "sum_pnl_per_contract_usd": 4679.0,
+                  "target_rate": 0.2631578947368421
+                },
+                {
+                  "avg_pnl_per_contract_usd": -13.21875,
+                  "avg_prob": 0.697907209205934,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -2347.5,
+                  "rows": 32,
+                  "sum_pnl_per_contract_usd": -423.0,
+                  "target_rate": 0.21875
+                },
+                {
+                  "avg_pnl_per_contract_usd": 173.6,
+                  "avg_prob": 0.9095155316281923,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": -150.5,
+                  "rows": 5,
+                  "sum_pnl_per_contract_usd": 868.0,
+                  "target_rate": 0.6
+                }
+              ],
+              "log_loss": 0.6067904499895173,
+              "positive_rate": 0.17142857142857143,
+              "rows": 140,
+              "split": "holdout"
+            },
+            "train": {
+              "auc": 0.7348468293070566,
+              "average_precision": 0.35024490754247634,
+              "avg_probability": 0.44446177007193427,
+              "brier": 0.21092581458511445,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": -21.761168384879724,
+                  "avg_prob": 0.11983837536674549,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -6722.5,
+                  "rows": 291,
+                  "sum_pnl_per_contract_usd": -6332.5,
+                  "target_rate": 0.006872852233676976
+                },
+                {
+                  "avg_pnl_per_contract_usd": 10.454867256637169,
+                  "avg_prob": 0.30311907792678855,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -4287.5,
+                  "rows": 565,
+                  "sum_pnl_per_contract_usd": 5907.0,
+                  "target_rate": 0.09557522123893805
+                },
+                {
+                  "avg_pnl_per_contract_usd": 0.4417758369723435,
+                  "avg_prob": 0.5007454531400265,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -3719.5,
+                  "rows": 687,
+                  "sum_pnl_per_contract_usd": 303.5,
+                  "target_rate": 0.16885007278020378
+                },
+                {
+                  "avg_pnl_per_contract_usd": 14.242038216560509,
+                  "avg_prob": 0.685769437138065,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -1896.0,
+                  "rows": 471,
+                  "sum_pnl_per_contract_usd": 6708.0,
+                  "target_rate": 0.3333333333333333
+                },
+                {
+                  "avg_pnl_per_contract_usd": 4.342592592592593,
+                  "avg_prob": 0.8518919083180525,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": -3199.5,
+                  "rows": 54,
+                  "sum_pnl_per_contract_usd": 234.5,
+                  "target_rate": 0.42592592592592593
+                }
+              ],
+              "log_loss": 0.6040183954841482,
+              "positive_rate": 0.1702127659574468,
+              "rows": 2068,
+              "split": "train"
+            },
+            "validation": {
+              "auc": 0.7385135135135136,
+              "average_precision": 0.3750234361175474,
+              "avg_probability": 0.4561882536686325,
+              "brier": 0.22250575127853522,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 38.45283018867924,
+                  "avg_prob": 0.10322206694739498,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -1956.5,
+                  "rows": 53,
+                  "sum_pnl_per_contract_usd": 2038.0,
+                  "target_rate": 0.07547169811320754
+                },
+                {
+                  "avg_pnl_per_contract_usd": -5.135294117647059,
+                  "avg_prob": 0.3090514953762713,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -2996.5,
+                  "rows": 85,
+                  "sum_pnl_per_contract_usd": -436.5,
+                  "target_rate": 0.03529411764705882
+                },
+                {
+                  "avg_pnl_per_contract_usd": 10.666666666666666,
+                  "avg_prob": 0.49675820570609797,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -1990.5,
+                  "rows": 105,
+                  "sum_pnl_per_contract_usd": 1120.0,
+                  "target_rate": 0.1523809523809524
+                },
+                {
+                  "avg_pnl_per_contract_usd": -18.369791666666668,
+                  "avg_prob": 0.6855923244986286,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -5612.5,
+                  "rows": 96,
+                  "sum_pnl_per_contract_usd": -1763.5,
+                  "target_rate": 0.2708333333333333
+                },
+                {
+                  "avg_pnl_per_contract_usd": 30.458333333333332,
+                  "avg_prob": 0.867121302623865,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": -2233.0,
+                  "rows": 12,
+                  "sum_pnl_per_contract_usd": 365.5,
+                  "target_rate": 0.5
+                }
+              ],
+              "log_loss": 0.6317549688614376,
+              "positive_rate": 0.15669515669515668,
+              "rows": 351,
+              "split": "validation"
+            }
+          },
+          "top_features": [
+            {
+              "feature": "overnight_range_pts",
+              "importance": 0.6703965669374081,
+              "model": "logistic",
+              "signed_value": -0.6703965669374081,
+              "target": "success_2r"
+            },
+            {
+              "feature": "atr14_daily_range_pts",
+              "importance": 0.6323342174821199,
+              "model": "logistic",
+              "signed_value": -0.6323342174821199,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_spy_realized_vol_20d",
+              "importance": 0.6127571310214837,
+              "model": "logistic",
+              "signed_value": -0.6127571310214837,
+              "target": "success_2r"
+            },
+            {
+              "feature": "or_high_to_overnight_high_pts",
+              "importance": 0.5792131452655551,
+              "model": "logistic",
+              "signed_value": 0.5792131452655551,
+              "target": "success_2r"
+            },
+            {
+              "feature": "or_low_to_overnight_low_pts",
+              "importance": 0.557209026758372,
+              "model": "logistic",
+              "signed_value": 0.557209026758372,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_vix_prev_close",
+              "importance": 0.49480420481389603,
+              "model": "logistic",
+              "signed_value": 0.49480420481389603,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_spy_dist_sma20",
+              "importance": 0.47946165090776843,
+              "model": "logistic",
+              "signed_value": -0.47946165090776843,
+              "target": "success_2r"
+            },
+            {
+              "feature": "atr20_daily_range_pts",
+              "importance": 0.4255623226183284,
+              "model": "logistic",
+              "signed_value": 0.4255623226183284,
+              "target": "success_2r"
+            },
+            {
+              "feature": "pre_60m_realized_vol_pts",
+              "importance": 0.4006183175475793,
+              "model": "logistic",
+              "signed_value": 0.4006183175475793,
+              "target": "success_2r"
+            },
+            {
+              "feature": "orb_range_to_atr14",
+              "importance": 0.3796382190921245,
+              "model": "logistic",
+              "signed_value": -0.3796382190921245,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_qqq_dist_sma50",
+              "importance": 0.37735605236129377,
+              "model": "logistic",
+              "signed_value": -0.37735605236129377,
+              "target": "success_2r"
+            },
+            {
+              "feature": "signal_minutes_from_open",
+              "importance": 0.3501122843560144,
+              "model": "logistic",
+              "signed_value": -0.3501122843560144,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_qqq_dist_sma20",
+              "importance": 0.3299874950413635,
+              "model": "logistic",
+              "signed_value": 0.3299874950413635,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_spy_dist_sma50",
+              "importance": 0.3113568512808121,
+              "model": "logistic",
+              "signed_value": 0.3113568512808121,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_vix_change_1d",
+              "importance": 0.28700177650802433,
+              "model": "logistic",
+              "signed_value": -0.28700177650802433,
+              "target": "success_2r"
+            },
+            {
+              "feature": "signal_risk_to_atr14",
+              "importance": 0.284585620727291,
+              "model": "logistic",
+              "signed_value": -0.284585620727291,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_tnx_prev_close",
+              "importance": 0.26318248296910746,
+              "model": "logistic",
+              "signed_value": 0.26318248296910746,
+              "target": "success_2r"
+            },
+            {
+              "feature": "side_is_up",
+              "importance": 0.25087596240454796,
+              "model": "logistic",
+              "signed_value": -0.25087596240454796,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_qqq_beta_residual_20d",
+              "importance": 0.24493918389094738,
+              "model": "logistic",
+              "signed_value": 0.24493918389094738,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_qqq_minus_spy_return_20d",
+              "importance": 0.23024222970885813,
+              "model": "logistic",
+              "signed_value": -0.23024222970885813,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_spy_return_20d",
+              "importance": 0.19730507245520784,
+              "model": "logistic",
+              "signed_value": 0.19730507245520784,
+              "target": "success_2r"
+            },
+            {
+              "feature": "breakout_range_pts",
+              "importance": 0.16735191957660134,
+              "model": "logistic",
+              "signed_value": 0.16735191957660134,
+              "target": "success_2r"
+            },
+            {
+              "feature": "prior_day_range_pts",
+              "importance": 0.14965509689231207,
+              "model": "logistic",
+              "signed_value": 0.14965509689231207,
+              "target": "success_2r"
+            },
+            {
+              "feature": "breakout_volume_to_or_mean",
+              "importance": 0.14935165121964097,
+              "model": "logistic",
+              "signed_value": -0.14935165121964097,
+              "target": "success_2r"
+            },
+            {
+              "feature": "dc_vix_change_5d",
+              "importance": 0.1476789481175256,
+              "model": "logistic",
+              "signed_value": 0.1476789481175256,
+              "target": "success_2r"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "v1_v2_comparison": [
+    {
+      "delta": -0.0007183908045976795,
+      "metric": "auc",
+      "model": "logistic",
+      "split": "holdout",
+      "target": "success_2r",
+      "v1": 0.7162356321839081,
+      "v2": 0.7155172413793104
+    },
+    {
+      "delta": 0.013986285787966235,
+      "metric": "average_precision",
+      "model": "logistic",
+      "split": "holdout",
+      "target": "success_2r",
+      "v1": 0.34993674263469854,
+      "v2": 0.3639230284226648
+    },
+    {
+      "delta": 0.015481543809092474,
+      "metric": "brier",
+      "model": "logistic",
+      "split": "holdout",
+      "target": "success_2r",
+      "v1": 0.1967665346150104,
+      "v2": 0.21224807842410287
+    },
+    {
+      "delta": 0.0269396551724137,
+      "metric": "auc",
+      "model": "lgbm_shallow",
+      "split": "holdout",
+      "target": "success_2r",
+      "v1": 0.605962643678161,
+      "v2": 0.6329022988505747
+    },
+    {
+      "delta": 0.02477127386859332,
+      "metric": "average_precision",
+      "model": "lgbm_shallow",
+      "split": "holdout",
+      "target": "success_2r",
+      "v1": 0.2111386812476929,
+      "v2": 0.2359099551162862
+    },
+    {
+      "delta": -0.0018760662266533168,
+      "metric": "brier",
+      "model": "lgbm_shallow",
+      "split": "holdout",
+      "target": "success_2r",
+      "v1": 0.13985900101532694,
+      "v2": 0.13798293478867363
+    },
+    {
+      "delta": 0.042291666666666616,
+      "metric": "auc",
+      "model": "logistic",
+      "split": "holdout",
+      "target": "positive_eod",
+      "v1": 0.541875,
+      "v2": 0.5841666666666666
+    },
+    {
+      "delta": 0.016352070363573556,
+      "metric": "average_precision",
+      "model": "logistic",
+      "split": "holdout",
+      "target": "positive_eod",
+      "v1": 0.6243993473177718,
+      "v2": 0.6407514176813454
+    },
+    {
+      "delta": -0.002912973784844508,
+      "metric": "brier",
+      "model": "logistic",
+      "split": "holdout",
+      "target": "positive_eod",
+      "v1": 0.24860229063551773,
+      "v2": 0.24568931685067322
+    },
+    {
+      "delta": -0.034479166666666616,
+      "metric": "auc",
+      "model": "lgbm_shallow",
+      "split": "holdout",
+      "target": "positive_eod",
+      "v1": 0.5497916666666667,
+      "v2": 0.5153125000000001
+    },
+    {
+      "delta": -0.0572709732324328,
+      "metric": "average_precision",
+      "model": "lgbm_shallow",
+      "split": "holdout",
+      "target": "positive_eod",
+      "v1": 0.6455988480214978,
+      "v2": 0.588327874789065
+    },
+    {
+      "delta": 0.002569627810787123,
+      "metric": "brier",
+      "model": "lgbm_shallow",
+      "split": "holdout",
+      "target": "positive_eod",
+      "v1": 0.2423738780596859,
+      "v2": 0.24494350587047303
+    }
+  ]
+}

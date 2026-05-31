@@ -1,0 +1,798 @@
+{
+  "created_at": "2026-05-29T03:45:12.475358+00:00",
+  "dataset": {
+    "columns": 47,
+    "path": "/home/kemal/futures/data/Level_2_Datamart/mnq/ORB/orb_risk_adjusted_model/breakout_quality_features.parquet",
+    "rows": 2559,
+    "split_counts": {
+      "holdout": 140,
+      "train": 2068,
+      "validation": 351
+    }
+  },
+  "experiment": "mnq_orb_risk_adjusted_probability",
+  "feature_columns": [
+    "prior_day_range_pts",
+    "atr5_daily_range_pts",
+    "atr14_daily_range_pts",
+    "atr20_daily_range_pts",
+    "orb_range_to_atr14",
+    "signal_risk_to_atr14",
+    "pre_60m_range_pts",
+    "pre_60m_return_pts",
+    "pre_60m_realized_vol_pts",
+    "or_close_dist_to_or_vwap_pts",
+    "signal_close_dist_to_vwap_pts",
+    "vwap_slope_or_to_signal_pts",
+    "side_aligned_with_vwap",
+    "overnight_range_pts",
+    "overnight_return_pts",
+    "or_high_to_overnight_high_pts",
+    "or_low_to_overnight_low_pts",
+    "side_distance_to_overnight_extreme_pts",
+    "side_is_up",
+    "signal_minutes_from_open",
+    "breakout_close_distance_pts",
+    "breakout_close_distance_to_orb",
+    "breakout_body_pts",
+    "breakout_range_pts",
+    "breakout_close_position",
+    "breakout_wick_against_pts",
+    "breakout_volume",
+    "breakout_volume_to_or_mean",
+    "breakout_volume_to_pre60_mean",
+    "prior_day_trend_pts",
+    "prior_close_gap_pts",
+    "or_mid_to_prior_close_pts",
+    "side_distance_to_prior_extreme_pts"
+  ],
+  "feature_importance": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v1_feature_importance.csv",
+  "status": "PASS",
+  "targets": {
+    "positive_eod": {
+      "models": {
+        "lgbm_shallow": {
+          "artifact": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v1_positive_eod_lgbm_shallow.joblib",
+          "holdout_predictions": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v1_positive_eod_lgbm_shallow_holdout_predictions.csv",
+          "holdout_threshold_table": [
+            {
+              "avg_pnl_per_contract_usd": 47.175,
+              "max_dd_per_contract_usd": -1614.5,
+              "selected_rows": 140,
+              "sum_pnl_per_contract_usd": 6604.5,
+              "target_rate": 0.5714285714285714,
+              "threshold": 0.2
+            },
+            {
+              "avg_pnl_per_contract_usd": 47.175,
+              "max_dd_per_contract_usd": -1614.5,
+              "selected_rows": 140,
+              "sum_pnl_per_contract_usd": 6604.5,
+              "target_rate": 0.5714285714285714,
+              "threshold": 0.3
+            },
+            {
+              "avg_pnl_per_contract_usd": 47.175,
+              "max_dd_per_contract_usd": -1614.5,
+              "selected_rows": 140,
+              "sum_pnl_per_contract_usd": 6604.5,
+              "target_rate": 0.5714285714285714,
+              "threshold": 0.4
+            },
+            {
+              "avg_pnl_per_contract_usd": 54.5,
+              "max_dd_per_contract_usd": -1614.5,
+              "selected_rows": 133,
+              "sum_pnl_per_contract_usd": 7248.5,
+              "target_rate": 0.5864661654135338,
+              "threshold": 0.5
+            },
+            {
+              "avg_pnl_per_contract_usd": 86.375,
+              "max_dd_per_contract_usd": -1253.5,
+              "selected_rows": 20,
+              "sum_pnl_per_contract_usd": 1727.5,
+              "target_rate": 0.7,
+              "threshold": 0.6
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.7
+            }
+          ],
+          "metrics": {
+            "holdout": {
+              "auc": 0.5497916666666667,
+              "average_precision": 0.6455988480214978,
+              "avg_probability": 0.5606015669184826,
+              "brier": 0.2423738780596859,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 40.641666666666666,
+                  "avg_prob": 0.551707988771385,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -2449.0,
+                  "rows": 120,
+                  "sum_pnl_per_contract_usd": 4877.0,
+                  "target_rate": 0.55
+                },
+                {
+                  "avg_pnl_per_contract_usd": 86.375,
+                  "avg_prob": 0.6139630358010685,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -1253.5,
+                  "rows": 20,
+                  "sum_pnl_per_contract_usd": 1727.5,
+                  "target_rate": 0.7
+                }
+              ],
+              "log_loss": 0.6777621167548212,
+              "positive_rate": 0.5714285714285714,
+              "rows": 140,
+              "split": "holdout"
+            },
+            "train": {
+              "auc": 0.656067478316225,
+              "average_precision": 0.659866301936928,
+              "avg_probability": 0.5688298448878886,
+              "brier": 0.2441121943028159,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": -10.838101034692636,
+                  "avg_prob": 0.556629458203634,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -18578.0,
+                  "rows": 1643,
+                  "sum_pnl_per_contract_usd": -17807.0,
+                  "target_rate": 0.4662203286670724
+                },
+                {
+                  "avg_pnl_per_contract_usd": 57.94705882352941,
+                  "avg_prob": 0.6159951044696073,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -1192.0,
+                  "rows": 425,
+                  "sum_pnl_per_contract_usd": 24627.5,
+                  "target_rate": 0.7035294117647058
+                }
+              ],
+              "log_loss": 0.681129861821441,
+              "positive_rate": 0.5149903288201161,
+              "rows": 2068,
+              "split": "train"
+            },
+            "validation": {
+              "auc": 0.5466594045025418,
+              "average_precision": 0.589184491375787,
+              "avg_probability": 0.5640942905992061,
+              "brier": 0.2443052396001667,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": -3.4947368421052634,
+                  "avg_prob": 0.5518724124578193,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -4672.5,
+                  "rows": 285,
+                  "sum_pnl_per_contract_usd": -996.0,
+                  "target_rate": 0.5508771929824562
+                },
+                {
+                  "avg_pnl_per_contract_usd": 35.14393939393939,
+                  "avg_prob": 0.6168705825733763,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -1593.0,
+                  "rows": 66,
+                  "sum_pnl_per_contract_usd": 2319.5,
+                  "target_rate": 0.6212121212121212
+                }
+              ],
+              "log_loss": 0.6817360714950096,
+              "positive_rate": 0.5641025641025641,
+              "rows": 351,
+              "split": "validation"
+            }
+          }
+        },
+        "logistic": {
+          "artifact": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v1_positive_eod_logistic.joblib",
+          "holdout_predictions": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v1_positive_eod_logistic_holdout_predictions.csv",
+          "holdout_threshold_table": [
+            {
+              "avg_pnl_per_contract_usd": 49.10071942446043,
+              "max_dd_per_contract_usd": -1614.5,
+              "selected_rows": 139,
+              "sum_pnl_per_contract_usd": 6825.0,
+              "target_rate": 0.5755395683453237,
+              "threshold": 0.2
+            },
+            {
+              "avg_pnl_per_contract_usd": 57.69485294117647,
+              "max_dd_per_contract_usd": -1393.5,
+              "selected_rows": 136,
+              "sum_pnl_per_contract_usd": 7846.5,
+              "target_rate": 0.5882352941176471,
+              "threshold": 0.3
+            },
+            {
+              "avg_pnl_per_contract_usd": 60.51229508196721,
+              "max_dd_per_contract_usd": -1504.0,
+              "selected_rows": 122,
+              "sum_pnl_per_contract_usd": 7382.5,
+              "target_rate": 0.5983606557377049,
+              "threshold": 0.4
+            },
+            {
+              "avg_pnl_per_contract_usd": 36.327586206896555,
+              "max_dd_per_contract_usd": -2340.5,
+              "selected_rows": 58,
+              "sum_pnl_per_contract_usd": 2107.0,
+              "target_rate": 0.5517241379310345,
+              "threshold": 0.5
+            },
+            {
+              "avg_pnl_per_contract_usd": 92.28125,
+              "max_dd_per_contract_usd": -699.0,
+              "selected_rows": 16,
+              "sum_pnl_per_contract_usd": 1476.5,
+              "target_rate": 0.6875,
+              "threshold": 0.6
+            },
+            {
+              "avg_pnl_per_contract_usd": 95.0,
+              "max_dd_per_contract_usd": -125.5,
+              "selected_rows": 4,
+              "sum_pnl_per_contract_usd": 380.0,
+              "target_rate": 0.5,
+              "threshold": 0.7
+            }
+          ],
+          "metrics": {
+            "holdout": {
+              "auc": 0.541875,
+              "average_precision": 0.6243993473177718,
+              "avg_probability": 0.4924178778399846,
+              "brier": 0.24860229063551773,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": -220.5,
+                  "avg_prob": 0.166495363229261,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -220.5,
+                  "rows": 1,
+                  "sum_pnl_per_contract_usd": -220.5,
+                  "target_rate": 0.0
+                },
+                {
+                  "avg_pnl_per_contract_usd": -32.794117647058826,
+                  "avg_prob": 0.3446546095489154,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -957.5,
+                  "rows": 17,
+                  "sum_pnl_per_contract_usd": -557.5,
+                  "target_rate": 0.4117647058823529
+                },
+                {
+                  "avg_pnl_per_contract_usd": 55.716981132075475,
+                  "avg_prob": 0.49042222753470005,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -1493.0,
+                  "rows": 106,
+                  "sum_pnl_per_contract_usd": 5906.0,
+                  "target_rate": 0.5849056603773585
+                },
+                {
+                  "avg_pnl_per_contract_usd": 62.892857142857146,
+                  "avg_prob": 0.6434339939594522,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -1027.5,
+                  "rows": 14,
+                  "sum_pnl_per_contract_usd": 880.5,
+                  "target_rate": 0.6428571428571429
+                },
+                {
+                  "avg_pnl_per_contract_usd": 298.0,
+                  "avg_prob": 0.9600235689632453,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": 0.0,
+                  "rows": 2,
+                  "sum_pnl_per_contract_usd": 596.0,
+                  "target_rate": 1.0
+                }
+              ],
+              "log_loss": 0.6878154462938686,
+              "positive_rate": 0.5714285714285714,
+              "rows": 140,
+              "split": "holdout"
+            },
+            "train": {
+              "auc": 0.575189923188182,
+              "average_precision": 0.5904980701171367,
+              "avg_probability": 0.5003034341001459,
+              "brier": 0.244817295856292,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": -327.0,
+                  "avg_prob": 0.1470386370709792,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -654.0,
+                  "rows": 2,
+                  "sum_pnl_per_contract_usd": -654.0,
+                  "target_rate": 0.0
+                },
+                {
+                  "avg_pnl_per_contract_usd": -11.264150943396226,
+                  "avg_prob": 0.3683835279786642,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -3456.0,
+                  "rows": 106,
+                  "sum_pnl_per_contract_usd": -1194.0,
+                  "target_rate": 0.41509433962264153
+                },
+                {
+                  "avg_pnl_per_contract_usd": 1.6685729847494553,
+                  "avg_prob": 0.4973683093026218,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -6126.5,
+                  "rows": 1836,
+                  "sum_pnl_per_contract_usd": 3063.5,
+                  "target_rate": 0.5098039215686274
+                },
+                {
+                  "avg_pnl_per_contract_usd": 37.21491228070175,
+                  "avg_prob": 0.6419404459790274,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -1544.5,
+                  "rows": 114,
+                  "sum_pnl_per_contract_usd": 4242.5,
+                  "target_rate": 0.6666666666666666
+                },
+                {
+                  "avg_pnl_per_contract_usd": 136.25,
+                  "avg_prob": 0.8935343757998672,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": -218.0,
+                  "rows": 10,
+                  "sum_pnl_per_contract_usd": 1362.5,
+                  "target_rate": 0.9
+                }
+              ],
+              "log_loss": 0.682171274284752,
+              "positive_rate": 0.5149903288201161,
+              "rows": 2068,
+              "split": "train"
+            },
+            "validation": {
+              "auc": 0.5342312008978676,
+              "average_precision": 0.5990376885907458,
+              "avg_probability": 0.49785089945879496,
+              "brier": 0.25097423685525533,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": -9.316666666666666,
+                  "avg_prob": 0.35687903407044197,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -3006.0,
+                  "rows": 30,
+                  "sum_pnl_per_contract_usd": -279.5,
+                  "target_rate": 0.5333333333333333
+                },
+                {
+                  "avg_pnl_per_contract_usd": 10.580479452054794,
+                  "avg_prob": 0.49600766948238956,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -2630.0,
+                  "rows": 292,
+                  "sum_pnl_per_contract_usd": 3089.5,
+                  "target_rate": 0.5582191780821918
+                },
+                {
+                  "avg_pnl_per_contract_usd": -7.092592592592593,
+                  "avg_prob": 0.645409400271596,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -2993.0,
+                  "rows": 27,
+                  "sum_pnl_per_contract_usd": -191.5,
+                  "target_rate": 0.6666666666666666
+                },
+                {
+                  "avg_pnl_per_contract_usd": -647.5,
+                  "avg_prob": 0.8895006958664574,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": -1529.5,
+                  "rows": 2,
+                  "sum_pnl_per_contract_usd": -1295.0,
+                  "target_rate": 0.5
+                }
+              ],
+              "log_loss": 0.6948731966800218,
+              "positive_rate": 0.5641025641025641,
+              "rows": 351,
+              "split": "validation"
+            }
+          }
+        }
+      }
+    },
+    "success_2r": {
+      "models": {
+        "lgbm_shallow": {
+          "artifact": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v1_success_2r_lgbm_shallow.joblib",
+          "holdout_predictions": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v1_success_2r_lgbm_shallow_holdout_predictions.csv",
+          "holdout_threshold_table": [
+            {
+              "avg_pnl_per_contract_usd": 61.265625,
+              "max_dd_per_contract_usd": -1006.0,
+              "selected_rows": 64,
+              "sum_pnl_per_contract_usd": 3921.0,
+              "target_rate": 0.21875,
+              "threshold": 0.2
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.3
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.4
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.5
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.6
+            },
+            {
+              "avg_pnl_per_contract_usd": null,
+              "max_dd_per_contract_usd": 0.0,
+              "selected_rows": 0,
+              "sum_pnl_per_contract_usd": 0.0,
+              "target_rate": null,
+              "threshold": 0.7
+            }
+          ],
+          "metrics": {
+            "holdout": {
+              "auc": 0.605962643678161,
+              "average_precision": 0.2111386812476929,
+              "avg_probability": 0.1465577868359261,
+              "brier": 0.13985900101532694,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 35.30921052631579,
+                  "avg_prob": 0.09589324449513512,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -2201.5,
+                  "rows": 76,
+                  "sum_pnl_per_contract_usd": 2683.5,
+                  "target_rate": 0.13157894736842105
+                },
+                {
+                  "avg_pnl_per_contract_usd": 61.265625,
+                  "avg_prob": 0.2067219308656154,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -1006.0,
+                  "rows": 64,
+                  "sum_pnl_per_contract_usd": 3921.0,
+                  "target_rate": 0.21875
+                }
+              ],
+              "log_loss": 0.45008759234923057,
+              "positive_rate": 0.17142857142857143,
+              "rows": 140,
+              "split": "holdout"
+            },
+            "train": {
+              "auc": 0.6762605292434838,
+              "average_precision": 0.24846327413019514,
+              "avg_probability": 0.15028500912120735,
+              "brier": 0.1348673822535093,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 0.08183306055646482,
+                  "avg_prob": 0.11121329406738639,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -4922.0,
+                  "rows": 1222,
+                  "sum_pnl_per_contract_usd": 100.0,
+                  "target_rate": 0.10638297872340426
+                },
+                {
+                  "avg_pnl_per_contract_usd": 7.943853427895981,
+                  "avg_prob": 0.20672193086561544,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -3261.0,
+                  "rows": 846,
+                  "sum_pnl_per_contract_usd": 6720.5,
+                  "target_rate": 0.2624113475177305
+                }
+              ],
+              "log_loss": 0.42980110448885034,
+              "positive_rate": 0.1702127659574468,
+              "rows": 2068,
+              "split": "train"
+            },
+            "validation": {
+              "auc": 0.6225122850122851,
+              "average_precision": 0.20170061321193647,
+              "avg_probability": 0.15677600148052842,
+              "brier": 0.12873482837052236,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 8.454268292682928,
+                  "avg_prob": 0.09982546004753284,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -2314.5,
+                  "rows": 164,
+                  "sum_pnl_per_contract_usd": 1386.5,
+                  "target_rate": 0.0975609756097561
+                },
+                {
+                  "avg_pnl_per_contract_usd": -0.33689839572192515,
+                  "avg_prob": 0.2067219308656154,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -2520.5,
+                  "rows": 187,
+                  "sum_pnl_per_contract_usd": -63.0,
+                  "target_rate": 0.20855614973262032
+                }
+              ],
+              "log_loss": 0.42007828003377784,
+              "positive_rate": 0.15669515669515668,
+              "rows": 351,
+              "split": "validation"
+            }
+          }
+        },
+        "logistic": {
+          "artifact": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v1_success_2r_logistic.joblib",
+          "holdout_predictions": "/home/kemal/futures/model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v1_success_2r_logistic_holdout_predictions.csv",
+          "holdout_threshold_table": [
+            {
+              "avg_pnl_per_contract_usd": 42.01271186440678,
+              "max_dd_per_contract_usd": -1854.0,
+              "selected_rows": 118,
+              "sum_pnl_per_contract_usd": 4957.5,
+              "target_rate": 0.2033898305084746,
+              "threshold": 0.2
+            },
+            {
+              "avg_pnl_per_contract_usd": 57.46808510638298,
+              "max_dd_per_contract_usd": -1474.0,
+              "selected_rows": 94,
+              "sum_pnl_per_contract_usd": 5402.0,
+              "target_rate": 0.24468085106382978,
+              "threshold": 0.3
+            },
+            {
+              "avg_pnl_per_contract_usd": 87.92424242424242,
+              "max_dd_per_contract_usd": -1122.0,
+              "selected_rows": 66,
+              "sum_pnl_per_contract_usd": 5803.0,
+              "target_rate": 0.30303030303030304,
+              "threshold": 0.4
+            },
+            {
+              "avg_pnl_per_contract_usd": 46.369565217391305,
+              "max_dd_per_contract_usd": -1269.5,
+              "selected_rows": 46,
+              "sum_pnl_per_contract_usd": 2133.0,
+              "target_rate": 0.2608695652173913,
+              "threshold": 0.5
+            },
+            {
+              "avg_pnl_per_contract_usd": 29.296875,
+              "max_dd_per_contract_usd": -2448.0,
+              "selected_rows": 32,
+              "sum_pnl_per_contract_usd": 937.5,
+              "target_rate": 0.25,
+              "threshold": 0.6
+            },
+            {
+              "avg_pnl_per_contract_usd": -23.954545454545453,
+              "max_dd_per_contract_usd": -1293.5,
+              "selected_rows": 11,
+              "sum_pnl_per_contract_usd": -263.5,
+              "target_rate": 0.2727272727272727,
+              "threshold": 0.7
+            }
+          ],
+          "metrics": {
+            "holdout": {
+              "auc": 0.7162356321839081,
+              "average_precision": 0.34993674263469854,
+              "avg_probability": 0.40726933805520693,
+              "brier": 0.1967665346150104,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 74.86363636363636,
+                  "avg_prob": 0.09686977607320796,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -713.5,
+                  "rows": 22,
+                  "sum_pnl_per_contract_usd": 1647.0,
+                  "target_rate": 0.0
+                },
+                {
+                  "avg_pnl_per_contract_usd": -16.259615384615383,
+                  "avg_prob": 0.29929237414483273,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -2869.5,
+                  "rows": 52,
+                  "sum_pnl_per_contract_usd": -845.5,
+                  "target_rate": 0.07692307692307693
+                },
+                {
+                  "avg_pnl_per_contract_usd": 143.10294117647058,
+                  "avg_prob": 0.49278739939247584,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -1638.5,
+                  "rows": 34,
+                  "sum_pnl_per_contract_usd": 4865.5,
+                  "target_rate": 0.35294117647058826
+                },
+                {
+                  "avg_pnl_per_contract_usd": 11.777777777777779,
+                  "avg_prob": 0.6734445259462207,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -2622.0,
+                  "rows": 27,
+                  "sum_pnl_per_contract_usd": 318.0,
+                  "target_rate": 0.18518518518518517
+                },
+                {
+                  "avg_pnl_per_contract_usd": 123.9,
+                  "avg_prob": 0.8771190037389889,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": -150.5,
+                  "rows": 5,
+                  "sum_pnl_per_contract_usd": 619.5,
+                  "target_rate": 0.6
+                }
+              ],
+              "log_loss": 0.5671434326476793,
+              "positive_rate": 0.17142857142857143,
+              "rows": 140,
+              "split": "holdout"
+            },
+            "train": {
+              "auc": 0.713604577240941,
+              "average_precision": 0.32238058733972275,
+              "avg_probability": 0.45290704126363696,
+              "brier": 0.21767614590078496,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": -12.700819672131148,
+                  "avg_prob": 0.12387606106005301,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -4031.5,
+                  "rows": 244,
+                  "sum_pnl_per_contract_usd": -3099.0,
+                  "target_rate": 0.012295081967213115
+                },
+                {
+                  "avg_pnl_per_contract_usd": 7.661350844277673,
+                  "avg_prob": 0.3042669692372639,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -3354.5,
+                  "rows": 533,
+                  "sum_pnl_per_contract_usd": 4083.5,
+                  "target_rate": 0.09380863039399624
+                },
+                {
+                  "avg_pnl_per_contract_usd": 4.461190168175938,
+                  "avg_prob": 0.5013046191908201,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -3938.0,
+                  "rows": 773,
+                  "sum_pnl_per_contract_usd": 3448.5,
+                  "target_rate": 0.16946959896507116
+                },
+                {
+                  "avg_pnl_per_contract_usd": 3.7920081967213113,
+                  "avg_prob": 0.6773507767557189,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -4133.5,
+                  "rows": 488,
+                  "sum_pnl_per_contract_usd": 1850.5,
+                  "target_rate": 0.319672131147541
+                },
+                {
+                  "avg_pnl_per_contract_usd": 17.9,
+                  "avg_prob": 0.8718686046597303,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": -1917.0,
+                  "rows": 30,
+                  "sum_pnl_per_contract_usd": 537.0,
+                  "target_rate": 0.4
+                }
+              ],
+              "log_loss": 0.6196584292202918,
+              "positive_rate": 0.1702127659574468,
+              "rows": 2068,
+              "split": "train"
+            },
+            "validation": {
+              "auc": 0.7223587223587223,
+              "average_precision": 0.3511157621799447,
+              "avg_probability": 0.442121948337072,
+              "brier": 0.21424141702807395,
+              "bucket_table": [
+                {
+                  "avg_pnl_per_contract_usd": 47.443396226415096,
+                  "avg_prob": 0.10946180418015648,
+                  "bucket": "[0.0, 0.2)",
+                  "max_dd_per_contract_usd": -1248.0,
+                  "rows": 53,
+                  "sum_pnl_per_contract_usd": 2514.5,
+                  "target_rate": 0.05660377358490566
+                },
+                {
+                  "avg_pnl_per_contract_usd": 5.6,
+                  "avg_prob": 0.304908701259486,
+                  "bucket": "[0.2, 0.4)",
+                  "max_dd_per_contract_usd": -2764.0,
+                  "rows": 90,
+                  "sum_pnl_per_contract_usd": 504.0,
+                  "target_rate": 0.05555555555555555
+                },
+                {
+                  "avg_pnl_per_contract_usd": -11.442148760330578,
+                  "avg_prob": 0.5015242684033159,
+                  "bucket": "[0.4, 0.6)",
+                  "max_dd_per_contract_usd": -3950.0,
+                  "rows": 121,
+                  "sum_pnl_per_contract_usd": -1384.5,
+                  "target_rate": 0.15702479338842976
+                },
+                {
+                  "avg_pnl_per_contract_usd": -9.422077922077921,
+                  "avg_prob": 0.6831168125885827,
+                  "bucket": "[0.6, 0.8)",
+                  "max_dd_per_contract_usd": -3239.5,
+                  "rows": 77,
+                  "sum_pnl_per_contract_usd": -725.5,
+                  "target_rate": 0.2987012987012987
+                },
+                {
+                  "avg_pnl_per_contract_usd": 41.5,
+                  "avg_prob": 0.8657114085288141,
+                  "bucket": "[0.8, 1.0)",
+                  "max_dd_per_contract_usd": -1587.0,
+                  "rows": 10,
+                  "sum_pnl_per_contract_usd": 415.0,
+                  "target_rate": 0.5
+                }
+              ],
+              "log_loss": 0.6113319128061836,
+              "positive_rate": 0.15669515669515668,
+              "rows": 351,
+              "split": "validation"
+            }
+          }
+        }
+      }
+    }
+  }
+}

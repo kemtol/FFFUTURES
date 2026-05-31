@@ -1,0 +1,182 @@
+[
+  {
+    "entry_ts": "2026-05-04 04:45",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": 170.47,
+    "balance": 50170.47,
+    "drawdown": 0.0,
+    "mll_floor": 48170.47,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-04 04:50",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": 174.97,
+    "balance": 50345.44,
+    "drawdown": 0.0,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-04 10:40",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -103.08,
+    "balance": 50242.36,
+    "drawdown": -103.08,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-04 15:25",
+    "mode": "MODE_CONSERVATIVE",
+    "pnl": -66.16,
+    "balance": 50176.2,
+    "drawdown": -169.24,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-04 22:15",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -102.75,
+    "balance": 50073.45,
+    "drawdown": -271.99,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-04 22:20",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -110.75,
+    "balance": 49962.71,
+    "drawdown": -382.74,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-04 22:35",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -108.75,
+    "balance": 49853.96,
+    "drawdown": -491.48,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-05 20:50",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -116.68,
+    "balance": 49737.28,
+    "drawdown": -608.16,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-06 13:55",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -50.13,
+    "balance": 49687.14,
+    "drawdown": -658.3,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-06 17:40",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": 41.67,
+    "balance": 49728.81,
+    "drawdown": -616.63,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-06 17:50",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": 53.67,
+    "balance": 49782.49,
+    "drawdown": -562.95,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-06 18:05",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": 116.67,
+    "balance": 49899.15,
+    "drawdown": -446.29,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-07 03:35",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -126.79,
+    "balance": 49772.36,
+    "drawdown": -573.08,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-07 05:25",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": 50.84,
+    "balance": 49823.2,
+    "drawdown": -522.24,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-08 01:10",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -38.67,
+    "balance": 49784.53,
+    "drawdown": -560.91,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-08 04:50",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -147.4,
+    "balance": 49637.13,
+    "drawdown": -708.31,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-08 12:40",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -37.57,
+    "balance": 49599.55,
+    "drawdown": -745.89,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-08 18:40",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -85.15,
+    "balance": 49514.41,
+    "drawdown": -831.03,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-08 19:25",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -96.15,
+    "balance": 49418.26,
+    "drawdown": -927.18,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  },
+  {
+    "entry_ts": "2026-05-08 20:15",
+    "mode": "MODE_AGGRESSIVE",
+    "pnl": -146.6,
+    "balance": 49271.66,
+    "drawdown": -1073.78,
+    "mll_floor": 48345.44,
+    "is_failed": false
+  }
+]

@@ -12,7 +12,7 @@ live-risk review.
 ```text
 pipeline/mnq_ml/
 └── experiments/
-    ├── orb_vol_target/
+    ├── ORB/
     └── m1_pullback_scalper/
 ```
 
@@ -27,7 +27,7 @@ model/MNQ/
 The existing `model/SUPER_STRUCTURE` and `data/.../super_structure_ml` paths are
 legacy Gold/MGC paths and should not be reused for MNQ.
 
-## Active Experiment: `orb_vol_target`
+## Active Experiment: `ORB`
 
 Current state:
 
@@ -35,10 +35,10 @@ Current state:
 Data grain: M1
 Primary scoreboard: Topstep-style 30 calendar day window
 Current best candidate: 15m OR, long only, TP 2R or 15:00 NY, risk $500
-Sweep worker: pipeline/mnq_ml/experiments/orb_vol_target/sweep_orb_params.py
-Sweep results: data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_results.parquet
-Risk-adjusted model: pipeline/mnq_ml/experiments/orb_vol_target/orb_risk_adjusted_model/
-Current V2 model: model/MNQ/orb_vol_target/orb_risk_adjusted_model/risk_adjusted_v2_report.md
+Sweep worker: pipeline/mnq_ml/experiments/ORB/sweep_orb_params.py
+Sweep results: data/Level_2_Datamart/mnq/ORB/sweeps/sweep_results.parquet
+Risk-adjusted model: pipeline/mnq_ml/experiments/ORB/orb_risk_adjusted_model/
+Current V2 model: model/MNQ/ORB/orb_risk_adjusted_model/risk_adjusted_v2_report.md
 ```
 
 The baseline `events.parquet` is still the simple long-only time-exit build.
@@ -75,7 +75,7 @@ feature builders must use external daily rows with `date <= D-1`.
 The current trainable probability dataset is:
 
 ```text
-data/Level_2_Datamart/mnq/orb_vol_target/orb_risk_adjusted_model/breakout_quality_features.parquet
+data/Level_2_Datamart/mnq/ORB/orb_risk_adjusted_model/breakout_quality_features.parquet
 rows: 2,559
 columns: 77
 features: 62
@@ -84,10 +84,10 @@ features: 62
 V2 confluence commands:
 
 ```bash
-python3 pipeline/mnq_ml/experiments/orb_vol_target/build_daily_confluence_features.py --force
-python3 pipeline/mnq_ml/experiments/orb_vol_target/audit_daily_confluence_features.py
-python3 pipeline/mnq_ml/experiments/orb_vol_target/orb_risk_adjusted_model/train_risk_adjusted_v2.py --force
-python3 pipeline/mnq_ml/experiments/orb_vol_target/orb_risk_adjusted_model/simulate_kelly_overlay_v2.py --force
+python3 pipeline/mnq_ml/experiments/ORB/build_daily_confluence_features.py --force
+python3 pipeline/mnq_ml/experiments/ORB/audit_daily_confluence_features.py
+python3 pipeline/mnq_ml/experiments/ORB/orb_risk_adjusted_model/train_risk_adjusted_v2.py --force
+python3 pipeline/mnq_ml/experiments/ORB/orb_risk_adjusted_model/simulate_kelly_overlay_v2.py --force
 ```
 
 V2 readout:

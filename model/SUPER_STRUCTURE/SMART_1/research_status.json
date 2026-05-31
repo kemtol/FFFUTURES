@@ -1,0 +1,15 @@
+{
+  "phase": "v8_precision_sharpening",
+  "baseline": "meta_v7_refined",
+  "candidates": [
+    "entry_adx",
+    "cci_abs",
+    "st_gap_ratio",
+    "efficiency_ratio",
+    "volatility_zscore",
+    "session_cluster",
+    "wick_ratio",
+    "candle_body_atr"
+  ],
+  "status": "initialized"
+}

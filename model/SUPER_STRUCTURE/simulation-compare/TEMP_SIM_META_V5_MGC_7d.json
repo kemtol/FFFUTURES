@@ -1,0 +1,32 @@
+[
+  {
+    "trade_no": 3615,
+    "entry_ts": "2026-04-27 23:20",
+    "side": "Long",
+    "pnl": -35.23,
+    "balance": 49964.77,
+    "mll_floor": 48000.0,
+    "drawdown": -35.23,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3616,
+    "entry_ts": "2026-04-28 01:35",
+    "side": "Short",
+    "pnl": 927.63,
+    "balance": 50892.41,
+    "mll_floor": 48892.41,
+    "drawdown": 0.0,
+    "is_failed": false
+  },
+  {
+    "trade_no": 3629,
+    "entry_ts": "2026-05-04 15:25",
+    "side": "Short",
+    "pnl": -66.16,
+    "balance": 50826.25,
+    "mll_floor": 48892.41,
+    "drawdown": -66.16,
+    "is_failed": false
+  }
+]

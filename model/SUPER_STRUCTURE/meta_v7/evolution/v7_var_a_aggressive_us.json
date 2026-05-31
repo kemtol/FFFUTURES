@@ -1,0 +1,6 @@
+{
+  "desc": "First v7 attempt. Very aggressive in US session.",
+  "thresholds": {"0": 0.5, "1": 0.4, "2": 0.35},
+  "daily_limit": null,
+  "result": "❌ FAILED MLL (-$2,384)"
+}

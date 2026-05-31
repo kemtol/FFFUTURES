@@ -11,12 +11,12 @@ loop below does not use MGC artifacts.
 ```text
 Instrument: MNQ / Micro Nasdaq
 Primary source: data/Level_0_Raw/MNQ_1m.duckdb
-Research code: pipeline/mnq_ml/experiments/orb_vol_target/
-L1: data/Level_1_Features/mnq/orb_vol_target/
-L2: data/Level_2_Datamart/mnq/orb_vol_target/
-Sweep outputs: data/Level_2_Datamart/mnq/orb_vol_target/sweeps/
-Risk-adjusted ML: pipeline/mnq_ml/experiments/orb_vol_target/orb_risk_adjusted_model/
-Model outputs: model/MNQ/orb_vol_target/orb_risk_adjusted_model/
+Research code: pipeline/mnq_ml/experiments/ORB/
+L1: data/Level_1_Features/mnq/ORB/
+L2: data/Level_2_Datamart/mnq/ORB/
+Sweep outputs: data/Level_2_Datamart/mnq/ORB/sweeps/
+Risk-adjusted ML: pipeline/mnq_ml/experiments/ORB/orb_risk_adjusted_model/
+Model outputs: model/MNQ/ORB/orb_risk_adjusted_model/
 ```
 
 ## Karpathy-Style Iteration Loop

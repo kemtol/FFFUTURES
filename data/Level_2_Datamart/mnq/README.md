@@ -6,7 +6,7 @@ Index for MNQ event/training datamarts. Keep each strategy in its own subfolder.
 
 | Folder | Status | Main artifact | Notes |
 | --- | --- | --- | --- |
-| `orb_vol_target/` | active baseline | `events.parquet` | ORB long-only volatility-targeted events |
+| `ORB/` | active baseline | `events.parquet` | ORB long-only volatility-targeted events |
 | `m1_pullback_scalper/` | scaffold | `training_gate.json` | Blocked until L1/L2 implementation |
 
 ## Namespace Contract
