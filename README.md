@@ -57,6 +57,7 @@ P0 confluence result:
 
 See:
 
+- `model/README.md`
 - `PROGRAM.md`
 - `_MEMORY/20260530.md`
 - `pipeline/mnq_ml/experiments/ORB/README.md`
