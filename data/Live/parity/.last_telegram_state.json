@@ -1,9 +1,0 @@
-{
-  "date": "2026-05-22",
-  "status": "CRITICAL",
-  "signals": 2,
-  "executions": 2,
-  "ui": 2,
-  "critical": 1,
-  "sent_at": "2026-05-22T00:46:03.925010+00:00"
-}

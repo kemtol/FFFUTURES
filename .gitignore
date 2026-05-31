@@ -22,6 +22,7 @@ _LOG/
 
 # Secrets and live credentials
 *.env
+data/Live/topstepx_creds.json
 
 # Databases and large generated data
 *.db
@@ -32,6 +33,11 @@ _LOG/
 *.jsonl
 *.zst
 data/Level_0_Raw/databento/
+data/Live/*_signals.json
+data/Live/*_state.json
+data/Live/portfolio_state.json
+data/Live/parity/
+data/Live/replay/
 data/Live/topstepx_profile/
 data/Live/topstepx_token.json
 data/Live/topstepx_token.lock
