@@ -21,6 +21,12 @@ Current working baseline:
 rule_based_15m_long_tp2r_eod
 ```
 
+Primary report:
+
+```text
+model/MNQ/ORB/rule_based_15m_long_tp2r_eod/REPORT.md
+```
+
 Contract:
 
 ```text

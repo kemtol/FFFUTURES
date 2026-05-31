@@ -47,6 +47,12 @@ Main model card:
 model/MNQ/ORB/
 ```
 
+Primary baseline report:
+
+```text
+model/MNQ/ORB/rule_based_15m_long_tp2r_eod/REPORT.md
+```
+
 Canonical data artifacts:
 
 ```text
@@ -100,4 +106,3 @@ Ignored globally:
 
 If a small canonical parquet is truly part of a model package, force-add it
 explicitly and document why.
-

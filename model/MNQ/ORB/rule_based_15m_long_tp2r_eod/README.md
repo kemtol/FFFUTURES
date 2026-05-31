@@ -19,6 +19,27 @@ we use as the control before judging any ML overlay.
 | Live status | Not live-ready |
 | Main comparison target | `orb_risk_adjusted_model` |
 
+## Report
+
+Primary report:
+
+```text
+model/MNQ/ORB/rule_based_15m_long_tp2r_eod/REPORT.md
+```
+
+Included model-package artifacts:
+
+| File | Description |
+| --- | --- |
+| `REPORT.md` | Human-readable report with PnL, DD, Sharpe, Sortino, rolling windows, and chart links |
+| `metrics.json` | Machine-readable copy of the canonical performance summary |
+| `manifest.json` | Source/output lineage for this model package |
+| `charts/equity_curve.svg` | Equity curve |
+| `charts/drawdown_curve.svg` | Drawdown curve |
+| `charts/monthly_pnl.svg` | Monthly net PnL |
+| `charts/rolling_windows.svg` | 5D/10D/20D/30D/50D/100D/200D PnL and DD |
+| `charts/trade_pnl_distribution.svg` | Trade PnL histogram |
+
 ## Strategy Contract
 
 | Field | Value |

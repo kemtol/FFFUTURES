@@ -1,0 +1,107 @@
+{
+  "contract": {
+    "entry": "next M1 open after signal close",
+    "exit": "TP_2R first, otherwise 15:00 NY time exit",
+    "instrument": "MNQ",
+    "max_trades_per_day": 1,
+    "opening_range_minutes": 15,
+    "session": "New York regular session",
+    "side": "LONG_ONLY",
+    "signal": "first M1 close above opening range high",
+    "source_grain": "right-labeled M1 bars",
+    "stop_reference": "opening_range_low_for_position_sizing_only",
+    "strategic_sl_used": false
+  },
+  "costs": {
+    "commission_round_turn_usd_per_contract": 1.24,
+    "slippage_round_turn_usd_per_contract": 1.0,
+    "slippage_ticks_per_side": 1,
+    "total_commission_paid_usd": 5589.92,
+    "total_modeled_slippage_usd": 4508.0
+  },
+  "created_at": "2026-05-31T00:04:11.463963+00:00",
+  "daily_quality": {
+    "active_day_rate": 0.589895311788803,
+    "active_day_win_rate": 0.5648148148148148,
+    "active_days": 1296,
+    "best_day_pnl_usd": 990.78,
+    "best_day_profit_share": 0.029940999205828288,
+    "daily_avg_pnl_usd": 15.061939007737815,
+    "daily_sharpe_annualized": 0.49891670107484826,
+    "daily_sortino_annualized": 0.6416633989476888,
+    "daily_std_pnl_usd": 479.24005900438493,
+    "topstep_50pct_consistency_ok": true,
+    "trading_days": 2197,
+    "worst_day_pnl_usd": -3780.96
+  },
+  "performance": {
+    "avg_contracts": 3.478395061728395,
+    "avg_loss_usd": -499.2487943262411,
+    "avg_pnl_usd": 25.53324074074073,
+    "avg_win_usd": 429.8734972677596,
+    "expectancy_per_trade_usd": 25.53324074074073,
+    "gross_loss_usd": -281576.32,
+    "gross_profit_usd": 314667.4,
+    "max_consecutive_losses": 6,
+    "max_consecutive_wins": 10,
+    "max_dd_usd": -12124.439999999999,
+    "median_pnl_usd": 93.01,
+    "payoff_ratio": 0.8610406317513363,
+    "profit_factor": 1.1175208199325852,
+    "return_dd": 2.7292872907944608,
+    "total_pnl_usd": 33091.07999999999,
+    "trades": 1296,
+    "win_rate": 0.5648148148148148
+  },
+  "signal_range": {
+    "anchor_ts": "2026-05-28T01:53:00+00:00",
+    "max_signal_ts": "2026-05-26T13:46:00+00:00",
+    "min_signal_ts": "2019-05-06T13:46:00+00:00"
+  },
+  "strategy_id": "rule_based_15m_long_tp2r_eod",
+  "strategy_name": "MNQ ORB 15m Long TP2R/EOD Rule-Based",
+  "windows": {
+    "100D": {
+      "max_dd_usd": -4085.1,
+      "pnl_usd": 4035.0599999999995,
+      "trades": 54,
+      "win_rate": 0.5555555555555556
+    },
+    "10D": {
+      "max_dd_usd": -222.24,
+      "pnl_usd": 895.06,
+      "trades": 5,
+      "win_rate": 0.6
+    },
+    "200D": {
+      "max_dd_usd": -4561.46,
+      "pnl_usd": 5385.480000000003,
+      "trades": 94,
+      "win_rate": 0.6170212765957447
+    },
+    "20D": {
+      "max_dd_usd": -222.24,
+      "pnl_usd": 2347.62,
+      "trades": 10,
+      "win_rate": 0.7
+    },
+    "30D": {
+      "max_dd_usd": -551.48,
+      "pnl_usd": 3460.0,
+      "trades": 18,
+      "win_rate": 0.7222222222222222
+    },
+    "50D": {
+      "max_dd_usd": -861.48,
+      "pnl_usd": 5385.26,
+      "trades": 30,
+      "win_rate": 0.6666666666666666
+    },
+    "5D": {
+      "max_dd_usd": 0.0,
+      "pnl_usd": 100.76,
+      "trades": 1,
+      "win_rate": 1.0
+    }
+  }
+}

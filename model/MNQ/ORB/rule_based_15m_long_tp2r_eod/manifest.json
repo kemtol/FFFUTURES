@@ -1,0 +1,17 @@
+{
+  "created_at": "2026-05-31T12:00:51+00:00",
+  "outputs": {
+    "charts": [
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/equity_curve.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/drawdown_curve.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/monthly_pnl.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/rolling_windows.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/trade_pnl_distribution.svg"
+    ],
+    "metrics": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/metrics.json",
+    "report": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/REPORT.md"
+  },
+  "source_events": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/events.parquet",
+  "source_summary": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/summary.json",
+  "strategy_id": "rule_based_15m_long_tp2r_eod"
+}
