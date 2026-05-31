@@ -1,0 +1,37 @@
+variant,window,trades,pnl,dd,return_dd,comparison
+Non-ML long fixed $500,5D,3,909.5,-173.5,5.24207492795389,as_built_calendar
+Non-ML long fixed $500,10D,5,902.5,-221.0,4.083710407239819,as_built_calendar
+Non-ML long fixed $500,20D,12,3439.0,-221.0,15.561085972850679,as_built_calendar
+Non-ML long fixed $500,50D,31,5390.5,-859.0,6.275320139697323,as_built_calendar
+Non-ML long fixed $500,100D,55,3987.0,-4066.5,0.9804500184433789,as_built_calendar
+Non-ML long fixed $500,200D,94,5569.0,-4556.5,1.2222100296280038,as_built_calendar
+ML V1 Kelly 0.10x UP+DOWN,5D,5,-341.0,-2016.5,-0.16910488470121499,as_built_calendar
+ML V1 Kelly 0.10x UP+DOWN,10D,9,413.0,-2016.5,0.20481031490205803,as_built_calendar
+ML V1 Kelly 0.10x UP+DOWN,20D,21,3493.0,-2016.5,1.7322092734936771,as_built_calendar
+ML V1 Kelly 0.10x UP+DOWN,50D,55,1984.0,-3435.5,0.577499636151943,as_built_calendar
+ML V1 Kelly 0.10x UP+DOWN,100D,103,8269.0,-3435.5,2.4069276670062583,as_built_calendar
+ML V1 Kelly 0.10x UP+DOWN,200D,187,9966.5,-10718.0,0.9298843067736517,as_built_calendar
+ML V2 Kelly 0.10x UP+DOWN,5D,5,-341.0,-2016.5,-0.16910488470121499,as_built_calendar
+ML V2 Kelly 0.10x UP+DOWN,10D,9,413.0,-2016.5,0.20481031490205803,as_built_calendar
+ML V2 Kelly 0.10x UP+DOWN,20D,21,3755.5,-2016.5,1.8623853211009174,as_built_calendar
+ML V2 Kelly 0.10x UP+DOWN,50D,55,2246.5,-3435.5,0.6539077281327318,as_built_calendar
+ML V2 Kelly 0.10x UP+DOWN,100D,103,8406.0,-3435.5,2.446805414059089,as_built_calendar
+ML V2 Kelly 0.10x UP+DOWN,200D,187,10204.5,-10718.0,0.9520899421533868,as_built_calendar
+Non-ML long fixed $500,5D,3,909.5,-173.5,5.24207492795389,up_only_calendar
+Non-ML long fixed $500,10D,5,902.5,-221.0,4.083710407239819,up_only_calendar
+Non-ML long fixed $500,20D,12,3439.0,-221.0,15.561085972850679,up_only_calendar
+Non-ML long fixed $500,50D,31,5390.5,-859.0,6.275320139697323,up_only_calendar
+Non-ML long fixed $500,100D,55,3987.0,-4066.5,0.9804500184433789,up_only_calendar
+Non-ML long fixed $500,200D,94,5569.0,-4556.5,1.2222100296280038,up_only_calendar
+ML V1 Kelly 0.10x UP-only,5D,3,1328.5,-347.0,3.8285302593659942,up_only_calendar
+ML V1 Kelly 0.10x UP-only,10D,5,1314.5,-442.0,2.973981900452489,up_only_calendar
+ML V1 Kelly 0.10x UP-only,20D,12,5419.0,-442.0,12.260180995475114,up_only_calendar
+ML V1 Kelly 0.10x UP-only,50D,31,8640.5,-1288.5,6.705859526581296,up_only_calendar
+ML V1 Kelly 0.10x UP-only,100D,58,8298.5,-5609.0,1.4794972365840613,up_only_calendar
+ML V1 Kelly 0.10x UP-only,200D,97,11442.0,-7384.5,1.549461710339224,up_only_calendar
+ML V2 Kelly 0.10x UP-only,5D,3,1328.5,-347.0,3.8285302593659942,up_only_calendar
+ML V2 Kelly 0.10x UP-only,10D,5,1314.5,-442.0,2.973981900452489,up_only_calendar
+ML V2 Kelly 0.10x UP-only,20D,12,5681.5,-442.0,12.854072398190045,up_only_calendar
+ML V2 Kelly 0.10x UP-only,50D,31,8903.0,-1288.5,6.909584788513776,up_only_calendar
+ML V2 Kelly 0.10x UP-only,100D,58,8435.5,-5734.5,1.4710088063475455,up_only_calendar
+ML V2 Kelly 0.10x UP-only,200D,97,11579.0,-7384.5,1.568014083553389,up_only_calendar

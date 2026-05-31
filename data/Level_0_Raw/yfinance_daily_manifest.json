@@ -1,0 +1,113 @@
+{
+  "after": {
+    "by_symbol": [
+      {
+        "close_nulls": 0,
+        "max_date": "2026-05-29",
+        "min_date": "2018-01-02",
+        "rows": 2115,
+        "symbol": "DXY",
+        "volume_nulls": 0,
+        "yf_ticker": "DX-Y.NYB"
+      },
+      {
+        "close_nulls": 0,
+        "max_date": "2026-05-29",
+        "min_date": "2018-01-02",
+        "rows": 2113,
+        "symbol": "QQQ",
+        "volume_nulls": 0,
+        "yf_ticker": "QQQ"
+      },
+      {
+        "close_nulls": 0,
+        "max_date": "2026-05-29",
+        "min_date": "2018-01-02",
+        "rows": 2113,
+        "symbol": "SPY",
+        "volume_nulls": 0,
+        "yf_ticker": "SPY"
+      },
+      {
+        "close_nulls": 0,
+        "max_date": "2026-05-29",
+        "min_date": "2018-01-02",
+        "rows": 2113,
+        "symbol": "TNX",
+        "volume_nulls": 0,
+        "yf_ticker": "^TNX"
+      },
+      {
+        "close_nulls": 0,
+        "max_date": "2026-05-29",
+        "min_date": "2018-01-02",
+        "rows": 2114,
+        "symbol": "VIX",
+        "volume_nulls": 0,
+        "yf_ticker": "^VIX"
+      }
+    ],
+    "duplicate_symbol_dates": 0,
+    "rows": 10568
+  },
+  "before": {
+    "by_symbol": [],
+    "duplicate_symbol_dates": 0,
+    "rows": 0
+  },
+  "created_at": "2026-05-30T00:47:52.828493+00:00",
+  "db": "/home/kemal/futures/data/Level_0_Raw/yfinance_daily.duckdb",
+  "dry_run": false,
+  "end_exclusive": "2026-05-31",
+  "fetched_by_symbol": [
+    {
+      "max_date": "2026-05-29",
+      "min_date": "2018-01-02",
+      "rows": 2115,
+      "symbol": "DXY",
+      "yf_ticker": "DX-Y.NYB"
+    },
+    {
+      "max_date": "2026-05-29",
+      "min_date": "2018-01-02",
+      "rows": 2113,
+      "symbol": "QQQ",
+      "yf_ticker": "QQQ"
+    },
+    {
+      "max_date": "2026-05-29",
+      "min_date": "2018-01-02",
+      "rows": 2113,
+      "symbol": "SPY",
+      "yf_ticker": "SPY"
+    },
+    {
+      "max_date": "2026-05-29",
+      "min_date": "2018-01-02",
+      "rows": 2113,
+      "symbol": "TNX",
+      "yf_ticker": "^TNX"
+    },
+    {
+      "max_date": "2026-05-29",
+      "min_date": "2018-01-02",
+      "rows": 2114,
+      "symbol": "VIX",
+      "yf_ticker": "^VIX"
+    }
+  ],
+  "no_lookahead_contract": "For MNQ trade date D, feature builders must use external daily rows with date <= D-1 only.",
+  "rows_fetched": 10568,
+  "rows_inserted": 10568,
+  "source": "YFINANCE_DAILY",
+  "start": "2018-01-01",
+  "status": "PASS",
+  "symbols": {
+    "DXY": "DX-Y.NYB",
+    "QQQ": "QQQ",
+    "SPY": "SPY",
+    "TNX": "^TNX",
+    "VIX": "^VIX"
+  },
+  "table": "daily_ohlcv"
+}

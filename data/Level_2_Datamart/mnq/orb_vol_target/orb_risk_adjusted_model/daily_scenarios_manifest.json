@@ -1,0 +1,74 @@
+{
+  "columns": 44,
+  "created_at": "2026-05-28T23:01:56.863653+00:00",
+  "down_avg_pnl_per_contract_usd": 1.170263788968825,
+  "down_breakout_days": 1261,
+  "down_max_dd_per_contract_usd": -4180.0,
+  "down_success_2r_rate": 0.20783373301358912,
+  "experiment": "mnq_orb_risk_adjusted_probability",
+  "feature_columns": [
+    "orb_range_pts",
+    "orb_body_pts",
+    "orb_direction_pts",
+    "orb_close_position",
+    "orb_upper_wick_pts",
+    "orb_lower_wick_pts",
+    "orb_volume_sum",
+    "orb_volume_mean",
+    "orb_volume_max",
+    "pre_60m_bar_count",
+    "pre_60m_return_pts",
+    "pre_60m_range_pts",
+    "pre_60m_volume_sum",
+    "ny_day_of_week",
+    "ny_month"
+  ],
+  "first_breakout_action_counts": {
+    "FULL_RISK": 322,
+    "NO_TRADE": 9,
+    "REDUCE_RISK": 1485
+  },
+  "first_breakout_side_counts": {
+    "DOWN": 880,
+    "NONE": 9,
+    "UP": 927
+  },
+  "input": "/home/kemal/futures/data/Level_1_Features/mnq/orb_vol_target/context.parquet",
+  "label_columns": [
+    "up_breakout_occurred",
+    "down_breakout_occurred",
+    "first_breakout_side",
+    "first_breakout_risk_label",
+    "up_success_2r",
+    "down_success_2r",
+    "up_pnl_per_contract_usd",
+    "down_pnl_per_contract_usd",
+    "up_r_multiple",
+    "down_r_multiple"
+  ],
+  "max_date": "2026-05-27",
+  "min_date": "2019-05-06",
+  "model_dir": "/home/kemal/futures/model/MNQ/orb_vol_target/orb_risk_adjusted_model",
+  "no_lookahead_note": "Features are known at OR completion. Breakout and PnL fields are labels/evaluation fields.",
+  "output": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/orb_risk_adjusted_model/daily_scenarios.parquet",
+  "rows": 1816,
+  "scenario_contract": {
+    "long_decision": "FULL_RISK_OR_REDUCE_RISK",
+    "no_breakout_decision": "NO_TRADE",
+    "orb_minutes": 15,
+    "reversal_model": "disabled",
+    "short_decision": "FULL_RISK_OR_REDUCE_RISK",
+    "time_exit": "15:00",
+    "tp_r": 2.0
+  },
+  "split_counts": {
+    "holdout": 102,
+    "train": 1457,
+    "validation": 257
+  },
+  "status": "PASS",
+  "up_avg_pnl_per_contract_usd": 10.156345565749236,
+  "up_breakout_days": 1322,
+  "up_max_dd_per_contract_usd": -4709.0,
+  "up_success_2r_rate": 0.13073394495412843
+}

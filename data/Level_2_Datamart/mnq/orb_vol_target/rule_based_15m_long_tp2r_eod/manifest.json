@@ -1,0 +1,21 @@
+{
+  "config": "pipeline/mnq_ml/experiments/orb_vol_target/config.json",
+  "created_at": "2026-05-31T00:04:11.479902+00:00",
+  "filter": {
+    "exit_mode": "tp_2r_or_time",
+    "orb_minutes": 15,
+    "side_mode": "long",
+    "target_risk_usd": 500
+  },
+  "outputs": {
+    "events": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/rule_based_15m_long_tp2r_eod/events.parquet",
+    "manifest": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/rule_based_15m_long_tp2r_eod/manifest.json",
+    "readme": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/rule_based_15m_long_tp2r_eod/README.md",
+    "report": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/rule_based_15m_long_tp2r_eod/report.md",
+    "summary": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/rule_based_15m_long_tp2r_eod/summary.json"
+  },
+  "source_sweep_events": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_events.parquet",
+  "source_sweep_manifest": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_manifest.json",
+  "strategy_id": "rule_based_15m_long_tp2r_eod",
+  "strategy_name": "MNQ ORB 15m Long TP2R/EOD Rule-Based"
+}

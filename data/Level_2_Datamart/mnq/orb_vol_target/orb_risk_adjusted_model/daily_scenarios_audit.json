@@ -1,0 +1,60 @@
+{
+  "columns": 44,
+  "created_at": "2026-05-28T23:02:08.318159+00:00",
+  "dataset": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/orb_risk_adjusted_model/daily_scenarios.parquet",
+  "dataset_dates": 1816,
+  "expected_or_complete_dates": 1816,
+  "failures": {},
+  "feature_columns": [
+    "orb_range_pts",
+    "orb_body_pts",
+    "orb_direction_pts",
+    "orb_close_position",
+    "orb_upper_wick_pts",
+    "orb_lower_wick_pts",
+    "orb_volume_sum",
+    "orb_volume_mean",
+    "orb_volume_max",
+    "pre_60m_bar_count",
+    "pre_60m_return_pts",
+    "pre_60m_range_pts",
+    "pre_60m_volume_sum",
+    "ny_day_of_week",
+    "ny_month"
+  ],
+  "forbidden_feature_tokens": [
+    "signal",
+    "entry",
+    "exit",
+    "pnl",
+    "success",
+    "label",
+    "breakout",
+    "r_multiple",
+    "future",
+    "target"
+  ],
+  "l1_context": "/home/kemal/futures/data/Level_1_Features/mnq/orb_vol_target/context.parquet",
+  "lookahead_contract": {
+    "feature_window": "pre-60m through opening range completion only",
+    "orb_feature_minutes_from_open": "1..15",
+    "post_or_columns_are_labels_only": true,
+    "pre_feature_minutes_from_open": "-60..0"
+  },
+  "rows": 1816,
+  "split_date_ranges": {
+    "holdout": {
+      "max": "2026-05-27",
+      "min": "2026-01-02"
+    },
+    "train": {
+      "max": "2024-12-31",
+      "min": "2019-05-06"
+    },
+    "validation": {
+      "max": "2025-12-31",
+      "min": "2025-01-02"
+    }
+  },
+  "status": "PASS"
+}

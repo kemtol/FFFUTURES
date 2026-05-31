@@ -1,0 +1,73 @@
+{
+  "experiment": "mnq_m1_pullback_scalper",
+  "status": "scaffold_research_only",
+  "live_safe": true,
+  "instrument": {
+    "root_symbol": "MNQ",
+    "name": "Micro Nasdaq futures",
+    "timeframe": "1m",
+    "point_value_usd": 2.0,
+    "tick_size": 0.25,
+    "tick_value_usd": 0.5
+  },
+  "source": {
+    "ready": true,
+    "engine": "duckdb",
+    "db": "data/Level_0_Raw/MNQ_1m.duckdb",
+    "table": "ohlcv_1m",
+    "timestamp_column": "timestamp_utc",
+    "required_columns": ["timestamp_utc", "open", "high", "low", "close", "volume"],
+    "notes": "MNQ_1m.duckdb built from Databento NDJSON via pipeline/mnq_ml/build_l0_duckdb_from_databento.py."
+  },
+  "outputs": {
+    "l1_context": "data/Level_1_Features/mnq/m1_pullback_scalper/context.parquet",
+    "l1_manifest": "data/Level_1_Features/mnq/m1_pullback_scalper/context_manifest.json",
+    "events": "data/Level_2_Datamart/mnq/m1_pullback_scalper/events.parquet",
+    "events_manifest": "data/Level_2_Datamart/mnq/m1_pullback_scalper/events_manifest.json",
+    "training_gate_report": "data/Level_2_Datamart/mnq/m1_pullback_scalper/training_gate.json",
+    "model_dir": "model/MNQ/m1_pullback_scalper"
+  },
+  "indicators": {
+    "atr_period": 14,
+    "supertrend_factor": 3.0,
+    "adx_length": 14,
+    "dema_fast": 50,
+    "dema_mid": 100,
+    "dema_slow": 200,
+    "rsi_length": 7,
+    "vwap_anchor": "ct_trade_day"
+  },
+  "candidate_rules": {
+    "trend_filter": "supertrend_plus_dema_stack",
+    "pullback_zone": "atr_band_around_supertrend_or_dema",
+    "skip_long_rsi_gte": 72.0,
+    "skip_short_rsi_lte": 28.0,
+    "min_adx": 12.0,
+    "min_risk_pts": 2.0,
+    "max_risk_pts": 25.0
+  },
+  "execution": {
+    "entry_timing": "next_m1_open_after_signal_close",
+    "max_entry_gap_minutes": 5,
+    "slippage_ticks": 1
+  },
+  "data_quality": {
+    "expected_step_seconds": 60,
+    "short_gap_fail_seconds": 3600,
+    "quarantine_bars_after_unexpected_gap": 240,
+    "reject_outcome_window_gap_gt_seconds": 60
+  },
+  "costs": {
+    "commission_round_turn_usd": null,
+    "commission_status": "pending_topstep_mnq_confirmation"
+  },
+  "promotion_requirements": [
+    "MNQ-only L0 source verified",
+    "No live files changed",
+    "No dependency on Gold/MGC datamarts or models",
+    "P0 gate PASS with training_allowed=true",
+    "OOT positive expectancy after commission and slippage",
+    "Rolling walk-forward positive across multiple regimes",
+    "Daily trade cap and daily loss cap defined before live wiring"
+  ]
+}

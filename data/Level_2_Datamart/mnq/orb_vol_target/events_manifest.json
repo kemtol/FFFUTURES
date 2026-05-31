@@ -1,0 +1,11 @@
+{
+  "avg_contracts_used": 1.3814756671899528,
+  "avg_pnl_per_contract_usd": 15.282574568288855,
+  "created_at": "2026-05-28T02:05:58.315805+00:00",
+  "max_signal_ts": "2026-05-04T14:13:00+00:00",
+  "min_signal_ts": "2019-05-06T14:12:00+00:00",
+  "output": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/events.parquet",
+  "rows": 637,
+  "total_pnl_vol_target_usd": 8808.5,
+  "win_rate": 0.5604395604395604
+}

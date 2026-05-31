@@ -1,0 +1,11 @@
+[Unit]
+Description=MNQ L0 Update (yfinance bridge, derived TF build, audits)
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/kemal/futures
+ExecStart=/bin/bash /home/kemal/futures/pipeline/run/update_mnq_l0.sh
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=append:/home/kemal/futures/_LOG/mnq_l0_update.log
+StandardError=append:/home/kemal/futures/_LOG/mnq_l0_update.log

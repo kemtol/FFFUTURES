@@ -24,11 +24,17 @@ _LOG/
 *.env
 
 # Databases and large generated data
+*.db
+*.duckdb
 *.sqlite
 *.sqlite3
 *.parquet
 *.jsonl
 *.zst
+data/Level_0_Raw/databento/
+data/Live/topstepx_profile/
+data/Live/topstepx_token.json
+data/Live/topstepx_token.lock
 
 # Model binaries / generated training outputs
 model/

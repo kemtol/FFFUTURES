@@ -1,0 +1,250 @@
+{
+  "base": {
+    "bad_high_rows": 0,
+    "bad_low_rows": 0,
+    "distinct_timestamps": 2487923,
+    "max_ts": "2026-05-29 20:59:00",
+    "min_ts": "2019-05-05 22:03:00",
+    "negative_volume_rows": 0,
+    "null_ohlcv": 0,
+    "null_ts": 0,
+    "rows": 2487923,
+    "source_symbols": 30
+  },
+  "continuity_status": "PASS_WITH_GAPS_REQUIRING_L1_QUARANTINE",
+  "created_at": "2026-05-31T00:07:38.174026+00:00",
+  "db": "/home/kemal/futures/data/Level_0_Raw/MNQ_1m.duckdb",
+  "duplicate_timestamps": 0,
+  "gap_summary": {
+    "gap_count_gt_60s": 5491,
+    "gaps_1h_to_2h": 1399,
+    "gaps_1m_to_5m": 2984,
+    "gaps_5m_to_1h": 682,
+    "gaps_gt_2h": 426,
+    "max_gap_seconds": 284460,
+    "min_gap_seconds": 120,
+    "p50_gap_seconds": 180,
+    "p90_gap_seconds": 3660,
+    "p99_gap_seconds": 176460
+  },
+  "gaps_by_year": [
+    {
+      "gap_count": 3002,
+      "gaps_1h_to_2h": 130,
+      "gaps_1m_to_5m": 2648,
+      "gaps_5m_to_1h": 184,
+      "gaps_gt_2h": 40,
+      "max_gap_seconds": 189960,
+      "year": 2019
+    },
+    {
+      "gap_count": 958,
+      "gaps_1h_to_2h": 199,
+      "gaps_1m_to_5m": 328,
+      "gaps_5m_to_1h": 372,
+      "gaps_gt_2h": 59,
+      "max_gap_seconds": 276360,
+      "year": 2020
+    },
+    {
+      "gap_count": 385,
+      "gaps_1h_to_2h": 201,
+      "gaps_1m_to_5m": 5,
+      "gaps_5m_to_1h": 121,
+      "gaps_gt_2h": 58,
+      "max_gap_seconds": 262860,
+      "year": 2021
+    },
+    {
+      "gap_count": 259,
+      "gaps_1h_to_2h": 199,
+      "gaps_1m_to_5m": 1,
+      "gaps_5m_to_1h": 0,
+      "gaps_gt_2h": 59,
+      "max_gap_seconds": 262860,
+      "year": 2022
+    },
+    {
+      "gap_count": 259,
+      "gaps_1h_to_2h": 198,
+      "gaps_1m_to_5m": 1,
+      "gaps_5m_to_1h": 0,
+      "gaps_gt_2h": 60,
+      "max_gap_seconds": 262860,
+      "year": 2023
+    },
+    {
+      "gap_count": 259,
+      "gaps_1h_to_2h": 197,
+      "gaps_1m_to_5m": 0,
+      "gaps_5m_to_1h": 0,
+      "gaps_gt_2h": 62,
+      "max_gap_seconds": 262860,
+      "year": 2024
+    },
+    {
+      "gap_count": 260,
+      "gaps_1h_to_2h": 196,
+      "gaps_1m_to_5m": 1,
+      "gaps_5m_to_1h": 0,
+      "gaps_gt_2h": 63,
+      "max_gap_seconds": 262860,
+      "year": 2025
+    },
+    {
+      "gap_count": 109,
+      "gaps_1h_to_2h": 79,
+      "gaps_1m_to_5m": 0,
+      "gaps_5m_to_1h": 5,
+      "gaps_gt_2h": 25,
+      "max_gap_seconds": 284460,
+      "year": 2026
+    }
+  ],
+  "hard_integrity_pass": true,
+  "short_gaps_after_2022": [
+    {
+      "gap_seconds": 660,
+      "prev_ts": "2026-05-21 03:58:00",
+      "timestamp_utc": "2026-05-21 04:09:00"
+    },
+    {
+      "gap_seconds": 660,
+      "prev_ts": "2026-05-22 03:58:00",
+      "timestamp_utc": "2026-05-22 04:09:00"
+    },
+    {
+      "gap_seconds": 660,
+      "prev_ts": "2026-05-27 03:58:00",
+      "timestamp_utc": "2026-05-27 04:09:00"
+    },
+    {
+      "gap_seconds": 660,
+      "prev_ts": "2026-05-28 03:58:00",
+      "timestamp_utc": "2026-05-28 04:09:00"
+    },
+    {
+      "gap_seconds": 660,
+      "prev_ts": "2026-05-29 03:58:00",
+      "timestamp_utc": "2026-05-29 04:09:00"
+    },
+    {
+      "gap_seconds": 120,
+      "prev_ts": "2022-12-13 13:30:00",
+      "timestamp_utc": "2022-12-13 13:32:00"
+    },
+    {
+      "gap_seconds": 120,
+      "prev_ts": "2023-07-03 22:47:00",
+      "timestamp_utc": "2023-07-03 22:49:00"
+    },
+    {
+      "gap_seconds": 120,
+      "prev_ts": "2025-04-02 20:30:00",
+      "timestamp_utc": "2025-04-02 20:32:00"
+    }
+  ],
+  "top_gaps": [
+    {
+      "gap_seconds": 284460,
+      "prev_ts": "2026-05-22 20:59:00",
+      "timestamp_utc": "2026-05-26 04:00:00"
+    },
+    {
+      "gap_seconds": 276360,
+      "prev_ts": "2020-12-24 18:14:00",
+      "timestamp_utc": "2020-12-27 23:00:00"
+    },
+    {
+      "gap_seconds": 262860,
+      "prev_ts": "2024-03-28 20:59:00",
+      "timestamp_utc": "2024-03-31 22:00:00"
+    },
+    {
+      "gap_seconds": 262860,
+      "prev_ts": "2022-12-23 21:59:00",
+      "timestamp_utc": "2022-12-26 23:00:00"
+    },
+    {
+      "gap_seconds": 262860,
+      "prev_ts": "2023-12-29 21:59:00",
+      "timestamp_utc": "2024-01-01 23:00:00"
+    },
+    {
+      "gap_seconds": 262860,
+      "prev_ts": "2020-12-31 21:59:00",
+      "timestamp_utc": "2021-01-03 23:00:00"
+    },
+    {
+      "gap_seconds": 262860,
+      "prev_ts": "2023-12-22 21:59:00",
+      "timestamp_utc": "2023-12-25 23:00:00"
+    },
+    {
+      "gap_seconds": 262860,
+      "prev_ts": "2022-12-30 21:59:00",
+      "timestamp_utc": "2023-01-02 23:00:00"
+    },
+    {
+      "gap_seconds": 262860,
+      "prev_ts": "2021-12-23 21:59:00",
+      "timestamp_utc": "2021-12-26 23:00:00"
+    },
+    {
+      "gap_seconds": 262860,
+      "prev_ts": "2020-04-09 20:59:00",
+      "timestamp_utc": "2020-04-12 22:00:00"
+    },
+    {
+      "gap_seconds": 262860,
+      "prev_ts": "2025-04-17 20:59:00",
+      "timestamp_utc": "2025-04-20 22:00:00"
+    },
+    {
+      "gap_seconds": 262860,
+      "prev_ts": "2022-04-14 20:59:00",
+      "timestamp_utc": "2022-04-17 22:00:00"
+    },
+    {
+      "gap_seconds": 204360,
+      "prev_ts": "2021-04-02 13:14:00",
+      "timestamp_utc": "2021-04-04 22:00:00"
+    },
+    {
+      "gap_seconds": 204360,
+      "prev_ts": "2026-04-03 13:14:00",
+      "timestamp_utc": "2026-04-05 22:00:00"
+    },
+    {
+      "gap_seconds": 204360,
+      "prev_ts": "2023-04-07 13:14:00",
+      "timestamp_utc": "2023-04-09 22:00:00"
+    },
+    {
+      "gap_seconds": 198120,
+      "prev_ts": "2020-02-28 15:58:00",
+      "timestamp_utc": "2020-03-01 23:00:00"
+    },
+    {
+      "gap_seconds": 190860,
+      "prev_ts": "2025-07-04 16:59:00",
+      "timestamp_utc": "2025-07-06 22:00:00"
+    },
+    {
+      "gap_seconds": 190860,
+      "prev_ts": "2020-07-03 16:59:00",
+      "timestamp_utc": "2020-07-05 22:00:00"
+    },
+    {
+      "gap_seconds": 189960,
+      "prev_ts": "2022-11-25 18:14:00",
+      "timestamp_utc": "2022-11-27 23:00:00"
+    },
+    {
+      "gap_seconds": 189960,
+      "prev_ts": "2019-11-29 18:14:00",
+      "timestamp_utc": "2019-12-01 23:00:00"
+    }
+  ],
+  "training_note": "L1 builder must compute prev_gap_seconds and quarantine bars after any gap >60s. Do not train across gap windows."
+}

@@ -1,0 +1,22 @@
+{
+  "bad_high_rows": 0,
+  "bad_low_rows": 0,
+  "bars_with_source_gap": 4184,
+  "created_at": "2026-05-31T00:07:36.746924+00:00",
+  "duplicate_timestamps": 0,
+  "gaps_gt_expected": 2372,
+  "max_gap_seconds": 285300,
+  "max_ts": "2026-05-29 21:00:00",
+  "min_ts": "2019-05-05 22:15:00",
+  "output": "/home/kemal/futures/data/Level_0_Raw/MNQ_15m.duckdb",
+  "partial_bars": 1884,
+  "resample_contract": {
+    "closed": "left",
+    "derived_from": "ohlcv_1m",
+    "label": "right"
+  },
+  "rows": 166200,
+  "source": "/home/kemal/futures/data/Level_0_Raw/MNQ_1m.duckdb",
+  "table": "ohlcv_15m",
+  "timeframe": "15m"
+}

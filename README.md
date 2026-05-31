@@ -1,8 +1,72 @@
 # MMMACHINE Futures Research Continuity
 
-Last updated: 2026-05-02
+Last updated: 2026-05-30
 
-This repo currently contains research for an ORB-based strategy on MGC Micro Gold Futures. The active research direction is no longer "find any positive expectancy edge"; the objective has been narrowed to:
+## Active Snapshot
+
+Current active research focus is **MNQ only**:
+
+```text
+pipeline/mnq_ml/
+data/Level_0_Raw/MNQ_1m.duckdb
+data/Level_1_Features/mnq/
+data/Level_2_Datamart/mnq/
+model/MNQ/
+```
+
+The current MNQ thesis is a Topstep-aware Opening Range Breakout program:
+
+```text
+Instrument: MNQ / Micro Nasdaq
+Base timeframe: right-labeled M1
+Session: New York cash open
+Baseline family: OR breakout, volatility sizing, Topstep 50K evaluation lens
+Current best candidate: 15m OR, long only, TP 2R or 15:00 NY time exit, risk $500
+```
+
+Latest MNQ sweep artifacts:
+
+```text
+data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_results.parquet
+data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_events.parquet
+```
+
+Best short-window candidate as of the latest sweep:
+
+| Candidate | 30D Trades | 30D PnL/DD | 50D PnL/DD | 100D PnL/DD | 200D PnL/DD |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 15m long TP 2R/time, risk $500 | 18 | $3,491 / -$549 | $5,448 / -$859 | $4,135 / -$4,066 | $5,569 / -$4,556 |
+
+This is **research evidence**, not live approval. Next required checks are Topstep-style daily consistency, MLL breach simulation, and walk-forward robustness.
+
+Current risk-adjusted ML state:
+
+```text
+Dataset: data/Level_2_Datamart/mnq/orb_vol_target/orb_risk_adjusted_model/breakout_quality_features.parquet
+Rows/columns/features: 2,559 / 77 / 62
+Model report: model/MNQ/orb_vol_target/orb_risk_adjusted_model/risk_adjusted_v2_report.md
+Kelly report: model/MNQ/orb_vol_target/orb_risk_adjusted_model/risk_adjusted_v2_kelly_overlay_report.md
+```
+
+P0 confluence result:
+
+- V2 confluence is now the active probability benchmark.
+- `success_2r` logistic holdout AUC is roughly flat versus V1, while LightGBM improves modestly.
+- Kelly V2 improves several holdout overlays, but latest 5D/10D windows are negative.
+- Do not live-wire yet; next gate is Topstep MLL/consistency simulation and calibration review before HMM.
+
+See:
+
+- `PROGRAM.md`
+- `_MEMORY/20260530.md`
+- `pipeline/mnq_ml/experiments/orb_vol_target/README.md`
+- `data/Level_2_Datamart/mnq/orb_vol_target/sweeps/README.md`
+
+## Historical MGC Context
+
+The sections below are retained for continuity. They describe the older MGC ORB/ML and Super Structure work and should not be interpreted as the active MNQ research state.
+
+This repo previously contained research for an ORB-based strategy on MGC Micro Gold Futures. That objective was:
 
 > Find an edge that can pass a Topstep-style 50K evaluation in about 20 trading days while respecting profit target, maximum loss limit, and consistency constraints.
 

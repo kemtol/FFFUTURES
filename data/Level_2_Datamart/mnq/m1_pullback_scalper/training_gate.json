@@ -1,0 +1,12 @@
+{
+  "l1_exists": false,
+  "l2_exists": false,
+  "live_isolation": {
+    "touches_gold_datamarts": false,
+    "touches_model_super_structure": false,
+    "touches_pipeline_live": false
+  },
+  "reason": "MNQ L1/L2 outputs are missing",
+  "status": "BLOCKED",
+  "training_allowed": false
+}

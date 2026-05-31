@@ -1,0 +1,34 @@
+{
+  "features": [
+    "signal_open",
+    "signal_high",
+    "signal_low",
+    "signal_close",
+    "signal_volume",
+    "signal_atr",
+    "signal_adx",
+    "signal_rsi_7",
+    "signal_supertrend",
+    "signal_dema_50",
+    "signal_dema_100",
+    "signal_dema_200",
+    "signal_ct_vwap",
+    "dist_to_ct_vwap_atr",
+    "vwap_deviation_z_50",
+    "bar_range_atr",
+    "close_slope_5_atr",
+    "dema_stack"
+  ],
+  "forbidden_patterns": [
+    "entry_",
+    "exit_",
+    "future_",
+    "next_",
+    "label",
+    "pnl",
+    "hold_bars",
+    "tp_price",
+    "sl_price",
+    "risk_pts"
+  ]
+}

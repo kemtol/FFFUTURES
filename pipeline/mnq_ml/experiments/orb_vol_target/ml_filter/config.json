@@ -1,0 +1,29 @@
+{
+  "experiment": "mnq_orb_15m_rule_based_ml_filter",
+  "status": "ml_scaffold",
+  "baseline_candidate": {
+    "orb_minutes": 15,
+    "side_mode": "long",
+    "exit_mode": "tp_2r_or_time",
+    "target_risk_usd": 500
+  },
+  "inputs": {
+    "sweep_events": "data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_events.parquet",
+    "sweep_results": "data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_results.parquet"
+  },
+  "outputs": {
+    "dataset": "data/Level_2_Datamart/mnq/orb_vol_target/ml_filter/candidate_a_dataset.parquet",
+    "manifest": "data/Level_2_Datamart/mnq/orb_vol_target/ml_filter/candidate_a_dataset_manifest.json",
+    "model_dir": "model/MNQ/orb_vol_target/ml_filter"
+  },
+  "split": {
+    "train_end": "2024-12-31",
+    "validation_start": "2025-01-01",
+    "validation_end": "2025-12-31",
+    "holdout_start": "2026-01-01"
+  },
+  "target": {
+    "primary_label": "label_good_trade",
+    "description": "Predict whether a baseline Candidate A trade has positive per-contract expectancy before using the prediction as a filter or sizing overlay."
+  }
+}

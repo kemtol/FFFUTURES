@@ -1,0 +1,103 @@
+{
+  "created_at": "2026-05-27T10:59:57.823722+00:00",
+  "input": "/home/kemal/futures/data/Level_0_Raw/databento/glbx-mdp3-20160501-20260518.ohlcv-1m.json",
+  "output": "/home/kemal/futures/data/Level_0_Raw/MNQ_1m.duckdb",
+  "tables": {
+    "ohlcv_1m": {
+      "duplicate_timestamps": 0,
+      "gaps_gt_60s": 5479,
+      "max_gap_seconds": 276360,
+      "max_ts": "2026-05-18 18:59:00",
+      "min_ts": "2019-05-05 22:03:00",
+      "rows": 2479042,
+      "selection_rule": "highest volume outright MNQ contract per timestamp",
+      "source_symbols": 29
+    },
+    "ohlcv_1m_contracts": {
+      "rows": 3683774,
+      "symbols": 33
+    }
+  },
+  "top_source_symbols": [
+    {
+      "rows": 94506,
+      "symbol": "MNQM4"
+    },
+    {
+      "rows": 89823,
+      "symbol": "MNQZ3"
+    },
+    {
+      "rows": 89561,
+      "symbol": "MNQZ2"
+    },
+    {
+      "rows": 89414,
+      "symbol": "MNQZ4"
+    },
+    {
+      "rows": 89360,
+      "symbol": "MNQU4"
+    },
+    {
+      "rows": 89307,
+      "symbol": "MNQU5"
+    },
+    {
+      "rows": 89214,
+      "symbol": "MNQU2"
+    },
+    {
+      "rows": 89166,
+      "symbol": "MNQZ1"
+    },
+    {
+      "rows": 89140,
+      "symbol": "MNQU3"
+    },
+    {
+      "rows": 89066,
+      "symbol": "MNQM3"
+    },
+    {
+      "rows": 88799,
+      "symbol": "MNQM2"
+    },
+    {
+      "rows": 88560,
+      "symbol": "MNQU1"
+    },
+    {
+      "rows": 88492,
+      "symbol": "MNQZ5"
+    },
+    {
+      "rows": 88365,
+      "symbol": "MNQU0"
+    },
+    {
+      "rows": 88321,
+      "symbol": "MNQH2"
+    },
+    {
+      "rows": 88165,
+      "symbol": "MNQM1"
+    },
+    {
+      "rows": 88160,
+      "symbol": "MNQZ0"
+    },
+    {
+      "rows": 87667,
+      "symbol": "MNQZ9"
+    },
+    {
+      "rows": 87003,
+      "symbol": "MNQM5"
+    },
+    {
+      "rows": 86330,
+      "symbol": "MNQH6"
+    }
+  ]
+}

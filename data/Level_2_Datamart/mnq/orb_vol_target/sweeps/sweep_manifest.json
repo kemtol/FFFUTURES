@@ -1,0 +1,38 @@
+{
+  "anchor_ts": "2026-05-28T01:53:00+00:00",
+  "base_opportunity_rows": 33756,
+  "created_at": "2026-05-31T00:04:04.061381+00:00",
+  "event_rows": 159294,
+  "exit_modes": [
+    "time_exit",
+    "tp_2r_or_time"
+  ],
+  "l1_context": "data/Level_1_Features/mnq/orb_vol_target/context.parquet",
+  "min_trades": 50,
+  "orb_minutes": [
+    10,
+    15,
+    20,
+    30
+  ],
+  "outputs": {
+    "base_opportunities": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_base_opportunities.parquet",
+    "events": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_events.parquet",
+    "manifest": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_manifest.json",
+    "results": "/home/kemal/futures/data/Level_2_Datamart/mnq/orb_vol_target/sweeps/sweep_results.parquet"
+  },
+  "result_rows": 144,
+  "side_modes": [
+    "long",
+    "short",
+    "long_short"
+  ],
+  "target_risks": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600
+  ]
+}

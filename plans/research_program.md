@@ -1,5 +1,9 @@
 # ORB Feature Research Program
 
+> Historical note, 2026-05-28: this file documents the older MGC ORB feature
+> program. The active program is now MNQ ORB Topstep research. Use
+> `PROGRAM.md` and `_MEMORY/20260528.md` for the current MNQ iteration state.
+
 ## Overview
 
 Systematic program to discover predictive features for the ORB breakout model's Topstep pass rate. The core insight: the ORB edge existed but faded in 2026 due to regime change (volatility explosion + model OOD). Feature discovery is the path to recovery.

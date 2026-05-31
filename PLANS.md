@@ -1,4 +1,39 @@
-# Next Steps Plan — MGC ORB Edge Research
+# Next Steps Plan
+
+## Active Plan — MNQ ORB Topstep Research
+
+Last updated: 2026-05-28
+
+Current active plan is MNQ only. Use `PROGRAM.md` for the full research loop.
+
+### Current Candidate
+
+```text
+Instrument: MNQ
+Strategy family: NY Opening Range Breakout
+Data grain: M1
+Candidate: 15m OR, long only, TP 2R or 15:00 NY, risk $500
+```
+
+Short-window evidence:
+
+| Window | Trades | PnL | Max DD |
+| ---: | ---: | ---: | ---: |
+| 30D | 18 | $3,491 | -$549 |
+| 50D | 30 | $5,448 | -$859 |
+| 100D | 54 | $4,135 | -$4,066 |
+| 200D | 94 | $5,569 | -$4,556 |
+
+### Immediate Next Steps
+
+1. Add Topstep-style daily consistency and MLL checks to the sweep output.
+2. Produce a candidate report for 15m long TP 2R/time at risk $400/$500/$600.
+3. Confirm MNQ commission/slippage assumptions.
+4. Only after those pass, consider feature filters or ML.
+
+---
+
+# Historical Plan — MGC ORB Edge Research
 
 **Status:** ✅ **COMPLETED** — This was the original planning document from 2026-04-26. All phases have been executed. See [`plans/research_program.md`](plans/research_program.md) for the active research program, [`RETROSPECTIVE.md`](RETROSPECTIVE.md) for live inference calibration, and [`_MEMORY/20260502.md`](_MEMORY/20260502.md) for latest progress.
 

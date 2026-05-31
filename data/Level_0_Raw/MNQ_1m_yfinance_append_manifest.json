@@ -1,0 +1,31 @@
+{
+  "after": {
+    "duplicate_timestamps": 0,
+    "max_ts": "2026-05-29 20:59:00",
+    "rows": 2487923
+  },
+  "append": {
+    "first_ts": "2026-05-20 04:09:00",
+    "last_ts": "2026-05-29 20:59:00",
+    "rows_inserted": 8881
+  },
+  "before": {
+    "max_ts": "2026-05-29 20:59:00",
+    "rows": 2487923,
+    "yfinance_rows": 8881
+  },
+  "created_at": "2026-05-31T00:07:32.850730+00:00",
+  "db": "/home/kemal/futures/data/Level_0_Raw/MNQ_1m.duckdb",
+  "dry_run": false,
+  "fetched": {
+    "first_ts": "2026-05-20 04:09:00",
+    "last_ts": "2026-05-29 20:59:00",
+    "overlap_rows": 0,
+    "rows": 8881
+  },
+  "interval": "1m",
+  "period": "8d",
+  "replace_yfinance": true,
+  "source_symbol": "MNQ=F_YF",
+  "ticker": "MNQ=F"
+}
