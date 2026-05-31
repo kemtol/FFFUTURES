@@ -2,7 +2,7 @@
   "bad_high_rows": 0,
   "bad_low_rows": 0,
   "bars_with_source_gap": 5083,
-  "created_at": "2026-05-31T00:07:35.576929+00:00",
+  "created_at": "2026-05-31T00:18:07.360244+00:00",
   "duplicate_timestamps": 0,
   "gaps_gt_expected": 2457,
   "max_gap_seconds": 284700,

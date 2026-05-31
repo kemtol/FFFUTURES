@@ -14,7 +14,7 @@
     "rows": 2487923,
     "yfinance_rows": 8881
   },
-  "created_at": "2026-05-31T00:07:32.850730+00:00",
+  "created_at": "2026-05-31T00:18:03.722744+00:00",
   "db": "/home/kemal/futures/data/Level_0_Raw/MNQ_1m.duckdb",
   "dry_run": false,
   "fetched": {
