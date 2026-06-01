@@ -26,6 +26,8 @@ ST_VARIANT_CSV = MODEL_DIR / "supertrend_variant_comparison.csv"
 ST_FILTER_CSV = MODEL_DIR / "supertrend_filter_candidates.csv"
 ST_REGIME_MANIFEST = DATA_DIR / "supertrend_regime_manifest.json"
 ST_VARIANT_MANIFEST = DATA_DIR / "supertrend_variant_comparison_manifest.json"
+SHORT_SWITCH_CSV = MODEL_DIR / "short_reversal_switch_comparison.csv"
+SHORT_SWITCH_MANIFEST = DATA_DIR / "short_reversal_switch_comparison_manifest.json"
 
 
 def rel(path: Path) -> str:
@@ -83,7 +85,7 @@ def save_equity_curve(events: pd.DataFrame) -> None:
     equity = events["pnl_net_usd"].cumsum()
     ax.plot(events["ny_date"], equity, color="#0f766e", linewidth=1.8)
     ax.axhline(0, color="#334155", linewidth=0.8, alpha=0.5)
-    style_axis(ax, "MNQ ORB Rule-Based Equity Curve", "Cumulative PnL ($)")
+    style_axis(ax, "NASDAQ Micro Futures ORB Rule-Based Equity Curve", "Cumulative PnL ($)")
     fig.autofmt_xdate()
     fig.tight_layout()
     save_fig(fig, CHART_DIR, "equity_curve")
@@ -96,7 +98,7 @@ def save_drawdown_curve(events: pd.DataFrame) -> None:
     drawdown = equity - equity.cummax()
     ax.fill_between(events["ny_date"], drawdown, 0, color="#dc2626", alpha=0.28)
     ax.plot(events["ny_date"], drawdown, color="#991b1b", linewidth=1.2)
-    style_axis(ax, "MNQ ORB Rule-Based Drawdown", "Drawdown ($)")
+    style_axis(ax, "NASDAQ Micro Futures ORB Rule-Based Drawdown", "Drawdown ($)")
     fig.autofmt_xdate()
     fig.tight_layout()
     save_fig(fig, CHART_DIR, "drawdown_curve")
@@ -405,6 +407,96 @@ def top_st_filter_rows(df: pd.DataFrame, limit: int = 8) -> str:
     return "\n".join(rows)
 
 
+def short_switch_rows(df: pd.DataFrame) -> str:
+    rows = []
+    for _, row in df.iterrows():
+        rows.append(
+            "| {label} | {trades:,} | {wr} | {pnl} | {dd} | {retdd} | {shorts:,} | {switches:,} | {short_pnl} | {jm_pnl} | {mar_pnl} | {d30_pnl} | {d30_dd} |".format(
+                label=row["label"],
+                trades=int(row["trades"]),
+                wr=pct(float(row["win_rate"])),
+                pnl=usd(float(row["pnl_usd"])),
+                dd=usd(float(row["max_dd_usd"])),
+                retdd=maybe_num(row["return_dd"]),
+                shorts=int(row["short_first_trades"]),
+                switches=int(row["switch_count"]),
+                short_pnl=usd(float(row["short_pnl_usd"])),
+                jm_pnl=usd(float(row["jan_may_2026_pnl_usd"])),
+                mar_pnl=usd(float(row["march_2026_pnl_usd"])),
+                d30_pnl=usd(float(row["last_30d_pnl_usd"])),
+                d30_dd=usd(float(row["last_30d_max_dd_usd"])),
+            )
+        )
+    return "\n".join(rows)
+
+
+def build_short_switch_section() -> str:
+    summary_df = safe_read_csv(SHORT_SWITCH_CSV)
+    manifest = safe_read_json(SHORT_SWITCH_MANIFEST)
+    if summary_df is None:
+        return """## 11. Short Breakout Switch-To-Long Audit
+
+Short switch audit belum tersedia saat report ini dibuat. Jalankan:
+
+```bash
+python3 pipeline/mnq_ml/experiments/ORB/build_short_reversal_switch_comparison.py --force
+```
+
+---
+"""
+
+    anchor = manifest["anchor_ts"] if manifest else "n/a"
+    return f"""## 11. Short Breakout Switch-To-Long Audit
+
+Section ini menguji definisi short yang asimetris terhadap long. Karena NASDAQ
+secara natural lebih long-biased, short tidak diperlakukan sebagai mirror
+strategy. Jika OR low break lebih dulu, strategy boleh masuk short; tetapi jika
+harga close kembali di atas OR high, short ditutup dan posisi dibalik menjadi
+long pada open M1 berikutnya.
+
+### 11.1 Methodology
+
+| Field | Value |
+| --- | --- |
+| Short entry | First M1 close below OR low |
+| Short exit | TP 1R / 1.5R / 2R, OR switch to long, OR 15:00 NY EOD |
+| Switch trigger | First M1 close above OR high while short is active |
+| Switch execution | Close short and open long at next M1 open |
+| Long after switch | Baseline long TP 2R or 15:00 NY EOD |
+| Anchor | {anchor} |
+
+### 11.2 Visual Audit
+
+#### Equity Curve
+
+![Short Switch Equity]({raw("charts/short_reversal_switch_equity_curve.png")})
+
+#### Drawdown Curve
+
+![Short Switch Drawdown]({raw("charts/short_reversal_switch_drawdown_curve.png")})
+
+#### Last 30D Equity
+
+![Short Switch Last 30D]({raw("charts/short_reversal_switch_last30_equity.png")})
+
+### 11.3 Summary
+
+| Variant | Trades | WR | PnL | DD | Ret/DD | Short-first | Switches | Short PnL | Jan-May PnL | Mar PnL | 30D PnL | 30D DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+{short_switch_rows(summary_df)}
+
+### 11.4 Current Read
+
+Di antara varian short-switch, short TP 2R adalah yang paling kuat: total PnL
+dan return/DD terbaik, serta short leg full-history positif. Namun ia masih
+belum mengalahkan baseline pada window 30D terakhir dan max drawdown-nya masih
+sedikit lebih berat dari baseline. Jadi short-switch TP 2R layak masuk watchlist
+sebagai research branch, tetapi belum menggantikan long-only baseline.
+
+---
+"""
+
+
 def build_supertrend_section() -> str:
     variant_df = safe_read_csv(ST_VARIANT_CSV)
     filter_df = safe_read_csv(ST_FILTER_CSV)
@@ -550,33 +642,36 @@ def build_report(events: pd.DataFrame, summary: dict, mc: dict) -> str:
         for window in window_order
     )
     supertrend_section = build_supertrend_section()
+    short_switch_section = build_short_switch_section()
     executive_variant_snapshot = build_executive_variant_snapshot()
 
     created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
-    return f"""# Strategi MNQ Opening Range Breakout Rule-Based Iterasi v1
-**Evaluasi Baseline 15m Long TP2R/EOD**
+    return f"""# Strategi NASDAQ Micro Futures Opening Range Breakout Rule-Based Iterasi v1
+**Evaluasi Baseline 15m Long TP2R/EOD pada kontrak MNQ**
 
 Tanggal laporan: **{created_at[:10]}**
 
 Model / strategy ID: `rule_based_15m_long_tp2r_eod`
 
 Objective: **Topstep 50K research baseline and regime-filter comparison** -
-mencari apakah breakout MNQ setelah 15 menit pertama New York open punya
-positive expectancy yang cukup untuk menjadi kandidat forward test, lalu
-menilai apakah SuperTrend sederhana dapat memperbaiki drawdown tanpa merusak
-recent performance.
+mencari apakah breakout NASDAQ Micro Futures setelah 15 menit pertama New York
+open punya positive expectancy yang cukup untuk menjadi kandidat forward test,
+lalu menilai apakah SuperTrend sederhana dapat memperbaiki drawdown tanpa
+merusak recent performance.
 
-Audience: trader futures, evaluator internal strategi MNQ, dan pembanding untuk
-overlay machine learning.
+Audience: trader futures, evaluator internal strategi NASDAQ futures, dan
+pembanding untuk overlay machine learning.
 
 ---
 
 ## 1. Ringkasan Eksekutif
 
-Laporan ini mengevaluasi strategi MNQ ORB v1 sebagai **rule-based research
-package**. Baseline long-only tetap menjadi control, tetapi report ini juga
-memuat comparison terhadap regime filter SuperTrend dan eksplorasi long+short.
+Laporan ini mengevaluasi strategi NASDAQ Micro Futures ORB v1 sebagai
+**rule-based research package**. Baseline long-only tetap menjadi control,
+tetapi report ini juga memuat comparison terhadap regime filter SuperTrend dan
+eksplorasi long+short. Ticker teknis yang digunakan di data dan backtest adalah
+`MNQ`, yaitu Micro E-mini Nasdaq-100 futures.
 
 Aturan yang diuji sederhana: ambil posisi long setelah candle M1 pertama close
 di atas high opening range 15 menit, entry pada open M1 berikutnya, lalu exit
@@ -620,7 +715,7 @@ bukan mean reversion intraday.
 Target riset bukan hanya mencari total PnL tertinggi. Untuk konteks Topstep 50K,
 strategi harus menjawab beberapa pertanyaan praktis:
 
-1. Apakah ORB MNQ 15m punya positive expectancy setelah biaya dan slippage?
+1. Apakah ORB NASDAQ Micro Futures 15m punya positive expectancy setelah biaya dan slippage?
 2. Apakah edge cukup aktif untuk window evaluasi sekitar 30 hari?
 3. Apakah drawdown masih masuk akal terhadap MLL dan consistency rule?
 4. Apakah filter sederhana dapat mengurangi bulan buruk seperti March 2026
@@ -684,7 +779,7 @@ Semua angka dalam report ini harus dibaca dengan guardrail berikut:
 
 | Field | Value |
 | --- | --- |
-| Instrument | MNQ |
+| Instrument | NASDAQ Micro Futures (`MNQ`) |
 | Session | New York regular session |
 | Source grain | Right-labeled M1 bars |
 | Opening range | 15 minutes after 09:30 NY |
@@ -789,15 +884,16 @@ produktif.
 | Total commission paid | {usd(costs["total_commission_paid_usd"])} |
 | Total modeled slippage | {usd(costs["total_modeled_slippage_usd"])} |
 
-Biaya sudah dimasukkan pada `pnl_net_usd`: TopstepX MNQ $1.24 round-turn per
-contract dan modeled slippage 1 tick per side.
+Biaya sudah dimasukkan pada `pnl_net_usd`: TopstepX MNQ, yaitu kontrak Micro
+E-mini Nasdaq-100 futures, $1.24 round-turn per contract dan modeled slippage
+1 tick per side.
 
 ---
 
 ## 8. Daily Quality
 
-Sharpe and Sortino are computed from daily dollar PnL over MNQ NY session days,
-with zero PnL on no-trade days, annualized by `sqrt(252)`.
+Sharpe and Sortino are computed from daily dollar PnL over NASDAQ Micro Futures
+NY session days, with zero PnL on no-trade days, annualized by `sqrt(252)`.
 
 | Metric | Value |
 | --- | ---: |
@@ -834,7 +930,9 @@ Interpretasi:
 
 {supertrend_section}
 
-## 11. Monte Carlo dan Stress Test
+{short_switch_section}
+
+## 12. Monte Carlo dan Stress Test
 
 Monte Carlo dilakukan dengan bootstrap dari daily PnL historis. Ini bukan
 prediksi masa depan, tetapi stress test distribusi jika pola daily PnL historis
@@ -844,19 +942,19 @@ muncul dalam urutan yang berbeda.
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 {monte_rows(mc)}
 
-### 11.1 Fan Chart 30D
+### 12.1 Fan Chart 30D
 
 ![Monte Carlo PnL Fan 30D]({raw("monte_carlo/monte_pnl_fan_30d.png")})
 
-### 11.2 Distribusi Final PnL 30D
+### 12.2 Distribusi Final PnL 30D
 
 ![Monte Carlo Final PnL CDF 30D]({raw("monte_carlo/monte_final_pnl_cdf_30d.png")})
 
-### 11.3 Max Drawdown 30D
+### 12.3 Max Drawdown 30D
 
 ![Monte Carlo MaxDD 30D]({raw("monte_carlo/monte_maxdd_hist_30d.png")})
 
-### 11.4 Fan Chart 100D
+### 12.4 Fan Chart 100D
 
 ![Monte Carlo PnL Fan 100D]({raw("monte_carlo/monte_pnl_fan_100d.png")})
 
@@ -866,29 +964,29 @@ diuji lebih ketat dengan simulator Topstep yang memperhitungkan aturan akun.
 
 ---
 
-## 12. Penilaian Risiko
+## 13. Penilaian Risiko
 
-### 12.1 Risiko Drawdown
+### 13.1 Risiko Drawdown
 
 Max drawdown historis {usd(perf["max_dd_usd"])} jauh lebih besar daripada MLL
 Topstep 50K. Ini tidak otomatis membatalkan strategi, karena evaluasi Topstep
 berjalan pada window pendek, tetapi artinya strategi membutuhkan guard dan
 monitoring harian.
 
-### 12.2 Risiko No Normal SL
+### 13.2 Risiko No Normal SL
 
 Strategi ini tidak memakai SL normal. Exit loss terjadi lewat time exit.
 Konsekuensinya, flash drop atau trend day yang berlawanan bisa menghasilkan
 kerugian lebih besar dari target risk teoritis. Catastrophic guard harus
 dipilih sebagai layer operasional terpisah.
 
-### 12.3 Risiko Curve Fit
+### 13.3 Risiko Curve Fit
 
 Baseline ini cukup bersih karena hanya memakai OR 15m, long only, TP 2R/time
 exit, dan risk $500. Namun pemilihan parameter tetap berasal dari sweep, jadi
 forward test diperlukan sebelum dianggap valid.
 
-### 12.4 Risiko Eksekusi Live
+### 13.4 Risiko Eksekusi Live
 
 Live version harus memastikan:
 
@@ -901,7 +999,7 @@ Live version harus memastikan:
 
 ---
 
-## 13. Rekomendasi Sementara
+## 14. Rekomendasi Sementara
 
 | Area | Rekomendasi |
 | --- | --- |
@@ -914,7 +1012,7 @@ Live version harus memastikan:
 
 Rekomendasi utama:
 
-1. Jadikan `rule_based_15m_long_tp2r_eod` sebagai benchmark MNQ ORB.
+1. Jadikan `rule_based_15m_long_tp2r_eod` sebagai benchmark NASDAQ Micro Futures ORB.
 2. Jangan mengganti baseline dengan ML sebelum ML terbukti memperbaiki risk
    adjusted return terhadap baseline ini.
 3. Prioritas berikutnya adalah Topstep-specific simulator: MLL, consistency,
@@ -922,7 +1020,7 @@ Rekomendasi utama:
 
 ---
 
-## 14. Keputusan Sementara
+## 15. Keputusan Sementara
 
 | Area | Status |
 | --- | --- |
@@ -932,12 +1030,12 @@ Rekomendasi utama:
 | Live readiness | Belum |
 | Model package | Siap sebagai baseline report |
 
-Keputusan sementara: **strategi dipertahankan sebagai baseline MNQ ORB v1**.
+Keputusan sementara: **strategi dipertahankan sebagai baseline NASDAQ Micro Futures ORB v1**.
 Belum ada approval untuk live execution.
 
 ---
 
-## 15. Artifact Register
+## 16. Artifact Register
 
 ### Model Package
 
@@ -958,6 +1056,9 @@ Belum ada approval untuk live execution.
 | `charts/supertrend_variant_rolling_windows.png` | Rolling PnL/DD perbandingan varian ST5_50 |
 | `charts/supertrend_variant_trade_pnl_distribution.png` | Distribusi trade PnL perbandingan varian ST5_50 |
 | `charts/supertrend_variant_march_2026_equity.png` | Equity khusus March 2026 perbandingan varian ST5_50 |
+| `charts/short_reversal_switch_equity_curve.png` | Equity curve varian short-switch-to-long |
+| `charts/short_reversal_switch_drawdown_curve.png` | Drawdown curve varian short-switch-to-long |
+| `charts/short_reversal_switch_last30_equity.png` | Last 30D equity varian short-switch-to-long |
 | `monte_carlo/monte_pnl_fan_30d.png` | Monte Carlo fan chart 30D |
 | `monte_carlo/monte_final_pnl_cdf_30d.png` | Monte Carlo final PnL CDF 30D |
 | `monte_carlo/monte_maxdd_hist_30d.png` | Monte Carlo MaxDD histogram 30D |
@@ -966,6 +1067,10 @@ Belum ada approval untuk live execution.
 | `supertrend_filter_candidates.csv` | Semua kandidat kombinasi bullish SuperTrend |
 | `supertrend_variant_comparison.md` | Perbandingan baseline, ST5_50, long+short, dan long+short ST aligned |
 | `supertrend_variant_comparison.csv` | Tabel machine-readable untuk perbandingan variant ST5_50 |
+| `short_reversal_switch_comparison.md` | Audit short breakout yang switch ke long saat OR high reclaim |
+| `short_reversal_switch_comparison.csv` | Summary varian short TP 1R/1.5R/2R |
+| `short_reversal_switch_events.csv` | Sequence-level event varian short-switch |
+| `short_reversal_switch_legs.csv` | Leg-level attribution varian short-switch |
 
 ### Canonical Data
 
@@ -976,11 +1081,12 @@ data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/manifest.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_features.parquet
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_manifest.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison_manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_reversal_switch_comparison_manifest.json
 ```
 
 ---
 
-## 16. Lampiran A - 10 Trade Terakhir
+## 17. Lampiran A - 10 Trade Terakhir
 
 | NY Date | Signal UTC | Exit | Contracts | Net PnL |
 | --- | --- | --- | ---: | ---: |
@@ -1046,6 +1152,12 @@ def main() -> None:
                 rel(CHART_DIR / "supertrend_variant_trade_pnl_distribution.png"),
                 rel(CHART_DIR / "supertrend_variant_march_2026_equity.svg"),
                 rel(CHART_DIR / "supertrend_variant_march_2026_equity.png"),
+                rel(CHART_DIR / "short_reversal_switch_equity_curve.svg"),
+                rel(CHART_DIR / "short_reversal_switch_equity_curve.png"),
+                rel(CHART_DIR / "short_reversal_switch_drawdown_curve.svg"),
+                rel(CHART_DIR / "short_reversal_switch_drawdown_curve.png"),
+                rel(CHART_DIR / "short_reversal_switch_last30_equity.svg"),
+                rel(CHART_DIR / "short_reversal_switch_last30_equity.png"),
                 rel(MONTE_DIR / "monte_pnl_fan_30d.svg"),
                 rel(MONTE_DIR / "monte_pnl_fan_30d.png"),
                 rel(MONTE_DIR / "monte_final_pnl_cdf_30d.svg"),
@@ -1063,6 +1175,13 @@ def main() -> None:
             "supertrend_regime_manifest": rel(DATA_DIR / "supertrend_regime_manifest.json"),
             "supertrend_variant_comparison_manifest": rel(
                 DATA_DIR / "supertrend_variant_comparison_manifest.json"
+            ),
+            "short_reversal_switch_report": rel(MODEL_DIR / "short_reversal_switch_comparison.md"),
+            "short_reversal_switch_summary": rel(MODEL_DIR / "short_reversal_switch_comparison.csv"),
+            "short_reversal_switch_events": rel(MODEL_DIR / "short_reversal_switch_events.csv"),
+            "short_reversal_switch_legs": rel(MODEL_DIR / "short_reversal_switch_legs.csv"),
+            "short_reversal_switch_manifest": rel(
+                DATA_DIR / "short_reversal_switch_comparison_manifest.json"
             ),
         },
     }

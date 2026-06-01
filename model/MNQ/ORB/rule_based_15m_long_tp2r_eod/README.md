@@ -1,4 +1,4 @@
-# MNQ ORB 15m Long TP2R/EOD Rule-Based
+# NASDAQ Micro Futures ORB 15m Long TP2R/EOD Rule-Based
 
 Model / strategy ID:
 
@@ -6,14 +6,15 @@ Model / strategy ID:
 rule_based_15m_long_tp2r_eod
 ```
 
-This is the current cleanest MNQ ORB rule-based baseline. It is the candidate
-we use as the control before judging any ML overlay.
+This is the current cleanest NASDAQ Micro Futures ORB rule-based baseline.
+The technical contract ticker is `MNQ` / Micro E-mini Nasdaq-100 futures. This
+is the candidate we use as the control before judging any ML overlay.
 
 ## Status
 
 | Field | Value |
 | --- | --- |
-| Instrument | MNQ |
+| Instrument | NASDAQ Micro Futures (`MNQ`) |
 | Type | Rule-based strategy, not ML |
 | Current role | Best current research baseline |
 | Live status | Not live-ready |
@@ -46,6 +47,9 @@ Included model-package artifacts:
 | `charts/supertrend_variant_rolling_windows.png` | ST5_50 variant rolling PnL/DD |
 | `charts/supertrend_variant_trade_pnl_distribution.png` | ST5_50 variant trade PnL distribution |
 | `charts/supertrend_variant_march_2026_equity.png` | ST5_50 variant March 2026 equity comparison |
+| `charts/short_reversal_switch_equity_curve.png` | Short breakout switch-to-long equity comparison |
+| `charts/short_reversal_switch_drawdown_curve.png` | Short breakout switch-to-long drawdown comparison |
+| `charts/short_reversal_switch_last30_equity.png` | Short breakout switch-to-long 30D equity comparison |
 | `monte_carlo/monte_pnl_fan_30d.png` | 30D Monte Carlo PnL fan chart |
 | `monte_carlo/monte_final_pnl_cdf_30d.png` | 30D final PnL CDF |
 | `monte_carlo/monte_maxdd_hist_30d.png` | 30D Monte Carlo max drawdown histogram |
@@ -54,6 +58,10 @@ Included model-package artifacts:
 | `supertrend_filter_candidates.csv` | Machine-readable candidate table for all ST bullish conjunctions |
 | `supertrend_variant_comparison.md` | Side-by-side comparison: no ST, ST5_50, long+short, long+short ST aligned |
 | `supertrend_variant_comparison.csv` | Machine-readable ST5_50 variant comparison |
+| `short_reversal_switch_comparison.md` | Short breakout switch-to-long audit with short TP 1R/1.5R/2R |
+| `short_reversal_switch_comparison.csv` | Machine-readable summary for short switch variants |
+| `short_reversal_switch_events.csv` | Sequence-level events for short switch variants |
+| `short_reversal_switch_legs.csv` | Leg-level attribution for short switch variants |
 
 ## Strategy Contract
 
@@ -101,6 +109,7 @@ data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/flash_guard_sweep.csv
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_features.parquet
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_manifest.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison_manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_reversal_switch_comparison_manifest.json
 ```
 
 This model folder intentionally does not duplicate the event parquet. It is the

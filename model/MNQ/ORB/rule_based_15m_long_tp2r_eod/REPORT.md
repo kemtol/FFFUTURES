@@ -1,26 +1,28 @@
-# Strategi MNQ Opening Range Breakout Rule-Based Iterasi v1
-**Evaluasi Baseline 15m Long TP2R/EOD**
+# Strategi NASDAQ Micro Futures Opening Range Breakout Rule-Based Iterasi v1
+**Evaluasi Baseline 15m Long TP2R/EOD pada kontrak MNQ**
 
 Tanggal laporan: **2026-06-01**
 
 Model / strategy ID: `rule_based_15m_long_tp2r_eod`
 
 Objective: **Topstep 50K research baseline and regime-filter comparison** -
-mencari apakah breakout MNQ setelah 15 menit pertama New York open punya
-positive expectancy yang cukup untuk menjadi kandidat forward test, lalu
-menilai apakah SuperTrend sederhana dapat memperbaiki drawdown tanpa merusak
-recent performance.
+mencari apakah breakout NASDAQ Micro Futures setelah 15 menit pertama New York
+open punya positive expectancy yang cukup untuk menjadi kandidat forward test,
+lalu menilai apakah SuperTrend sederhana dapat memperbaiki drawdown tanpa
+merusak recent performance.
 
-Audience: trader futures, evaluator internal strategi MNQ, dan pembanding untuk
-overlay machine learning.
+Audience: trader futures, evaluator internal strategi NASDAQ futures, dan
+pembanding untuk overlay machine learning.
 
 ---
 
 ## 1. Ringkasan Eksekutif
 
-Laporan ini mengevaluasi strategi MNQ ORB v1 sebagai **rule-based research
-package**. Baseline long-only tetap menjadi control, tetapi report ini juga
-memuat comparison terhadap regime filter SuperTrend dan eksplorasi long+short.
+Laporan ini mengevaluasi strategi NASDAQ Micro Futures ORB v1 sebagai
+**rule-based research package**. Baseline long-only tetap menjadi control,
+tetapi report ini juga memuat comparison terhadap regime filter SuperTrend dan
+eksplorasi long+short. Ticker teknis yang digunakan di data dan backtest adalah
+`MNQ`, yaitu Micro E-mini Nasdaq-100 futures.
 
 Aturan yang diuji sederhana: ambil posisi long setelah candle M1 pertama close
 di atas high opening range 15 menit, entry pada open M1 berikutnya, lalu exit
@@ -83,7 +85,7 @@ bukan mean reversion intraday.
 Target riset bukan hanya mencari total PnL tertinggi. Untuk konteks Topstep 50K,
 strategi harus menjawab beberapa pertanyaan praktis:
 
-1. Apakah ORB MNQ 15m punya positive expectancy setelah biaya dan slippage?
+1. Apakah ORB NASDAQ Micro Futures 15m punya positive expectancy setelah biaya dan slippage?
 2. Apakah edge cukup aktif untuk window evaluasi sekitar 30 hari?
 3. Apakah drawdown masih masuk akal terhadap MLL dan consistency rule?
 4. Apakah filter sederhana dapat mengurangi bulan buruk seperti March 2026
@@ -147,7 +149,7 @@ Semua angka dalam report ini harus dibaca dengan guardrail berikut:
 
 | Field | Value |
 | --- | --- |
-| Instrument | MNQ |
+| Instrument | NASDAQ Micro Futures (`MNQ`) |
 | Session | New York regular session |
 | Source grain | Right-labeled M1 bars |
 | Opening range | 15 minutes after 09:30 NY |
@@ -252,15 +254,16 @@ produktif.
 | Total commission paid | $5,590 |
 | Total modeled slippage | $4,508 |
 
-Biaya sudah dimasukkan pada `pnl_net_usd`: TopstepX MNQ $1.24 round-turn per
-contract dan modeled slippage 1 tick per side.
+Biaya sudah dimasukkan pada `pnl_net_usd`: TopstepX MNQ, yaitu kontrak Micro
+E-mini Nasdaq-100 futures, $1.24 round-turn per contract dan modeled slippage
+1 tick per side.
 
 ---
 
 ## 8. Daily Quality
 
-Sharpe and Sortino are computed from daily dollar PnL over MNQ NY session days,
-with zero PnL on no-trade days, annualized by `sqrt(252)`.
+Sharpe and Sortino are computed from daily dollar PnL over NASDAQ Micro Futures
+NY session days, with zero PnL on no-trade days, annualized by `sqrt(252)`.
 
 | Metric | Value |
 | --- | ---: |
@@ -396,7 +399,61 @@ sebagai control. Kandidat yang dibawa ke iterasi berikutnya:
 ---
 
 
-## 11. Monte Carlo dan Stress Test
+## 11. Short Breakout Switch-To-Long Audit
+
+Section ini menguji definisi short yang asimetris terhadap long. Karena NASDAQ
+secara natural lebih long-biased, short tidak diperlakukan sebagai mirror
+strategy. Jika OR low break lebih dulu, strategy boleh masuk short; tetapi jika
+harga close kembali di atas OR high, short ditutup dan posisi dibalik menjadi
+long pada open M1 berikutnya.
+
+### 11.1 Methodology
+
+| Field | Value |
+| --- | --- |
+| Short entry | First M1 close below OR low |
+| Short exit | TP 1R / 1.5R / 2R, OR switch to long, OR 15:00 NY EOD |
+| Switch trigger | First M1 close above OR high while short is active |
+| Switch execution | Close short and open long at next M1 open |
+| Long after switch | Baseline long TP 2R or 15:00 NY EOD |
+| Anchor | 2026-05-28T01:53:00+00:00 |
+
+### 11.2 Visual Audit
+
+#### Equity Curve
+
+![Short Switch Equity](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_reversal_switch_equity_curve.png)
+
+#### Drawdown Curve
+
+![Short Switch Drawdown](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_reversal_switch_drawdown_curve.png)
+
+#### Last 30D Equity
+
+![Short Switch Last 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_reversal_switch_last30_equity.png)
+
+### 11.3 Summary
+
+| Variant | Trades | WR | PnL | DD | Ret/DD | Short-first | Switches | Short PnL | Jan-May PnL | Mar PnL | 30D PnL | 30D DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Long only, no ST | 1,296 | 56.48% | $33,091 | -$12,124 | 2.73 | 0 | 0 | $0 | $6,096 | -$2,633 | $3,460 | -$551 |
+| Long+Short first breakout, no switch | 1,767 | 53.03% | $26,501 | -$15,294 | 1.73 | 862 | 0 | $0 | $4,072 | -$1,451 | $839 | -$1,636 |
+| Short switch to long, short TP 1.5R | 1,767 | 54.90% | $26,124 | -$16,047 | 1.63 | 862 | 375 | -$7,598 | $6,592 | -$2,085 | $1,323 | -$886 |
+| Short switch to long, short TP 1R | 1,767 | 57.89% | $32,242 | -$13,722 | 2.35 | 862 | 340 | -$607 | $4,270 | -$2,480 | $973 | -$886 |
+| Short switch to long, short TP 2R | 1,767 | 53.99% | $37,731 | -$12,715 | 2.97 | 862 | 382 | $3,671 | $7,085 | -$2,074 | $1,515 | -$886 |
+
+### 11.4 Current Read
+
+Di antara varian short-switch, short TP 2R adalah yang paling kuat: total PnL
+dan return/DD terbaik, serta short leg full-history positif. Namun ia masih
+belum mengalahkan baseline pada window 30D terakhir dan max drawdown-nya masih
+sedikit lebih berat dari baseline. Jadi short-switch TP 2R layak masuk watchlist
+sebagai research branch, tetapi belum menggantikan long-only baseline.
+
+---
+
+
+## 12. Monte Carlo dan Stress Test
 
 Monte Carlo dilakukan dengan bootstrap dari daily PnL historis. Ini bukan
 prediksi masa depan, tetapi stress test distribusi jika pola daily PnL historis
@@ -408,19 +465,19 @@ muncul dalam urutan yang berbeda.
 | 100D | $1,893 | -$6,990 | 35.46% | -$4,646 | 95.96% | 64.36% |
 | 200D | $3,730 | -$8,746 | 31.10% | -$6,568 | 99.86% | 78.14% |
 
-### 11.1 Fan Chart 30D
+### 12.1 Fan Chart 30D
 
 ![Monte Carlo PnL Fan 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_30d.png)
 
-### 11.2 Distribusi Final PnL 30D
+### 12.2 Distribusi Final PnL 30D
 
 ![Monte Carlo Final PnL CDF 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_final_pnl_cdf_30d.png)
 
-### 11.3 Max Drawdown 30D
+### 12.3 Max Drawdown 30D
 
 ![Monte Carlo MaxDD 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_maxdd_hist_30d.png)
 
-### 11.4 Fan Chart 100D
+### 12.4 Fan Chart 100D
 
 ![Monte Carlo PnL Fan 100D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_100d.png)
 
@@ -430,29 +487,29 @@ diuji lebih ketat dengan simulator Topstep yang memperhitungkan aturan akun.
 
 ---
 
-## 12. Penilaian Risiko
+## 13. Penilaian Risiko
 
-### 12.1 Risiko Drawdown
+### 13.1 Risiko Drawdown
 
 Max drawdown historis -$12,124 jauh lebih besar daripada MLL
 Topstep 50K. Ini tidak otomatis membatalkan strategi, karena evaluasi Topstep
 berjalan pada window pendek, tetapi artinya strategi membutuhkan guard dan
 monitoring harian.
 
-### 12.2 Risiko No Normal SL
+### 13.2 Risiko No Normal SL
 
 Strategi ini tidak memakai SL normal. Exit loss terjadi lewat time exit.
 Konsekuensinya, flash drop atau trend day yang berlawanan bisa menghasilkan
 kerugian lebih besar dari target risk teoritis. Catastrophic guard harus
 dipilih sebagai layer operasional terpisah.
 
-### 12.3 Risiko Curve Fit
+### 13.3 Risiko Curve Fit
 
 Baseline ini cukup bersih karena hanya memakai OR 15m, long only, TP 2R/time
 exit, dan risk $500. Namun pemilihan parameter tetap berasal dari sweep, jadi
 forward test diperlukan sebelum dianggap valid.
 
-### 12.4 Risiko Eksekusi Live
+### 13.4 Risiko Eksekusi Live
 
 Live version harus memastikan:
 
@@ -465,7 +522,7 @@ Live version harus memastikan:
 
 ---
 
-## 13. Rekomendasi Sementara
+## 14. Rekomendasi Sementara
 
 | Area | Rekomendasi |
 | --- | --- |
@@ -478,7 +535,7 @@ Live version harus memastikan:
 
 Rekomendasi utama:
 
-1. Jadikan `rule_based_15m_long_tp2r_eod` sebagai benchmark MNQ ORB.
+1. Jadikan `rule_based_15m_long_tp2r_eod` sebagai benchmark NASDAQ Micro Futures ORB.
 2. Jangan mengganti baseline dengan ML sebelum ML terbukti memperbaiki risk
    adjusted return terhadap baseline ini.
 3. Prioritas berikutnya adalah Topstep-specific simulator: MLL, consistency,
@@ -486,7 +543,7 @@ Rekomendasi utama:
 
 ---
 
-## 14. Keputusan Sementara
+## 15. Keputusan Sementara
 
 | Area | Status |
 | --- | --- |
@@ -496,12 +553,12 @@ Rekomendasi utama:
 | Live readiness | Belum |
 | Model package | Siap sebagai baseline report |
 
-Keputusan sementara: **strategi dipertahankan sebagai baseline MNQ ORB v1**.
+Keputusan sementara: **strategi dipertahankan sebagai baseline NASDAQ Micro Futures ORB v1**.
 Belum ada approval untuk live execution.
 
 ---
 
-## 15. Artifact Register
+## 16. Artifact Register
 
 ### Model Package
 
@@ -522,6 +579,9 @@ Belum ada approval untuk live execution.
 | `charts/supertrend_variant_rolling_windows.png` | Rolling PnL/DD perbandingan varian ST5_50 |
 | `charts/supertrend_variant_trade_pnl_distribution.png` | Distribusi trade PnL perbandingan varian ST5_50 |
 | `charts/supertrend_variant_march_2026_equity.png` | Equity khusus March 2026 perbandingan varian ST5_50 |
+| `charts/short_reversal_switch_equity_curve.png` | Equity curve varian short-switch-to-long |
+| `charts/short_reversal_switch_drawdown_curve.png` | Drawdown curve varian short-switch-to-long |
+| `charts/short_reversal_switch_last30_equity.png` | Last 30D equity varian short-switch-to-long |
 | `monte_carlo/monte_pnl_fan_30d.png` | Monte Carlo fan chart 30D |
 | `monte_carlo/monte_final_pnl_cdf_30d.png` | Monte Carlo final PnL CDF 30D |
 | `monte_carlo/monte_maxdd_hist_30d.png` | Monte Carlo MaxDD histogram 30D |
@@ -530,6 +590,10 @@ Belum ada approval untuk live execution.
 | `supertrend_filter_candidates.csv` | Semua kandidat kombinasi bullish SuperTrend |
 | `supertrend_variant_comparison.md` | Perbandingan baseline, ST5_50, long+short, dan long+short ST aligned |
 | `supertrend_variant_comparison.csv` | Tabel machine-readable untuk perbandingan variant ST5_50 |
+| `short_reversal_switch_comparison.md` | Audit short breakout yang switch ke long saat OR high reclaim |
+| `short_reversal_switch_comparison.csv` | Summary varian short TP 1R/1.5R/2R |
+| `short_reversal_switch_events.csv` | Sequence-level event varian short-switch |
+| `short_reversal_switch_legs.csv` | Leg-level attribution varian short-switch |
 
 ### Canonical Data
 
@@ -540,11 +604,12 @@ data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/manifest.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_features.parquet
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_manifest.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison_manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_reversal_switch_comparison_manifest.json
 ```
 
 ---
 
-## 16. Lampiran A - 10 Trade Terakhir
+## 17. Lampiran A - 10 Trade Terakhir
 
 | NY Date | Signal UTC | Exit | Contracts | Net PnL |
 | --- | --- | --- | ---: | ---: |
