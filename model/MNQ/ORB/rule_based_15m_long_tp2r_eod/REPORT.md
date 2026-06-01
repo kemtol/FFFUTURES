@@ -192,9 +192,11 @@ probabilitas yang menentukan trade size, trade/no-trade, atau direction.
 
 ---
 
-## 4. Definisi Sizing
+## 4. Sizing dan Risk Model
 
-Baseline memakai target risk dollar tetap:
+Semua varian di report ini memakai target risk dollar tetap sebagai sizing
+anchor. Target risk bukan normal stop-loss order; ia hanya menentukan jumlah
+kontrak berdasarkan jarak entry ke referensi opening range.
 
 ```text
 contracts_float = target_risk_usd / risk_per_contract_usd
@@ -205,20 +207,34 @@ Dengan `target_risk_usd = $500`, jumlah kontrak otomatis turun saat OR/risk
 melebar dan naik saat risk menyempit. Karena kontrak harus integer, actual risk
 tidak selalu tepat $500.
 
-Catatan penting: OR low **bukan** normal stop loss strategi. OR low hanya
-referensi sizing. Exit tetap TP 2R atau time exit.
+Referensi risk per family:
+
+| Family | Risk Reference | Exit |
+| --- | --- | --- |
+| Long only baseline | Entry minus OR low | TP 2R atau 15:00 NY |
+| Long only + ST5_50 | Entry minus OR low | TP 2R atau 15:00 NY |
+| Short continuation | OR high minus entry | TP 2R atau 15:00 NY |
+| Short switch to long | Short leg memakai OR high; switched long memakai OR low | Short TP/switch/EOD, lalu long TP 2R/EOD |
+
+Catatan penting: OR high/low **bukan** normal stop loss strategi. Exit loss
+utama tetap time exit, sehingga live version tetap membutuhkan catastrophic
+guard terpisah.
 
 ---
 
-## 5. Hasil Historis 2019-2026
+## 5. Baseline Control - Equity, Drawdown, Monthly PnL
+
+Section ini hanya untuk baseline control `Long only, no ST`. Tujuannya adalah
+menyediakan benchmark bersih sebelum membaca audit SuperTrend dan short-switch
+di section 10-11.
 
 ### 5.1 Equity Curve
 
 ![Equity Curve](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/equity_curve.png)
 
-Equity curve menunjukkan strategi menghasilkan PnL positif secara historis,
-tetapi jalurnya tidak linear. Ada fase panjang yang relatif datar dan beberapa
-periode drawdown besar.
+Equity curve baseline menunjukkan PnL positif secara historis, tetapi jalurnya
+tidak linear. Ada fase panjang yang relatif datar dan beberapa periode drawdown
+besar.
 
 ### 5.2 Drawdown
 
@@ -232,20 +248,27 @@ mengandalkan total PnL historis.
 
 ![Monthly PnL](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/monthly_pnl.png)
 
-Grafik bulanan membantu melihat bahwa strategi tidak menghasilkan distribusi
-profit yang stabil setiap bulan. Ada bulan kuat, bulan kosong, dan bulan rugi.
+Grafik bulanan baseline membantu melihat bahwa strategi tidak menghasilkan
+distribusi profit yang stabil setiap bulan. Ada bulan kuat, bulan kosong, dan
+bulan rugi.
 
 ### 5.4 Distribusi PnL Per Trade
 
 ![Trade PnL Distribution](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/trade_pnl_distribution.png)
 
-Rata-rata loss per trade masih lebih besar daripada rata-rata win. Edge muncul
-dari kombinasi win rate 56.48%, sizing, dan beberapa periode momentum yang
-produktif.
+Pada baseline, rata-rata loss per trade masih lebih besar daripada rata-rata
+win. Edge muncul dari kombinasi win rate 56.48%, sizing, dan beberapa periode
+momentum yang produktif.
 
 ---
 
-## 6. Metrik Historis
+## 6. Baseline Control - Performance Card dan Variant Snapshot
+
+Section 6.1 adalah metric card baseline `Long only, no ST`. Ini bukan metric
+untuk seluruh strategy family. Cross-variant context langsung ditaruh di
+section 6.2 agar baseline, ST filter, dan short-switch tidak tercampur.
+
+### 6.1 Baseline Control Metrics
 
 | Metric | Value |
 | --- | ---: |
@@ -267,6 +290,24 @@ produktif.
 | Max consecutive wins | 10 |
 | Max consecutive losses | 6 |
 
+### 6.2 Cross-Variant Metric Snapshot
+
+| Variant | Role | Trades | PF | Full PnL | Max DD | Mar 2026 PnL | 30D PnL |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Long only, no ST | Control | 1,296 | 1.12 | $33,091 | -$12,124 | -$2,633 | $3,460 |
+| Long only, ST5_50 bullish | P0 candidate | 964 | 1.14 | $28,199 | -$8,027 | $102 | $1,918 |
+| Long+Short, no ST | Rejected | 1,767 | 1.06 | $26,501 | -$15,294 | -$1,451 | $839 |
+| Long+Short, ST5_50 aligned | Exploratory | 1,251 | 1.13 | $36,800 | -$9,099 | $2,336 | -$1,059 |
+| Short switch to long, short TP 2R | Watchlist | 1,767 | 1.09 | $37,731 | -$12,715 | -$2,074 | $1,515 |
+
+Reading note:
+
+- Baseline still has the strongest recent 30D PnL.
+- `Long only + ST5_50` improves full-history drawdown and March 2026, but gives
+  up some recent upside.
+- Short-switch TP2R improves full-history PnL, but not enough on March/30D to
+  replace the long-only control.
+
 ---
 
 ## 7. Cost Model
@@ -279,16 +320,18 @@ produktif.
 | Total commission paid | $5,590 |
 | Total modeled slippage | $4,508 |
 
-Biaya sudah dimasukkan pada `pnl_net_usd`: TopstepX MNQ, yaitu kontrak Micro
-E-mini Nasdaq-100 futures, $1.24 round-turn per contract dan modeled slippage
-1 tick per side.
+Biaya ini dipakai konsisten untuk baseline-control dan audit varian yang dibuat
+dalam package ini. `pnl_net_usd` sudah memasukkan TopstepX MNQ, yaitu kontrak
+Micro E-mini Nasdaq-100 futures, $1.24 round-turn per contract dan modeled
+slippage 1 tick per side.
 
 ---
 
-## 8. Daily Quality
+## 8. Baseline Control - Daily Quality
 
-Sharpe and Sortino are computed from daily dollar PnL over NASDAQ Micro Futures
-NY session days, with zero PnL on no-trade days, annualized by `sqrt(252)`.
+Daily quality di section ini hanya untuk baseline-control. Sharpe and Sortino
+are computed from daily dollar PnL over NASDAQ Micro Futures NY session days,
+with zero PnL on no-trade days, annualized by `sqrt(252)`.
 
 | Metric | Value |
 | --- | ---: |
@@ -305,9 +348,12 @@ NY session days, with zero PnL on no-trade days, annualized by `sqrt(252)`.
 | Best-day profit share | 2.99% |
 | 50% consistency flag | Pass |
 
+Variant daily quality belum dijadikan decision metric utama karena varian ST dan
+short-switch masih perlu Topstep-specific simulator yang sama sebelum promosi.
+
 ---
 
-## 9. Rolling Window Terakhir
+## 9. Baseline Control - Rolling Window Terakhir
 
 ![Rolling Windows](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/rolling_windows.png)
 
@@ -321,11 +367,13 @@ NY session days, with zero PnL on no-trade days, annualized by `sqrt(252)`.
 | 100D | 54 | 55.56% | $4,035 | -$4,085 |
 | 200D | 94 | 61.70% | $5,385 | -$4,561 |
 
-Interpretasi:
+Interpretasi baseline:
 
 - 30D terakhir adalah bagian paling menarik: 18 trade dan $3,460 PnL.
 - 5D dan 10D masih terlalu pendek untuk menjadi bukti edge.
 - 100D dan 200D tetap positif, tetapi DD historisnya mulai berat untuk Topstep.
+- Rolling comparison untuk varian ST dan short-switch ada di section 10-11,
+  bukan di chart baseline ini.
 
 ---
 
@@ -478,11 +526,12 @@ sebagai research branch, tetapi belum menggantikan long-only baseline.
 ---
 
 
-## 12. Monte Carlo dan Stress Test
+## 12. Baseline Control - Monte Carlo dan Stress Test
 
-Monte Carlo dilakukan dengan bootstrap dari daily PnL historis. Ini bukan
-prediksi masa depan, tetapi stress test distribusi jika pola daily PnL historis
-muncul dalam urutan yang berbeda.
+Monte Carlo di section ini hanya memakai daily PnL baseline-control. Ini bukan
+prediksi masa depan, dan belum boleh dibaca sebagai Monte Carlo untuk ST5_50
+atau short-switch. Fungsinya adalah stress test distribusi baseline jika pola
+daily PnL historis muncul dalam urutan yang berbeda.
 
 | Horizon | Median PnL | P5 PnL | Prob. Akhir Rugi | Median MaxDD | Prob. DD <= -$2k | Prob. Hit +$3k |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -506,9 +555,11 @@ muncul dalam urutan yang berbeda.
 
 ![Monte Carlo PnL Fan 100D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_100d.png)
 
-Kesimpulan Monte Carlo: strategi punya upside untuk mencapai +$3,000 dalam
-sebagian path 30D, tetapi risiko drawdown terhadap batas -$2,000 tetap perlu
-diuji lebih ketat dengan simulator Topstep yang memperhitungkan aturan akun.
+Kesimpulan Monte Carlo baseline: strategi punya upside untuk mencapai +$3,000
+dalam sebagian path 30D, tetapi risiko drawdown terhadap batas -$2,000 tetap
+perlu diuji lebih ketat dengan simulator Topstep yang memperhitungkan aturan
+akun. Setelah simulator itu ada, baseline, ST5_50, dan short-switch TP2R harus
+dibandingkan ulang dengan metodologi yang sama.
 
 ---
 
@@ -516,10 +567,11 @@ diuji lebih ketat dengan simulator Topstep yang memperhitungkan aturan akun.
 
 ### 13.1 Risiko Drawdown
 
-Max drawdown historis -$12,124 jauh lebih besar daripada MLL
-Topstep 50K. Ini tidak otomatis membatalkan strategi, karena evaluasi Topstep
-berjalan pada window pendek, tetapi artinya strategi membutuhkan guard dan
-monitoring harian.
+Baseline max drawdown historis -$12,124 jauh lebih besar
+daripada MLL Topstep 50K. ST5_50 menurunkan drawdown full-history, tetapi belum
+menghapus risiko MLL karena window 30D dan intraday path tetap harus
+disimulasikan. Ini tidak otomatis membatalkan strategi, tetapi semua varian
+membutuhkan guard dan monitoring harian.
 
 ### 13.2 Risiko No Normal SL
 
@@ -530,9 +582,11 @@ dipilih sebagai layer operasional terpisah.
 
 ### 13.3 Risiko Curve Fit
 
-Baseline ini cukup bersih karena hanya memakai OR 15m, long only, TP 2R/time
-exit, dan risk $500. Namun pemilihan parameter tetap berasal dari sweep, jadi
-forward test diperlukan sebelum dianggap valid.
+Baseline cukup bersih karena hanya memakai OR 15m, long only, TP 2R/time exit,
+dan risk $500. Risiko curve fit naik pada kombinasi multi-SuperTrend dan
+short-switch karena jumlah pilihan bertambah. Karena itu kandidat sederhana
+`ST5_50` diprioritaskan atas kombinasi multi-filter walaupun beberapa kombinasi
+punya return/DD historis lebih tinggi.
 
 ### 13.4 Risiko Eksekusi Live
 
@@ -551,20 +605,24 @@ Live version harus memastikan:
 
 | Area | Rekomendasi |
 | --- | --- |
-| Baseline research | Pertahankan sebagai control strategy |
+| Baseline control | Pertahankan `Long only, no ST` sebagai benchmark wajib |
+| P0 regime filter | Bawa `Long only + ST5_50 bullish` ke Topstep simulator |
+| Short branch | Track `Short switch to long, short TP 2R`, tetapi jangan promosi dulu |
 | Live trading | Belum live-ready |
-| Forward test | Layak dibuat paper/forward-test setelah Topstep simulator selesai |
+| Forward test | Baru layak paper/forward-test setelah simulator MLL/consistency selesai |
 | ML overlay | Hanya boleh menjadi risk adjuster, bukan filter trade utama dulu |
 | Sizing default | Tetap $500 sampai MLL/consistency simulator selesai |
 | Guard | Wajib desain catastrophic guard sebelum live |
 
 Rekomendasi utama:
 
-1. Jadikan `rule_based_15m_long_tp2r_eod` sebagai benchmark NASDAQ Micro Futures ORB.
-2. Jangan mengganti baseline dengan ML sebelum ML terbukti memperbaiki risk
-   adjusted return terhadap baseline ini.
-3. Prioritas berikutnya adalah Topstep-specific simulator: MLL, consistency,
-   first +$3,000 path, dan daily loss guard.
+1. Kunci baseline sebagai control, bukan final live strategy.
+2. Bandingkan baseline vs `Long only + ST5_50` vs `Short switch TP2R` memakai
+   Topstep-specific simulator yang sama.
+3. Jangan mengganti baseline dengan ML sebelum ML terbukti memperbaiki
+   risk-adjusted return dan sizing decision terhadap control ini.
+4. Prioritas berikutnya adalah simulator: MLL, consistency, first +$3,000 path,
+   daily loss guard, dan catastrophic guard.
 
 ---
 
@@ -572,14 +630,19 @@ Rekomendasi utama:
 
 | Area | Status |
 | --- | --- |
-| Baseline edge | Ada, tetapi tipis |
-| 30D Topstep-style potential | Menarik |
-| Long-run robustness | Perlu guard dan regime review |
+| Strategy family | Rule-based ORB research package |
+| Baseline edge | Ada, tetapi PF masih tipis |
+| P0 candidate | `Long only + ST5_50 bullish` |
+| Watchlist | `Short switch to long, short TP 2R` |
+| 30D Topstep-style potential | Menarik pada baseline, belum cukup tanpa simulator |
+| Long-run robustness | Perlu guard, regime review, dan Topstep path sim |
 | Live readiness | Belum |
-| Model package | Siap sebagai baseline report |
+| Model package | Siap sebagai institutional-style research report |
 
-Keputusan sementara: **strategi dipertahankan sebagai baseline NASDAQ Micro Futures ORB v1**.
-Belum ada approval untuk live execution.
+Keputusan sementara: **package ini dipertahankan sebagai NASDAQ Micro Futures
+ORB rule-based strategy family v1**. Baseline tetap control, ST5_50 menjadi P0
+candidate, short-switch TP2R menjadi watchlist. Belum ada approval untuk live
+execution.
 
 ---
 
@@ -593,11 +656,11 @@ Belum ada approval untuk live execution.
 | `REPORT.md` | Laporan utama ini |
 | `metrics.json` | Ringkasan metrik machine-readable |
 | `manifest.json` | Lineage source/output |
-| `charts/equity_curve.png` | Equity curve |
-| `charts/drawdown_curve.png` | Drawdown curve |
-| `charts/monthly_pnl.png` | Monthly PnL |
-| `charts/rolling_windows.png` | Rolling window PnL/DD |
-| `charts/trade_pnl_distribution.png` | Distribusi PnL trade |
+| `charts/equity_curve.png` | Baseline-control equity curve |
+| `charts/drawdown_curve.png` | Baseline-control drawdown curve |
+| `charts/monthly_pnl.png` | Baseline-control monthly PnL |
+| `charts/rolling_windows.png` | Baseline-control rolling window PnL/DD |
+| `charts/trade_pnl_distribution.png` | Baseline-control distribusi PnL trade |
 | `charts/supertrend_variant_equity_curve.png` | Equity curve perbandingan varian ST5_50 |
 | `charts/supertrend_variant_drawdown_curve.png` | Drawdown curve perbandingan varian ST5_50 |
 | `charts/supertrend_variant_monthly_pnl_2026.png` | Monthly PnL 2026 perbandingan varian ST5_50 |
@@ -607,10 +670,10 @@ Belum ada approval untuk live execution.
 | `charts/short_reversal_switch_equity_curve.png` | Equity curve varian short-switch-to-long |
 | `charts/short_reversal_switch_drawdown_curve.png` | Drawdown curve varian short-switch-to-long |
 | `charts/short_reversal_switch_last30_equity.png` | Last 30D equity varian short-switch-to-long |
-| `monte_carlo/monte_pnl_fan_30d.png` | Monte Carlo fan chart 30D |
-| `monte_carlo/monte_final_pnl_cdf_30d.png` | Monte Carlo final PnL CDF 30D |
-| `monte_carlo/monte_maxdd_hist_30d.png` | Monte Carlo MaxDD histogram 30D |
-| `monte_carlo/monte_pnl_fan_100d.png` | Monte Carlo fan chart 100D |
+| `monte_carlo/monte_pnl_fan_30d.png` | Baseline-control Monte Carlo fan chart 30D |
+| `monte_carlo/monte_final_pnl_cdf_30d.png` | Baseline-control Monte Carlo final PnL CDF 30D |
+| `monte_carlo/monte_maxdd_hist_30d.png` | Baseline-control Monte Carlo MaxDD histogram 30D |
+| `monte_carlo/monte_pnl_fan_100d.png` | Baseline-control Monte Carlo fan chart 100D |
 | `supertrend_regime_audit.md` | Audit grid SuperTrend 5m/15m ATR 5/10/20/50 |
 | `supertrend_filter_candidates.csv` | Semua kandidat kombinasi bullish SuperTrend |
 | `supertrend_variant_comparison.md` | Perbandingan baseline, ST5_50, long+short, dan long+short ST aligned |
