@@ -775,25 +775,50 @@ Semua angka dalam report ini harus dibaca dengan guardrail berikut:
 
 ---
 
-## 3. Konteks Strategi
+## 3. Konteks Strategy Family
+
+Report ini tidak lagi hanya berisi satu baseline long-only. Scope saat ini
+adalah **family of rule-based ORB variants** untuk NASDAQ Micro Futures, dengan
+baseline sebagai control dan beberapa branch sebagai kandidat riset.
+
+### 3.1 Common Contract
 
 | Field | Value |
 | --- | --- |
 | Instrument | NASDAQ Micro Futures (`MNQ`) |
 | Session | New York regular session |
 | Source grain | Right-labeled M1 bars |
-| Opening range | 15 minutes after 09:30 NY |
-| Direction | Long only |
-| Signal | First M1 close above OR high |
-| Entry | Next M1 open after signal close |
-| Exit | TP 2R first, otherwise 15:00 NY time exit |
-| Normal strategic SL | None |
-| Stop reference | OR low for position sizing only |
+| Opening range | First 15 minutes after 09:30 NY |
+| Entry timing | Signal after M1 close, execution on next M1 open |
+| Primary exit clock | 15:00 NY EOD/time exit |
+| Cost model | TopstepX MNQ commission + 1 tick slippage per side |
 | Target risk | $500 |
-| Max trades | 1 per NY session |
+| Baseline max trades | 1 sequence per NY session |
+| Research status | Not live-ready |
 
-Model ini disebut rule-based karena semua keputusan entry dan exit ditentukan
-oleh aturan eksplisit. Belum ada model probabilitas yang ikut menentukan trade.
+### 3.2 Variant Map
+
+| Variant | Role | Direction Logic | Regime Filter | Exit Logic | Current Status |
+| --- | --- | --- | --- | --- | --- |
+| Long only, no ST | Control baseline | First M1 close above OR high | None | TP 2R or 15:00 NY | Keep as benchmark |
+| Long only + ST5_50 | P0 candidate | Same as baseline | Require ST5_50 bullish at signal close | TP 2R or 15:00 NY | Best simple regime filter |
+| Long+Short, no ST | Rejected as primary | First breakout either OR high or OR low | None | TP 2R or 15:00 NY | Adds frequency but weak risk-adjusted quality |
+| Long+Short + ST5_50 aligned | Exploratory | Long with bullish ST, short with bearish ST | ST5_50 aligned by side | TP 2R or 15:00 NY | Good March, weak recent 30D |
+| Short switch to long | Research branch | Short if OR low breaks first; switch to long if OR high reclaimed | None in current test | Short TP 1R/1.5R/2R, switch, or EOD | TP 2R best, not promoted |
+
+### 3.3 Rule-Based Definition
+
+Semua variant di report ini masih **rule-based**, bukan ML. Keputusan entry,
+exit, switch, dan filter ditentukan oleh aturan eksplisit. Belum ada model
+probabilitas yang menentukan trade size, trade/no-trade, atau direction.
+
+### 3.4 Current Promotion Hierarchy
+
+1. **Benchmark:** `Long only, no ST`.
+2. **P0 candidate:** `Long only + ST5_50 bullish`.
+3. **Watchlist:** `Short switch to long, short TP 2R`.
+4. **Exploratory only:** `Long+Short + ST5_50 aligned`.
+5. **Not promoted:** `Long+Short, no ST`.
 
 ---
 
