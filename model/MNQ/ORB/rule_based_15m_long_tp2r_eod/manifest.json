@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-06-01T13:52:34+00:00",
+  "created_at": "2026-06-01T14:07:14+00:00",
   "outputs": {
     "charts": [
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/equity_curve.svg",
@@ -12,6 +12,18 @@
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/rolling_windows.png",
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/trade_pnl_distribution.svg",
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/trade_pnl_distribution.png",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_equity_curve.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_equity_curve.png",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_drawdown_curve.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_drawdown_curve.png",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_monthly_pnl_2026.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_monthly_pnl_2026.png",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_rolling_windows.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_rolling_windows.png",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_trade_pnl_distribution.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_trade_pnl_distribution.png",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_march_2026_equity.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_march_2026_equity.png",
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_30d.svg",
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_30d.png",
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_final_pnl_cdf_30d.svg",

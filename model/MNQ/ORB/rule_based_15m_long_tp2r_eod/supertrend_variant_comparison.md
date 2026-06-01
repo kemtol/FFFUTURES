@@ -14,6 +14,32 @@
 | Anchor | 2026-05-28T01:53:00+00:00 |
 | Lookahead violations | 0 |
 
+## Visual Artifacts
+
+### Equity Curve
+
+![ST5_50 Variant Equity Curve](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_equity_curve.png)
+
+### Drawdown Curve
+
+![ST5_50 Variant Drawdown Curve](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_drawdown_curve.png)
+
+### Monthly PnL 2026
+
+![ST5_50 Variant Monthly PnL 2026](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_monthly_pnl_2026.png)
+
+### Rolling Window PnL/DD
+
+![ST5_50 Variant Rolling Windows](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_rolling_windows.png)
+
+### Trade PnL Distribution
+
+![ST5_50 Variant Trade PnL Distribution](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_trade_pnl_distribution.png)
+
+### March 2026 Equity
+
+![ST5_50 Variant March 2026 Equity](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/supertrend_variant_march_2026_equity.png)
+
 ## Comparison
 
 | Variant | Trades | Long | Short | WR | PnL | DD | Ret/DD | Jan-May Trades | Jan-May PnL | Jan-May DD | Mar PnL | Mar DD | 30D Trades | 30D PnL | 30D DD |
@@ -34,4 +60,5 @@
 | Artifact | Path |
 | --- | --- |
 | CSV | `model/MNQ/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison.csv` |
+| Charts | `model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts` |
 | Manifest | `data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison_manifest.json` |

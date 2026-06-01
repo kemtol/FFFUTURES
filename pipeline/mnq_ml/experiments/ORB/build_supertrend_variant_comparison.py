@@ -9,6 +9,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import matplotlib
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
 import pandas as pd
 
 from build_supertrend_regime_features import (
@@ -28,11 +33,29 @@ from common import assert_mnq_namespaces, load_config, project_path, write_json
 SWEEP_EVENTS_PATH = "data/Level_2_Datamart/mnq/ORB/sweeps/sweep_events.parquet"
 OUTPUT_CSV = "supertrend_variant_comparison.csv"
 OUTPUT_MD = "supertrend_variant_comparison.md"
+RAW_BASE = (
+    "https://raw.githubusercontent.com/kemtol/FFFUTURES/main/"
+    "model/MNQ/ORB/rule_based_15m_long_tp2r_eod"
+)
 OUTPUT_JSON = (
     "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/"
     "supertrend_variant_comparison_manifest.json"
 )
 WINDOW_DAYS = [5, 10, 20, 30, 50, 100, 200]
+CHART_STEMS = [
+    "supertrend_variant_equity_curve",
+    "supertrend_variant_drawdown_curve",
+    "supertrend_variant_monthly_pnl_2026",
+    "supertrend_variant_rolling_windows",
+    "supertrend_variant_trade_pnl_distribution",
+    "supertrend_variant_march_2026_equity",
+]
+VARIANT_COLORS = {
+    "long_only_no_st": "#334155",
+    "long_only_st5_50": "#0f766e",
+    "long_short_no_st": "#dc2626",
+    "long_short_st5_50_aligned": "#2563eb",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -45,6 +68,32 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target-risk", type=float, default=500.0)
     parser.add_argument("--exit-mode", default="tp_2r_or_time")
     return parser.parse_args()
+
+
+def raw(path: str) -> str:
+    return f"{RAW_BASE}/{path}"
+
+
+def clean_svg(path: Path) -> None:
+    text = path.read_text()
+    path.write_text("\n".join(line.rstrip() for line in text.splitlines()) + "\n")
+
+
+def save_fig(fig, chart_dir: Path, stem: str) -> None:
+    chart_dir.mkdir(parents=True, exist_ok=True)
+    svg_path = chart_dir / f"{stem}.svg"
+    png_path = chart_dir / f"{stem}.png"
+    fig.savefig(svg_path)
+    fig.savefig(png_path, dpi=150)
+    clean_svg(svg_path)
+
+
+def style_axis(ax, title: str, ylabel: str) -> None:
+    ax.set_title(title, fontsize=12, weight="bold")
+    ax.set_ylabel(ylabel)
+    ax.grid(True, alpha=0.25)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
 
 def prepare_event_frame(df: pd.DataFrame, pnl_col: str) -> pd.DataFrame:
@@ -113,12 +162,11 @@ def summarize(events: pd.DataFrame, anchor: pd.Timestamp) -> dict[str, Any]:
     return out
 
 
-def build_rows(
+def build_variant_frames(
     baseline: pd.DataFrame,
     long_short: pd.DataFrame,
-    anchor: pd.Timestamp,
     st_feature: str,
-) -> pd.DataFrame:
+) -> list[tuple[str, str, str, pd.DataFrame]]:
     long_st = baseline[baseline[f"{st_feature}_bullish"].fillna(False)].copy()
     aligned = (
         (long_short["side"].eq("LONG") & long_short[f"{st_feature}_bullish"].fillna(False))
@@ -152,7 +200,17 @@ def build_rows(
             long_short_st,
         ),
     ]
+    prepared = []
+    for variant_id, label, rule, frame in variants:
+        cur = frame.sort_values("signal_ts").reset_index(drop=True).copy()
+        cur["variant_id"] = variant_id
+        cur["variant_label"] = label
+        cur["variant_rule"] = rule
+        prepared.append((variant_id, label, rule, cur))
+    return prepared
 
+
+def build_rows(variants: list[tuple[str, str, str, pd.DataFrame]], anchor: pd.Timestamp) -> pd.DataFrame:
     rows = []
     for variant_id, label, rule, frame in variants:
         row = {
@@ -194,6 +252,163 @@ def pct(value: Any) -> str:
     return f"{float(value):.2%}"
 
 
+def plot_equity_curve(variants: list[tuple[str, str, str, pd.DataFrame]], chart_dir: Path) -> None:
+    fig, ax = plt.subplots(figsize=(11.5, 5.2))
+    for variant_id, label, _, frame in variants:
+        equity = frame["pnl_net_usd"].astype(float).cumsum()
+        ax.plot(
+            frame["signal_ts"],
+            equity,
+            label=label,
+            linewidth=1.8,
+            color=VARIANT_COLORS.get(variant_id),
+        )
+    ax.axhline(0, color="#334155", linewidth=0.8, alpha=0.45)
+    style_axis(ax, "MNQ ORB ST5_50 Variant Equity Curve", "Cumulative PnL ($)")
+    ax.legend(frameon=False, fontsize=8)
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    save_fig(fig, chart_dir, "supertrend_variant_equity_curve")
+    plt.close(fig)
+
+
+def plot_drawdown_curve(variants: list[tuple[str, str, str, pd.DataFrame]], chart_dir: Path) -> None:
+    fig, ax = plt.subplots(figsize=(11.5, 5.2))
+    for variant_id, label, _, frame in variants:
+        equity = frame["pnl_net_usd"].astype(float).cumsum()
+        drawdown = equity - equity.cummax()
+        ax.plot(
+            frame["signal_ts"],
+            drawdown,
+            label=label,
+            linewidth=1.5,
+            color=VARIANT_COLORS.get(variant_id),
+        )
+    ax.axhline(0, color="#334155", linewidth=0.8, alpha=0.45)
+    style_axis(ax, "MNQ ORB ST5_50 Variant Drawdown", "Drawdown ($)")
+    ax.legend(frameon=False, fontsize=8)
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    save_fig(fig, chart_dir, "supertrend_variant_drawdown_curve")
+    plt.close(fig)
+
+
+def plot_monthly_2026(variants: list[tuple[str, str, str, pd.DataFrame]], chart_dir: Path) -> None:
+    months = pd.period_range("2026-01", "2026-05", freq="M").astype(str).tolist()
+    labels = [label for _, label, _, _ in variants]
+    x = list(range(len(months)))
+    width = 0.18
+    fig, ax = plt.subplots(figsize=(11.5, 5.2))
+    for i, (variant_id, label, _, frame) in enumerate(variants):
+        monthly = (
+            frame.assign(month=pd.to_datetime(frame["ny_date"]).dt.to_period("M").astype(str))
+            .groupby("month")["pnl_net_usd"]
+            .sum()
+            .reindex(months, fill_value=0.0)
+        )
+        offsets = [v + (i - 1.5) * width for v in x]
+        ax.bar(
+            offsets,
+            monthly.values,
+            width=width,
+            label=label,
+            color=VARIANT_COLORS.get(variant_id),
+            alpha=0.88,
+        )
+    ax.axhline(0, color="#334155", linewidth=0.8)
+    ax.set_xticks(x)
+    ax.set_xticklabels(months)
+    style_axis(ax, "MNQ ORB ST5_50 Variant Monthly PnL 2026", "Monthly PnL ($)")
+    ax.legend(frameon=False, fontsize=8)
+    fig.tight_layout()
+    save_fig(fig, chart_dir, "supertrend_variant_monthly_pnl_2026")
+    plt.close(fig)
+
+
+def plot_rolling_windows(comparison: pd.DataFrame, chart_dir: Path) -> None:
+    windows = [5, 10, 20, 30, 50, 100, 200]
+    fig, axes = plt.subplots(2, 1, figsize=(11.5, 7.2), sharex=True)
+    for _, row in comparison.iterrows():
+        variant_id = row["variant_id"]
+        label = row["label"]
+        pnls = [row[f"last_{days}d_pnl_usd"] for days in windows]
+        dds = [row[f"last_{days}d_max_dd_usd"] for days in windows]
+        axes[0].plot(windows, pnls, marker="o", label=label, color=VARIANT_COLORS.get(variant_id))
+        axes[1].plot(windows, dds, marker="o", label=label, color=VARIANT_COLORS.get(variant_id))
+    axes[0].axhline(0, color="#334155", linewidth=0.8, alpha=0.45)
+    axes[1].axhline(0, color="#334155", linewidth=0.8, alpha=0.45)
+    style_axis(axes[0], "Rolling Window PnL", "PnL ($)")
+    style_axis(axes[1], "Rolling Window Max Drawdown", "Drawdown ($)")
+    axes[1].set_xlabel("Lookback days")
+    axes[0].legend(frameon=False, fontsize=8, ncol=2)
+    fig.tight_layout()
+    save_fig(fig, chart_dir, "supertrend_variant_rolling_windows")
+    plt.close(fig)
+
+
+def plot_trade_distribution(variants: list[tuple[str, str, str, pd.DataFrame]], chart_dir: Path) -> None:
+    fig, ax = plt.subplots(figsize=(11.5, 5.2))
+    for variant_id, label, _, frame in variants:
+        ax.hist(
+            frame["pnl_net_usd"].astype(float),
+            bins=55,
+            histtype="step",
+            linewidth=1.5,
+            label=label,
+            color=VARIANT_COLORS.get(variant_id),
+        )
+    ax.axvline(0, color="#334155", linewidth=0.8, alpha=0.6)
+    style_axis(ax, "MNQ ORB ST5_50 Variant Trade PnL Distribution", "Trade count")
+    ax.set_xlabel("Trade PnL ($)")
+    ax.legend(frameon=False, fontsize=8)
+    fig.tight_layout()
+    save_fig(fig, chart_dir, "supertrend_variant_trade_pnl_distribution")
+    plt.close(fig)
+
+
+def plot_march_2026_equity(variants: list[tuple[str, str, str, pd.DataFrame]], chart_dir: Path) -> None:
+    fig, ax = plt.subplots(figsize=(11.5, 5.2))
+    for variant_id, label, _, frame in variants:
+        dates = pd.to_datetime(frame["ny_date"])
+        march = frame[(dates >= pd.Timestamp("2026-03-01")) & (dates <= pd.Timestamp("2026-03-31"))]
+        if march.empty:
+            continue
+        equity = march["pnl_net_usd"].astype(float).cumsum()
+        ax.plot(
+            march["signal_ts"],
+            equity,
+            marker="o",
+            label=label,
+            linewidth=1.5,
+            color=VARIANT_COLORS.get(variant_id),
+        )
+    ax.axhline(0, color="#334155", linewidth=0.8, alpha=0.45)
+    style_axis(ax, "MNQ ORB ST5_50 Variant March 2026 Equity", "March cumulative PnL ($)")
+    ax.legend(frameon=False, fontsize=8)
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    save_fig(fig, chart_dir, "supertrend_variant_march_2026_equity")
+    plt.close(fig)
+
+
+def save_variant_charts(
+    variants: list[tuple[str, str, str, pd.DataFrame]],
+    comparison: pd.DataFrame,
+    chart_dir: Path,
+) -> list[str]:
+    plot_equity_curve(variants, chart_dir)
+    plot_drawdown_curve(variants, chart_dir)
+    plot_monthly_2026(variants, chart_dir)
+    plot_rolling_windows(comparison, chart_dir)
+    plot_trade_distribution(variants, chart_dir)
+    plot_march_2026_equity(variants, chart_dir)
+    charts = []
+    for stem in CHART_STEMS:
+        charts.append(str((chart_dir / f"{stem}.svg").relative_to(project_path("."))))
+        charts.append(str((chart_dir / f"{stem}.png").relative_to(project_path("."))))
+    return charts
+
+
 def write_report(path: Path, df: pd.DataFrame, manifest: dict[str, Any]) -> None:
     cols = [
         ("label", "Variant"),
@@ -230,6 +445,32 @@ def write_report(path: Path, df: pd.DataFrame, manifest: dict[str, Any]) -> None
         f"| Anchor | {manifest['anchor_ts']} |",
         f"| Lookahead violations | {manifest['lookahead_violations']} |",
         "",
+        "## Visual Artifacts",
+        "",
+        "### Equity Curve",
+        "",
+        f"![ST5_50 Variant Equity Curve]({raw('charts/supertrend_variant_equity_curve.png')})",
+        "",
+        "### Drawdown Curve",
+        "",
+        f"![ST5_50 Variant Drawdown Curve]({raw('charts/supertrend_variant_drawdown_curve.png')})",
+        "",
+        "### Monthly PnL 2026",
+        "",
+        f"![ST5_50 Variant Monthly PnL 2026]({raw('charts/supertrend_variant_monthly_pnl_2026.png')})",
+        "",
+        "### Rolling Window PnL/DD",
+        "",
+        f"![ST5_50 Variant Rolling Windows]({raw('charts/supertrend_variant_rolling_windows.png')})",
+        "",
+        "### Trade PnL Distribution",
+        "",
+        f"![ST5_50 Variant Trade PnL Distribution]({raw('charts/supertrend_variant_trade_pnl_distribution.png')})",
+        "",
+        "### March 2026 Equity",
+        "",
+        f"![ST5_50 Variant March 2026 Equity]({raw('charts/supertrend_variant_march_2026_equity.png')})",
+        "",
         "## Comparison",
         "",
         "| " + " | ".join(label for _, label in cols) + " |",
@@ -264,6 +505,7 @@ def write_report(path: Path, df: pd.DataFrame, manifest: dict[str, Any]) -> None
             "| Artifact | Path |",
             "| --- | --- |",
             f"| CSV | `{manifest['artifacts']['csv']}` |",
+            f"| Charts | `{manifest['artifacts']['charts_dir']}` |",
             f"| Manifest | `{manifest['artifacts']['manifest']}` |",
             "",
         ]
@@ -278,6 +520,7 @@ def main() -> None:
     assert_mnq_namespaces(cfg)
 
     model_dir = project_path(MODEL_DIR)
+    chart_dir = model_dir / "charts"
     csv_path = model_dir / OUTPUT_CSV
     md_path = model_dir / OUTPUT_MD
     manifest_path = project_path(OUTPUT_JSON)
@@ -300,10 +543,12 @@ def main() -> None:
     baseline, baseline_audit = attach_features(baseline, feature_tables, [args.st_period])
     long_short, long_short_audit = attach_features(long_short, feature_tables, [args.st_period])
     st_feature = f"st{args.st_timeframe}_{args.st_period}"
-    comparison = build_rows(baseline, long_short, anchor, st_feature)
+    variants = build_variant_frames(baseline, long_short, st_feature)
+    comparison = build_rows(variants, anchor)
 
     model_dir.mkdir(parents=True, exist_ok=True)
     comparison.to_csv(csv_path, index=False)
+    chart_outputs = save_variant_charts(variants, comparison, chart_dir)
     lookahead_violations = int(
         sum(baseline_audit["lookahead_violations"].values())
         + sum(long_short_audit["lookahead_violations"].values())
@@ -331,6 +576,8 @@ def main() -> None:
         "artifacts": {
             "csv": str(csv_path.relative_to(project_path("."))),
             "report": str(md_path.relative_to(project_path("."))),
+            "charts_dir": str(chart_dir.relative_to(project_path("."))),
+            "charts": chart_outputs,
             "manifest": OUTPUT_JSON,
         },
     }

@@ -392,6 +392,30 @@ python3 pipeline/mnq_ml/experiments/ORB/build_supertrend_variant_comparison.py -
         variant_table = f"""
 ### 10.2 Perbandingan Variant Utama
 
+#### Equity Curve
+
+![ST5_50 Variant Equity Curve]({raw("charts/supertrend_variant_equity_curve.png")})
+
+#### Drawdown Curve
+
+![ST5_50 Variant Drawdown Curve]({raw("charts/supertrend_variant_drawdown_curve.png")})
+
+#### Monthly PnL 2026
+
+![ST5_50 Variant Monthly PnL 2026]({raw("charts/supertrend_variant_monthly_pnl_2026.png")})
+
+#### Rolling Window PnL/DD
+
+![ST5_50 Variant Rolling Windows]({raw("charts/supertrend_variant_rolling_windows.png")})
+
+#### Trade PnL Distribution
+
+![ST5_50 Variant Trade PnL Distribution]({raw("charts/supertrend_variant_trade_pnl_distribution.png")})
+
+#### March 2026 Equity
+
+![ST5_50 Variant March 2026 Equity]({raw("charts/supertrend_variant_march_2026_equity.png")})
+
 | Variant | Trades | Long | Short | WR | PnL | DD | Ret/DD | Jan-May Trades | Jan-May PnL | Jan-May DD | Mar PnL | Mar DD | 30D Trades | 30D PnL | 30D DD |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 {variant_rows(variant_df)}
@@ -818,6 +842,12 @@ Belum ada approval untuk live execution.
 | `charts/monthly_pnl.png` | Monthly PnL |
 | `charts/rolling_windows.png` | Rolling window PnL/DD |
 | `charts/trade_pnl_distribution.png` | Distribusi PnL trade |
+| `charts/supertrend_variant_equity_curve.png` | Equity curve perbandingan varian ST5_50 |
+| `charts/supertrend_variant_drawdown_curve.png` | Drawdown curve perbandingan varian ST5_50 |
+| `charts/supertrend_variant_monthly_pnl_2026.png` | Monthly PnL 2026 perbandingan varian ST5_50 |
+| `charts/supertrend_variant_rolling_windows.png` | Rolling PnL/DD perbandingan varian ST5_50 |
+| `charts/supertrend_variant_trade_pnl_distribution.png` | Distribusi trade PnL perbandingan varian ST5_50 |
+| `charts/supertrend_variant_march_2026_equity.png` | Equity khusus March 2026 perbandingan varian ST5_50 |
 | `monte_carlo/monte_pnl_fan_30d.png` | Monte Carlo fan chart 30D |
 | `monte_carlo/monte_final_pnl_cdf_30d.png` | Monte Carlo final PnL CDF 30D |
 | `monte_carlo/monte_maxdd_hist_30d.png` | Monte Carlo MaxDD histogram 30D |
@@ -894,6 +924,18 @@ def main() -> None:
                 rel(CHART_DIR / "rolling_windows.png"),
                 rel(CHART_DIR / "trade_pnl_distribution.svg"),
                 rel(CHART_DIR / "trade_pnl_distribution.png"),
+                rel(CHART_DIR / "supertrend_variant_equity_curve.svg"),
+                rel(CHART_DIR / "supertrend_variant_equity_curve.png"),
+                rel(CHART_DIR / "supertrend_variant_drawdown_curve.svg"),
+                rel(CHART_DIR / "supertrend_variant_drawdown_curve.png"),
+                rel(CHART_DIR / "supertrend_variant_monthly_pnl_2026.svg"),
+                rel(CHART_DIR / "supertrend_variant_monthly_pnl_2026.png"),
+                rel(CHART_DIR / "supertrend_variant_rolling_windows.svg"),
+                rel(CHART_DIR / "supertrend_variant_rolling_windows.png"),
+                rel(CHART_DIR / "supertrend_variant_trade_pnl_distribution.svg"),
+                rel(CHART_DIR / "supertrend_variant_trade_pnl_distribution.png"),
+                rel(CHART_DIR / "supertrend_variant_march_2026_equity.svg"),
+                rel(CHART_DIR / "supertrend_variant_march_2026_equity.png"),
                 rel(MONTE_DIR / "monte_pnl_fan_30d.svg"),
                 rel(MONTE_DIR / "monte_pnl_fan_30d.png"),
                 rel(MONTE_DIR / "monte_final_pnl_cdf_30d.svg"),

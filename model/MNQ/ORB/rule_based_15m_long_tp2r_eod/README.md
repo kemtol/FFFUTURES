@@ -40,6 +40,12 @@ Included model-package artifacts:
 | `charts/monthly_pnl.png` | Monthly net PnL |
 | `charts/rolling_windows.png` | 5D/10D/20D/30D/50D/100D/200D PnL and DD |
 | `charts/trade_pnl_distribution.png` | Trade PnL histogram |
+| `charts/supertrend_variant_equity_curve.png` | ST5_50 variant equity comparison |
+| `charts/supertrend_variant_drawdown_curve.png` | ST5_50 variant drawdown comparison |
+| `charts/supertrend_variant_monthly_pnl_2026.png` | ST5_50 variant monthly PnL for 2026 |
+| `charts/supertrend_variant_rolling_windows.png` | ST5_50 variant rolling PnL/DD |
+| `charts/supertrend_variant_trade_pnl_distribution.png` | ST5_50 variant trade PnL distribution |
+| `charts/supertrend_variant_march_2026_equity.png` | ST5_50 variant March 2026 equity comparison |
 | `monte_carlo/monte_pnl_fan_30d.png` | 30D Monte Carlo PnL fan chart |
 | `monte_carlo/monte_final_pnl_cdf_30d.png` | 30D final PnL CDF |
 | `monte_carlo/monte_maxdd_hist_30d.png` | 30D Monte Carlo max drawdown histogram |

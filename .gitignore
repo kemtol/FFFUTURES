@@ -46,6 +46,8 @@ data/Live/topstepx_token.lock
 # Keep model cards, configs, metrics, small model binaries, and reports tracked.
 # Large generated data/images are already covered by *.parquet and *.png above.
 model/**/__pycache__/
+!model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/*.png
+!model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/*.png
 
 # Browser/test artifacts
 playwright-report/
