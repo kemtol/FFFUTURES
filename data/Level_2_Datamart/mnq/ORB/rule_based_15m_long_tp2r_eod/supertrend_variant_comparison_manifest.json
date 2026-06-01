@@ -1,0 +1,62 @@
+{
+  "anchor_ts": "2026-05-28T01:53:00+00:00",
+  "artifacts": {
+    "csv": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison.csv",
+    "manifest": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison_manifest.json",
+    "report": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison.md"
+  },
+  "baseline_attach_audit": {
+    "lookahead_violations": {
+      "5m": 0
+    },
+    "timeframes": {
+      "5m": {
+        "events_with_feature": 1296,
+        "max_lag_minutes": 4.0,
+        "median_lag_minutes": 2.0,
+        "min_lag_minutes": 0.0
+      }
+    }
+  },
+  "created_at": "2026-06-01T13:45:01.880264+00:00",
+  "feature_audit": {
+    "atr_periods": [
+      50
+    ],
+    "bars": 492704,
+    "factor": 4.0,
+    "max_feature_ts": "2026-05-28T01:50:00+00:00",
+    "min_feature_ts": "2019-05-05T23:30:00+00:00",
+    "timeframe_minutes": 5,
+    "valid_st_counts": {
+      "st5_50": 492655
+    }
+  },
+  "long_short_attach_audit": {
+    "lookahead_violations": {
+      "5m": 0
+    },
+    "timeframes": {
+      "5m": {
+        "events_with_feature": 1767,
+        "max_lag_minutes": 4.0,
+        "median_lag_minutes": 2.0,
+        "min_lag_minutes": 0.0
+      }
+    }
+  },
+  "lookahead_violations": 0,
+  "params": {
+    "exit_mode": "tp_2r_or_time",
+    "orb_minutes": 15,
+    "st_factor": 4.0,
+    "st_period": 50,
+    "st_timeframe": 5,
+    "target_risk_usd": 500.0
+  },
+  "sources": {
+    "baseline_events": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/events.parquet",
+    "l1_context": "data/Level_1_Features/mnq/ORB/context.parquet",
+    "long_short_events": "data/Level_2_Datamart/mnq/ORB/sweeps/sweep_events.parquet"
+  }
+}

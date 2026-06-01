@@ -1,7 +1,7 @@
 # Strategi MNQ Opening Range Breakout Rule-Based Iterasi v1
 **Evaluasi Baseline 15m Long TP2R/EOD**
 
-Tanggal laporan: **2026-05-31**
+Tanggal laporan: **2026-06-01**
 
 Model / strategy ID: `rule_based_15m_long_tp2r_eod`
 
@@ -223,7 +223,78 @@ Interpretasi:
 
 ---
 
-## 10. Monte Carlo dan Stress Test
+## 10. SuperTrend Regime Filter Audit
+
+SuperTrend audit ditambahkan untuk menjawab apakah drawdown March 2026 bisa
+dikurangi dengan regime filter sederhana, tanpa langsung mengganti baseline.
+Semua fitur dihitung dari bar yang sudah close dan di-join ke trade event
+dengan rule `feature_ts <= signal_ts`.
+
+### 10.1 Data Integrity
+
+| Check | Value |
+| --- | ---: |
+| Feature family | `ST5_5`, `ST5_10`, `ST5_20`, `ST5_50`, `ST15_5`, `ST15_10`, `ST15_20`, `ST15_50` |
+| SuperTrend factor | 4.00 |
+| Direction convention | `-1 = bullish/up`, `+1 = bearish/down` |
+| Join rule | Latest completed feature timestamp `<= signal_ts` |
+| Lookahead violations | 0 |
+| Max feature lag | 14 menit |
+
+
+### 10.2 Perbandingan Variant Utama
+
+| Variant | Trades | Long | Short | WR | PnL | DD | Ret/DD | Jan-May Trades | Jan-May PnL | Jan-May DD | Mar PnL | Mar DD | 30D Trades | 30D PnL | 30D DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Long only, no ST | 1,296 | 1,296 | 0 | 56.48% | $33,091 | -$12,124 | 2.73 | 72 | $6,096 | -$4,085 | -$2,633 | -$4,085 | 18 | $3,460 | -$551 |
+| Long only, ST5_50 bullish | 964 | 964 | 0 | 56.85% | $28,199 | -$8,027 | 3.51 | 50 | $5,843 | -$1,916 | $102 | -$1,588 | 15 | $1,918 | -$551 |
+| Long+Short, no ST | 1,767 | 905 | 862 | 53.03% | $26,501 | -$15,294 | 1.73 | 97 | $4,072 | -$3,623 | -$1,451 | -$3,105 | 21 | $839 | -$1,636 |
+| Long+Short, ST5_50 aligned | 1,251 | 667 | 584 | 53.88% | $36,800 | -$9,099 | 4.04 | 63 | $7,328 | -$4,493 | $2,336 | -$1,029 | 16 | -$1,059 | -$1,894 |
+
+Interpretasi:
+
+- `Long only, ST5_50 bullish` adalah kandidat P0 paling bersih: hanya menambah
+  satu rule regime filter, March 2026 membaik, dan sample size masih besar.
+- `Long+Short, no ST` menambah frekuensi, tetapi short leg mentahnya tidak
+  cukup kuat karena PnL full-history turun dan DD membesar.
+- `Long+Short, ST5_50 aligned` menarik secara full-history dan March, tetapi
+  30D terakhir negatif. Ini belum layak jadi kandidat utama tanpa investigasi
+  stabilitas recent window.
+
+
+### 10.3 Kandidat Kombinasi SuperTrend
+
+Tabel ini menampilkan kandidat terbaik berdasarkan full-history return/DD,
+dengan minimum `full_trades >= 100` dan `jan_may_2026_trades >= 30`.
+
+| Candidate | N | Full Trades | Full PnL | Full DD | Ret/DD | Jan-May Trades | Jan-May PnL | Mar PnL | Mar DD | 30D PnL |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| ST5_5 & ST5_20 & ST5_50 & ST15_20 | 4 | 496 | $30,466 | -$5,351 | 5.69 | 32 | $5,403 | $229 | -$1,461 | $1,431 |
+| ST5_5 & ST5_20 & ST15_20 | 3 | 513 | $30,428 | -$5,351 | 5.69 | 33 | $5,278 | $103 | -$1,587 | $1,431 |
+| ST5_5 & ST5_50 & ST15_20 | 3 | 500 | $30,226 | -$5,351 | 5.65 | 32 | $5,403 | $229 | -$1,461 | $1,431 |
+| ST5_5 & ST5_10 & ST5_20 & ST5_50 & ST15_20 | 5 | 492 | $29,456 | -$5,351 | 5.50 | 32 | $5,403 | $229 | -$1,461 | $1,431 |
+| ST5_5 & ST5_10 & ST5_20 & ST15_20 | 4 | 509 | $29,418 | -$5,351 | 5.50 | 33 | $5,278 | $103 | -$1,587 | $1,431 |
+| ST5_5 & ST5_10 & ST5_50 & ST15_20 | 4 | 495 | $29,213 | -$5,351 | 5.46 | 32 | $5,403 | $229 | -$1,461 | $1,431 |
+| ST5_5 & ST5_10 & ST15_20 | 3 | 523 | $28,807 | -$5,351 | 5.38 | 35 | $5,948 | $103 | -$1,587 | $1,431 |
+| ST5_20 & ST15_20 | 2 | 567 | $30,892 | -$5,756 | 5.37 | 37 | $4,591 | $103 | -$1,587 | $879 |
+
+Catatan: kombinasi multi-filter dapat memperbaiki March drawdown secara besar,
+tetapi trade count turun drastis. Untuk menghindari curve fitting, kandidat
+yang lebih sederhana tetap diprioritaskan sebelum kombinasi kompleks.
+
+### 10.4 Keputusan Sementara SuperTrend
+
+Untuk saat ini baseline **tidak diganti**. Baseline tetap `Long only, no ST`
+sebagai control. Kandidat yang dibawa ke iterasi berikutnya:
+
+1. `Long only + ST5_50 bullish` sebagai P0 regime-filter candidate.
+2. `Long+Short + ST5_50 aligned` sebagai exploratory candidate, bukan prioritas
+   utama, karena 30D terakhir masih negatif.
+
+---
+
+
+## 11. Monte Carlo dan Stress Test
 
 Monte Carlo dilakukan dengan bootstrap dari daily PnL historis. Ini bukan
 prediksi masa depan, tetapi stress test distribusi jika pola daily PnL historis
@@ -235,19 +306,19 @@ muncul dalam urutan yang berbeda.
 | 100D | $1,893 | -$6,990 | 35.46% | -$4,646 | 95.96% | 64.36% |
 | 200D | $3,730 | -$8,746 | 31.10% | -$6,568 | 99.86% | 78.14% |
 
-### 10.1 Fan Chart 30D
+### 11.1 Fan Chart 30D
 
 ![Monte Carlo PnL Fan 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_30d.png)
 
-### 10.2 Distribusi Final PnL 30D
+### 11.2 Distribusi Final PnL 30D
 
 ![Monte Carlo Final PnL CDF 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_final_pnl_cdf_30d.png)
 
-### 10.3 Max Drawdown 30D
+### 11.3 Max Drawdown 30D
 
 ![Monte Carlo MaxDD 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_maxdd_hist_30d.png)
 
-### 10.4 Fan Chart 100D
+### 11.4 Fan Chart 100D
 
 ![Monte Carlo PnL Fan 100D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_100d.png)
 
@@ -257,29 +328,29 @@ diuji lebih ketat dengan simulator Topstep yang memperhitungkan aturan akun.
 
 ---
 
-## 11. Penilaian Risiko
+## 12. Penilaian Risiko
 
-### 11.1 Risiko Drawdown
+### 12.1 Risiko Drawdown
 
 Max drawdown historis -$12,124 jauh lebih besar daripada MLL
 Topstep 50K. Ini tidak otomatis membatalkan strategi, karena evaluasi Topstep
 berjalan pada window pendek, tetapi artinya strategi membutuhkan guard dan
 monitoring harian.
 
-### 11.2 Risiko No Normal SL
+### 12.2 Risiko No Normal SL
 
 Strategi ini tidak memakai SL normal. Exit loss terjadi lewat time exit.
 Konsekuensinya, flash drop atau trend day yang berlawanan bisa menghasilkan
 kerugian lebih besar dari target risk teoritis. Catastrophic guard harus
 dipilih sebagai layer operasional terpisah.
 
-### 11.3 Risiko Curve Fit
+### 12.3 Risiko Curve Fit
 
 Baseline ini cukup bersih karena hanya memakai OR 15m, long only, TP 2R/time
 exit, dan risk $500. Namun pemilihan parameter tetap berasal dari sweep, jadi
 forward test diperlukan sebelum dianggap valid.
 
-### 11.4 Risiko Eksekusi Live
+### 12.4 Risiko Eksekusi Live
 
 Live version harus memastikan:
 
@@ -292,7 +363,7 @@ Live version harus memastikan:
 
 ---
 
-## 12. Rekomendasi Sementara
+## 13. Rekomendasi Sementara
 
 | Area | Rekomendasi |
 | --- | --- |
@@ -313,7 +384,7 @@ Rekomendasi utama:
 
 ---
 
-## 13. Keputusan Sementara
+## 14. Keputusan Sementara
 
 | Area | Status |
 | --- | --- |
@@ -328,7 +399,7 @@ Belum ada approval untuk live execution.
 
 ---
 
-## 14. Artifact Register
+## 15. Artifact Register
 
 ### Model Package
 
@@ -347,6 +418,10 @@ Belum ada approval untuk live execution.
 | `monte_carlo/monte_final_pnl_cdf_30d.png` | Monte Carlo final PnL CDF 30D |
 | `monte_carlo/monte_maxdd_hist_30d.png` | Monte Carlo MaxDD histogram 30D |
 | `monte_carlo/monte_pnl_fan_100d.png` | Monte Carlo fan chart 100D |
+| `supertrend_regime_audit.md` | Audit grid SuperTrend 5m/15m ATR 5/10/20/50 |
+| `supertrend_filter_candidates.csv` | Semua kandidat kombinasi bullish SuperTrend |
+| `supertrend_variant_comparison.md` | Perbandingan baseline, ST5_50, long+short, dan long+short ST aligned |
+| `supertrend_variant_comparison.csv` | Tabel machine-readable untuk perbandingan variant ST5_50 |
 
 ### Canonical Data
 
@@ -354,11 +429,14 @@ Belum ada approval untuk live execution.
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/events.parquet
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/summary.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_features.parquet
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison_manifest.json
 ```
 
 ---
 
-## 15. Lampiran A - 10 Trade Terakhir
+## 16. Lampiran A - 10 Trade Terakhir
 
 | NY Date | Signal UTC | Exit | Contracts | Net PnL |
 | --- | --- | --- | ---: | ---: |

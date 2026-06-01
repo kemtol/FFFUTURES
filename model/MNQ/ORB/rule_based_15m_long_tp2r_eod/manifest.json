@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-05-31T12:15:23+00:00",
+  "created_at": "2026-06-01T13:52:34+00:00",
   "outputs": {
     "charts": [
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/equity_curve.svg",
@@ -23,7 +23,13 @@
     ],
     "metrics": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/metrics.json",
     "monte_carlo_metrics": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo_metrics.json",
-    "report": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/REPORT.md"
+    "report": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/REPORT.md",
+    "supertrend_filter_candidates": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/supertrend_filter_candidates.csv",
+    "supertrend_regime_audit": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_audit.md",
+    "supertrend_regime_manifest": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_manifest.json",
+    "supertrend_variant_comparison": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison.md",
+    "supertrend_variant_comparison_csv": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison.csv",
+    "supertrend_variant_comparison_manifest": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison_manifest.json"
   },
   "source_events": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/events.parquet",
   "source_summary": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/summary.json",

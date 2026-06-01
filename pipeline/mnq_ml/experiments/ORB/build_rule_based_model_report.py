@@ -22,6 +22,10 @@ RAW_BASE = (
     "https://raw.githubusercontent.com/kemtol/FFFUTURES/main/"
     "model/MNQ/ORB/rule_based_15m_long_tp2r_eod"
 )
+ST_VARIANT_CSV = MODEL_DIR / "supertrend_variant_comparison.csv"
+ST_FILTER_CSV = MODEL_DIR / "supertrend_filter_candidates.csv"
+ST_REGIME_MANIFEST = DATA_DIR / "supertrend_regime_manifest.json"
+ST_VARIANT_MANIFEST = DATA_DIR / "supertrend_variant_comparison_manifest.json"
 
 
 def rel(path: Path) -> str:
@@ -267,6 +271,192 @@ def last_trades_rows(events: pd.DataFrame) -> str:
     return "\n".join(rows)
 
 
+def safe_read_csv(path: Path) -> pd.DataFrame | None:
+    if not path.exists():
+        return None
+    return pd.read_csv(path)
+
+
+def safe_read_json(path: Path) -> dict | None:
+    if not path.exists():
+        return None
+    with path.open() as f:
+        return json.load(f)
+
+
+def optional_float(value) -> float | None:
+    if value is None or pd.isna(value):
+        return None
+    return float(value)
+
+
+def maybe_num(value) -> str:
+    parsed = optional_float(value)
+    if parsed is None:
+        return ""
+    return f"{parsed:.2f}"
+
+
+def variant_rows(df: pd.DataFrame) -> str:
+    rows = []
+    for _, row in df.iterrows():
+        rows.append(
+            "| {label} | {trades:,} | {longs:,} | {shorts:,} | {wr} | {pnl} | {dd} | {retdd} | {jm_trades:,} | {jm_pnl} | {jm_dd} | {mar_pnl} | {mar_dd} | {d30_trades:,} | {d30_pnl} | {d30_dd} |".format(
+                label=row["label"],
+                trades=int(row["trades"]),
+                longs=int(row["long_trades"]),
+                shorts=int(row["short_trades"]),
+                wr=pct(float(row["win_rate"])),
+                pnl=usd(float(row["pnl_usd"])),
+                dd=usd(float(row["max_dd_usd"])),
+                retdd=maybe_num(row["return_dd"]),
+                jm_trades=int(row["jan_may_2026_trades"]),
+                jm_pnl=usd(float(row["jan_may_2026_pnl_usd"])),
+                jm_dd=usd(float(row["jan_may_2026_max_dd_usd"])),
+                mar_pnl=usd(float(row["march_2026_pnl_usd"])),
+                mar_dd=usd(float(row["march_2026_max_dd_usd"])),
+                d30_trades=int(row["last_30d_trades"]),
+                d30_pnl=usd(float(row["last_30d_pnl_usd"])),
+                d30_dd=usd(float(row["last_30d_max_dd_usd"])),
+            )
+        )
+    return "\n".join(rows)
+
+
+def top_st_filter_rows(df: pd.DataFrame, limit: int = 8) -> str:
+    liquid = df[
+        (df["candidate"] != "BASELINE")
+        & (df["full_trades"] >= 100)
+        & (df["jan_may_2026_trades"] >= 30)
+    ].copy()
+    if liquid.empty:
+        return ""
+    liquid = liquid.sort_values(
+        ["full_return_dd", "jan_may_2026_pnl"],
+        ascending=[False, False],
+    )
+    rows = []
+    for _, row in liquid.head(limit).iterrows():
+        rows.append(
+            "| {candidate} | {n} | {trades:,} | {pnl} | {dd} | {retdd} | {jm_trades:,} | {jm_pnl} | {mar_pnl} | {mar_dd} | {d30_pnl} |".format(
+                candidate=row["candidate"],
+                n=int(row["filter_count"]),
+                trades=int(row["full_trades"]),
+                pnl=usd(float(row["full_pnl"])),
+                dd=usd(float(row["full_max_dd"])),
+                retdd=maybe_num(row["full_return_dd"]),
+                jm_trades=int(row["jan_may_2026_trades"]),
+                jm_pnl=usd(float(row["jan_may_2026_pnl"])),
+                mar_pnl=usd(float(row["march_2026_pnl"])),
+                mar_dd=usd(float(row["march_2026_max_dd"])),
+                d30_pnl=usd(float(row["last_30d_pnl"])),
+            )
+        )
+    return "\n".join(rows)
+
+
+def build_supertrend_section() -> str:
+    variant_df = safe_read_csv(ST_VARIANT_CSV)
+    filter_df = safe_read_csv(ST_FILTER_CSV)
+    regime_manifest = safe_read_json(ST_REGIME_MANIFEST)
+    variant_manifest = safe_read_json(ST_VARIANT_MANIFEST)
+
+    if variant_df is None and filter_df is None:
+        return """## 10. SuperTrend Regime Filter Audit
+
+SuperTrend audit belum tersedia saat report ini dibuat. Jalankan:
+
+```bash
+python3 pipeline/mnq_ml/experiments/ORB/build_supertrend_regime_features.py --force
+python3 pipeline/mnq_ml/experiments/ORB/build_supertrend_variant_comparison.py --force
+```
+
+---
+"""
+
+    lookahead_violations = 0
+    max_lag = None
+    feature_names = []
+    if regime_manifest:
+        lookahead_violations += int(regime_manifest["lookahead"]["total_violations"])
+        max_lag = regime_manifest["lookahead"]["max_lag_minutes"]
+        feature_names = regime_manifest["features"]["feature_names"]
+    if variant_manifest:
+        lookahead_violations += int(variant_manifest["lookahead_violations"])
+
+    feature_text = ", ".join(f"`{name}`" for name in feature_names) if feature_names else "`ST5_50`"
+    max_lag_text = f"{max_lag:.0f} menit" if max_lag is not None else "n/a"
+
+    variant_table = ""
+    if variant_df is not None:
+        variant_table = f"""
+### 10.2 Perbandingan Variant Utama
+
+| Variant | Trades | Long | Short | WR | PnL | DD | Ret/DD | Jan-May Trades | Jan-May PnL | Jan-May DD | Mar PnL | Mar DD | 30D Trades | 30D PnL | 30D DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+{variant_rows(variant_df)}
+
+Interpretasi:
+
+- `Long only, ST5_50 bullish` adalah kandidat P0 paling bersih: hanya menambah
+  satu rule regime filter, March 2026 membaik, dan sample size masih besar.
+- `Long+Short, no ST` menambah frekuensi, tetapi short leg mentahnya tidak
+  cukup kuat karena PnL full-history turun dan DD membesar.
+- `Long+Short, ST5_50 aligned` menarik secara full-history dan March, tetapi
+  30D terakhir negatif. Ini belum layak jadi kandidat utama tanpa investigasi
+  stabilitas recent window.
+"""
+
+    filter_table = ""
+    if filter_df is not None:
+        filter_table = f"""
+### 10.3 Kandidat Kombinasi SuperTrend
+
+Tabel ini menampilkan kandidat terbaik berdasarkan full-history return/DD,
+dengan minimum `full_trades >= 100` dan `jan_may_2026_trades >= 30`.
+
+| Candidate | N | Full Trades | Full PnL | Full DD | Ret/DD | Jan-May Trades | Jan-May PnL | Mar PnL | Mar DD | 30D PnL |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+{top_st_filter_rows(filter_df)}
+
+Catatan: kombinasi multi-filter dapat memperbaiki March drawdown secara besar,
+tetapi trade count turun drastis. Untuk menghindari curve fitting, kandidat
+yang lebih sederhana tetap diprioritaskan sebelum kombinasi kompleks.
+"""
+
+    return f"""## 10. SuperTrend Regime Filter Audit
+
+SuperTrend audit ditambahkan untuk menjawab apakah drawdown March 2026 bisa
+dikurangi dengan regime filter sederhana, tanpa langsung mengganti baseline.
+Semua fitur dihitung dari bar yang sudah close dan di-join ke trade event
+dengan rule `feature_ts <= signal_ts`.
+
+### 10.1 Data Integrity
+
+| Check | Value |
+| --- | ---: |
+| Feature family | {feature_text} |
+| SuperTrend factor | 4.00 |
+| Direction convention | `-1 = bullish/up`, `+1 = bearish/down` |
+| Join rule | Latest completed feature timestamp `<= signal_ts` |
+| Lookahead violations | {lookahead_violations:,} |
+| Max feature lag | {max_lag_text} |
+
+{variant_table}
+{filter_table}
+### 10.4 Keputusan Sementara SuperTrend
+
+Untuk saat ini baseline **tidak diganti**. Baseline tetap `Long only, no ST`
+sebagai control. Kandidat yang dibawa ke iterasi berikutnya:
+
+1. `Long only + ST5_50 bullish` sebagai P0 regime-filter candidate.
+2. `Long+Short + ST5_50 aligned` sebagai exploratory candidate, bukan prioritas
+   utama, karena 30D terakhir masih negatif.
+
+---
+"""
+
+
 def build_report(events: pd.DataFrame, summary: dict, mc: dict) -> str:
     perf = summary["performance"]
     quality = summary["daily_quality"]
@@ -285,6 +475,7 @@ def build_report(events: pd.DataFrame, summary: dict, mc: dict) -> str:
         )
         for window in window_order
     )
+    supertrend_section = build_supertrend_section()
 
     created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -507,7 +698,9 @@ Interpretasi:
 
 ---
 
-## 10. Monte Carlo dan Stress Test
+{supertrend_section}
+
+## 11. Monte Carlo dan Stress Test
 
 Monte Carlo dilakukan dengan bootstrap dari daily PnL historis. Ini bukan
 prediksi masa depan, tetapi stress test distribusi jika pola daily PnL historis
@@ -517,19 +710,19 @@ muncul dalam urutan yang berbeda.
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 {monte_rows(mc)}
 
-### 10.1 Fan Chart 30D
+### 11.1 Fan Chart 30D
 
 ![Monte Carlo PnL Fan 30D]({raw("monte_carlo/monte_pnl_fan_30d.png")})
 
-### 10.2 Distribusi Final PnL 30D
+### 11.2 Distribusi Final PnL 30D
 
 ![Monte Carlo Final PnL CDF 30D]({raw("monte_carlo/monte_final_pnl_cdf_30d.png")})
 
-### 10.3 Max Drawdown 30D
+### 11.3 Max Drawdown 30D
 
 ![Monte Carlo MaxDD 30D]({raw("monte_carlo/monte_maxdd_hist_30d.png")})
 
-### 10.4 Fan Chart 100D
+### 11.4 Fan Chart 100D
 
 ![Monte Carlo PnL Fan 100D]({raw("monte_carlo/monte_pnl_fan_100d.png")})
 
@@ -539,29 +732,29 @@ diuji lebih ketat dengan simulator Topstep yang memperhitungkan aturan akun.
 
 ---
 
-## 11. Penilaian Risiko
+## 12. Penilaian Risiko
 
-### 11.1 Risiko Drawdown
+### 12.1 Risiko Drawdown
 
 Max drawdown historis {usd(perf["max_dd_usd"])} jauh lebih besar daripada MLL
 Topstep 50K. Ini tidak otomatis membatalkan strategi, karena evaluasi Topstep
 berjalan pada window pendek, tetapi artinya strategi membutuhkan guard dan
 monitoring harian.
 
-### 11.2 Risiko No Normal SL
+### 12.2 Risiko No Normal SL
 
 Strategi ini tidak memakai SL normal. Exit loss terjadi lewat time exit.
 Konsekuensinya, flash drop atau trend day yang berlawanan bisa menghasilkan
 kerugian lebih besar dari target risk teoritis. Catastrophic guard harus
 dipilih sebagai layer operasional terpisah.
 
-### 11.3 Risiko Curve Fit
+### 12.3 Risiko Curve Fit
 
 Baseline ini cukup bersih karena hanya memakai OR 15m, long only, TP 2R/time
 exit, dan risk $500. Namun pemilihan parameter tetap berasal dari sweep, jadi
 forward test diperlukan sebelum dianggap valid.
 
-### 11.4 Risiko Eksekusi Live
+### 12.4 Risiko Eksekusi Live
 
 Live version harus memastikan:
 
@@ -574,7 +767,7 @@ Live version harus memastikan:
 
 ---
 
-## 12. Rekomendasi Sementara
+## 13. Rekomendasi Sementara
 
 | Area | Rekomendasi |
 | --- | --- |
@@ -595,7 +788,7 @@ Rekomendasi utama:
 
 ---
 
-## 13. Keputusan Sementara
+## 14. Keputusan Sementara
 
 | Area | Status |
 | --- | --- |
@@ -610,7 +803,7 @@ Belum ada approval untuk live execution.
 
 ---
 
-## 14. Artifact Register
+## 15. Artifact Register
 
 ### Model Package
 
@@ -629,6 +822,10 @@ Belum ada approval untuk live execution.
 | `monte_carlo/monte_final_pnl_cdf_30d.png` | Monte Carlo final PnL CDF 30D |
 | `monte_carlo/monte_maxdd_hist_30d.png` | Monte Carlo MaxDD histogram 30D |
 | `monte_carlo/monte_pnl_fan_100d.png` | Monte Carlo fan chart 100D |
+| `supertrend_regime_audit.md` | Audit grid SuperTrend 5m/15m ATR 5/10/20/50 |
+| `supertrend_filter_candidates.csv` | Semua kandidat kombinasi bullish SuperTrend |
+| `supertrend_variant_comparison.md` | Perbandingan baseline, ST5_50, long+short, dan long+short ST aligned |
+| `supertrend_variant_comparison.csv` | Tabel machine-readable untuk perbandingan variant ST5_50 |
 
 ### Canonical Data
 
@@ -636,11 +833,14 @@ Belum ada approval untuk live execution.
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/events.parquet
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/summary.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_features.parquet
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison_manifest.json
 ```
 
 ---
 
-## 15. Lampiran A - 10 Trade Terakhir
+## 16. Lampiran A - 10 Trade Terakhir
 
 | NY Date | Signal UTC | Exit | Contracts | Net PnL |
 | --- | --- | --- | ---: | ---: |
@@ -704,6 +904,14 @@ def main() -> None:
                 rel(MONTE_DIR / "monte_pnl_fan_100d.png"),
             ],
             "monte_carlo_metrics": rel(MODEL_DIR / "monte_carlo_metrics.json"),
+            "supertrend_regime_audit": rel(MODEL_DIR / "supertrend_regime_audit.md"),
+            "supertrend_filter_candidates": rel(MODEL_DIR / "supertrend_filter_candidates.csv"),
+            "supertrend_variant_comparison": rel(MODEL_DIR / "supertrend_variant_comparison.md"),
+            "supertrend_variant_comparison_csv": rel(MODEL_DIR / "supertrend_variant_comparison.csv"),
+            "supertrend_regime_manifest": rel(DATA_DIR / "supertrend_regime_manifest.json"),
+            "supertrend_variant_comparison_manifest": rel(
+                DATA_DIR / "supertrend_variant_comparison_manifest.json"
+            ),
         },
     }
     (MODEL_DIR / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")

@@ -1,0 +1,113 @@
+{
+  "artifacts": {
+    "candidate_csv": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/supertrend_filter_candidates.csv",
+    "features_path": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_features.parquet",
+    "manifest_path": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_manifest.json",
+    "report_path": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_audit.md"
+  },
+  "candidates": {
+    "grid": "all non-empty bullish conjunctions across ST feature names plus baseline",
+    "rows": 256
+  },
+  "created_at": "2026-06-01T08:47:49.615223+00:00",
+  "events": {
+    "anchor_ts": "2026-05-28T01:53:00+00:00",
+    "max_signal_ts": "2026-05-26T13:46:00+00:00",
+    "min_signal_ts": "2019-05-06T13:46:00+00:00",
+    "rows": 1296
+  },
+  "features": {
+    "feature_columns_added": 90,
+    "feature_names": [
+      "ST5_5",
+      "ST5_10",
+      "ST5_20",
+      "ST5_50",
+      "ST15_5",
+      "ST15_10",
+      "ST15_20",
+      "ST15_50"
+    ],
+    "table_audits": [
+      {
+        "atr_periods": [
+          5,
+          10,
+          20,
+          50
+        ],
+        "bars": 492704,
+        "factor": 4.0,
+        "max_feature_ts": "2026-05-28T01:50:00+00:00",
+        "min_feature_ts": "2019-05-05T23:30:00+00:00",
+        "timeframe_minutes": 5,
+        "valid_st_counts": {
+          "st5_10": 492695,
+          "st5_20": 492685,
+          "st5_5": 492700,
+          "st5_50": 492655
+        }
+      },
+      {
+        "atr_periods": [
+          5,
+          10,
+          20,
+          50
+        ],
+        "bars": 161873,
+        "factor": 4.0,
+        "max_feature_ts": "2026-05-28T01:45:00+00:00",
+        "min_feature_ts": "2019-05-06T12:45:00+00:00",
+        "timeframe_minutes": 15,
+        "valid_st_counts": {
+          "st15_10": 161864,
+          "st15_20": 161854,
+          "st15_5": 161869,
+          "st15_50": 161824
+        }
+      }
+    ]
+  },
+  "lookahead": {
+    "by_timeframe": {
+      "lookahead_violations": {
+        "15m": 0,
+        "5m": 0
+      },
+      "timeframes": {
+        "15m": {
+          "events_with_feature": 1296,
+          "max_lag_minutes": 14.0,
+          "median_lag_minutes": 5.0,
+          "min_lag_minutes": 0.0
+        },
+        "5m": {
+          "events_with_feature": 1296,
+          "max_lag_minutes": 4.0,
+          "median_lag_minutes": 2.0,
+          "min_lag_minutes": 0.0
+        }
+      }
+    },
+    "max_lag_minutes": 14.0,
+    "min_lag_minutes": 0.0,
+    "rule": "feature_ts <= signal_ts for every attached timeframe",
+    "total_violations": 0
+  },
+  "params": {
+    "atr_periods": [
+      5,
+      10,
+      20,
+      50
+    ],
+    "direction_convention": "-1=bullish/up, +1=bearish/down",
+    "factor": 4.0,
+    "timeframes": [
+      5,
+      15
+    ]
+  },
+  "strategy_id": "rule_based_15m_long_tp2r_eod"
+}

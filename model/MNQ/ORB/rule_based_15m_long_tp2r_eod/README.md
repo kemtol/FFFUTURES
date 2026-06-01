@@ -44,6 +44,10 @@ Included model-package artifacts:
 | `monte_carlo/monte_final_pnl_cdf_30d.png` | 30D final PnL CDF |
 | `monte_carlo/monte_maxdd_hist_30d.png` | 30D Monte Carlo max drawdown histogram |
 | `monte_carlo/monte_pnl_fan_100d.png` | 100D Monte Carlo PnL fan chart |
+| `supertrend_regime_audit.md` | Audit SuperTrend regime filter grid for March 2026 drawdown |
+| `supertrend_filter_candidates.csv` | Machine-readable candidate table for all ST bullish conjunctions |
+| `supertrend_variant_comparison.md` | Side-by-side comparison: no ST, ST5_50, long+short, long+short ST aligned |
+| `supertrend_variant_comparison.csv` | Machine-readable ST5_50 variant comparison |
 
 ## Strategy Contract
 
@@ -88,10 +92,28 @@ data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/manifest.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/report.md
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/flash_guard_report.md
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/flash_guard_sweep.csv
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_features.parquet
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison_manifest.json
 ```
 
 This model folder intentionally does not duplicate the event parquet. It is the
 human-facing model card and pointer to the canonical artifacts.
+
+## SuperTrend Regime Audit
+
+SuperTrend filter audit is research-only. It computes ST on 5m and 15m bars
+with ATR periods 5/10/20/50, fixed factor 4.0, then joins the latest completed
+feature timestamp to each ORB signal. The gate currently reports zero
+lookahead violations.
+
+Current read: ST filters can materially reduce the March 2026 drawdown, but
+they also reduce recent trade count and 30D PnL. Treat them as regime-filter
+candidates, not as the promoted rule yet.
+
+The cleanest P0 variant is `ST5_50` as a long-only filter. The long+short
+ST-aligned variant improves full-history PnL/DD but currently fails recent 30D
+quality, so it remains exploratory.
 
 ## Promotion Gaps
 
