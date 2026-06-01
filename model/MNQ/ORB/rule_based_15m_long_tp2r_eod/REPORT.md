@@ -5,9 +5,11 @@ Tanggal laporan: **2026-06-01**
 
 Model / strategy ID: `rule_based_15m_long_tp2r_eod`
 
-Objective: **Topstep 50K research baseline** - mencari apakah breakout MNQ
-setelah 15 menit pertama New York open punya positive expectancy yang cukup
-untuk menjadi kandidat forward test.
+Objective: **Topstep 50K research baseline and regime-filter comparison** -
+mencari apakah breakout MNQ setelah 15 menit pertama New York open punya
+positive expectancy yang cukup untuk menjadi kandidat forward test, lalu
+menilai apakah SuperTrend sederhana dapat memperbaiki drawdown tanpa merusak
+recent performance.
 
 Audience: trader futures, evaluator internal strategi MNQ, dan pembanding untuk
 overlay machine learning.
@@ -16,8 +18,9 @@ overlay machine learning.
 
 ## 1. Ringkasan Eksekutif
 
-Laporan ini mengevaluasi strategi MNQ ORB v1 dari sudut pandang **baseline
-rule-based**, bukan machine learning.
+Laporan ini mengevaluasi strategi MNQ ORB v1 sebagai **rule-based research
+package**. Baseline long-only tetap menjadi control, tetapi report ini juga
+memuat comparison terhadap regime filter SuperTrend dan eksplorasi long+short.
 
 Aturan yang diuji sederhana: ambil posisi long setelah candle M1 pertama close
 di atas high opening range 15 menit, entry pada open M1 berikutnya, lalu exit
@@ -27,20 +30,43 @@ loss; OR low hanya menjadi referensi sizing.
 | Area | Hasil |
 | --- | ---: |
 | Periode sinyal | 2019-05-06 - 2026-05-26 |
-| Total trade | 1,296 |
-| Win rate | 56.48% |
-| Net PnL | $33,091 |
-| Max drawdown | -$12,124 |
-| Profit factor | 1.12 |
-| Daily Sharpe | 0.50 |
-| Daily Sortino | 0.64 |
-| 30D terakhir | 18 trade, $3,460 PnL, -$551 max DD |
+| Baseline total trade | 1,296 |
+| Baseline win rate | 56.48% |
+| Baseline net PnL | $33,091 |
+| Baseline max drawdown | -$12,124 |
+| Baseline profit factor | 1.12 |
+| Baseline daily Sharpe / Sortino | 0.50 / 0.64 |
+| Baseline 30D terakhir | 18 trade, $3,460 PnL, -$551 max DD |
 
-**Kesimpulan utama:** baseline ini layak dipertahankan sebagai control strategy
-karena window 30 hari terakhir menarik untuk objektif Topstep. Namun edge
-historis panjangnya masih tipis: PF 1.12 dan Sharpe 0.50. Strategi belum
-layak live tanpa simulasi MLL, consistency, catastrophic guard, dan forward
-test.
+Ringkasan varian utama:
+
+| Variant | Trades | PnL | DD | Ret/DD | Mar 2026 PnL | 30D PnL | Current Use |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Long only, no ST | 1,296 | $33,091 | -$12,124 | 2.73 | -$2,633 | $3,460 | Control baseline |
+| Long only, ST5_50 bullish | 964 | $28,199 | -$8,027 | 3.51 | $102 | $1,918 | P0 candidate |
+| Long+Short, no ST | 1,767 | $26,501 | -$15,294 | 1.73 | -$1,451 | $839 | Rejected as primary |
+| Long+Short, ST5_50 aligned | 1,251 | $36,800 | -$9,099 | 4.04 | $2,336 | -$1,059 | Exploratory only |
+
+Keputusan sementara dari comparison ini:
+
+- Baseline `Long only, no ST` tetap menjadi **control strategy** karena paling
+  mudah diaudit dan 30D terakhir masih paling kuat.
+- `Long only + ST5_50 bullish` menjadi **P0 candidate** untuk regime filter:
+  drawdown full-history dan March 2026 membaik dengan hanya satu rule tambahan.
+- `Long+Short, no ST` tidak dipromosikan karena short side mentah menambah
+  frekuensi tetapi menurunkan kualitas risk-adjusted.
+- `Long+Short + ST5_50 aligned` tetap ditrack sebagai exploratory variant:
+  full-history dan March terlihat bagus, tetapi 30D terakhir negatif.
+
+
+**Kesimpulan utama:** strategi ini belum boleh dibaca sebagai satu final live
+strategy. Baseline membuktikan ada continuation edge, terutama pada 30D
+terakhir, tetapi long-run PF masih tipis dan max drawdown historis terlalu
+besar untuk langsung masuk Topstep live. SuperTrend `ST5_50` memberi perbaikan
+drawdown yang jelas, khususnya pada March 2026, namun menurunkan 30D PnL. Maka
+keputusan institusional saat ini adalah: baseline tetap control, `Long only +
+ST5_50` masuk P0 candidate, long+short ST aligned tetap exploratory, dan semua
+variant perlu Topstep MLL/consistency simulator sebelum forward execution.
 
 ---
 
@@ -49,6 +75,22 @@ test.
 Opening Range Breakout berangkat dari hipotesis bahwa rentang harga pada awal
 sesi New York menyimpan informasi tentang imbalance intraday. Untuk Nasdaq
 futures, tekanan order setelah cash open sering menjadi penentu arah sesi.
+Strategi ini mencari continuation setelah harga keluar dari opening range,
+bukan mean reversion intraday.
+
+### 2.1 Research Problem
+
+Target riset bukan hanya mencari total PnL tertinggi. Untuk konteks Topstep 50K,
+strategi harus menjawab beberapa pertanyaan praktis:
+
+1. Apakah ORB MNQ 15m punya positive expectancy setelah biaya dan slippage?
+2. Apakah edge cukup aktif untuk window evaluasi sekitar 30 hari?
+3. Apakah drawdown masih masuk akal terhadap MLL dan consistency rule?
+4. Apakah filter sederhana dapat mengurangi bulan buruk seperti March 2026
+   tanpa menghapus trade terbaik pada April-May 2026?
+5. Apakah sisi short menambah edge atau hanya menambah noise/frequency?
+
+### 2.2 Why Baseline First
 
 Versi ini sengaja dibuat sederhana:
 
@@ -62,6 +104,42 @@ Tujuannya adalah mendapatkan **baseline bersih**. Jika baseline saja tidak
 punya edge, ML overlay akan mudah menjadi curve fitting. Jika baseline punya
 edge, ML dapat diuji sebagai risk adjuster, bukan sebagai alasan untuk memaksa
 trade.
+
+Baseline long-only juga berfungsi sebagai control: setiap filter, ML model,
+atau long+short extension harus mengalahkan baseline pada risk-adjusted metrics,
+bukan hanya menaikkan satu angka PnL.
+
+### 2.3 Why SuperTrend Was Added To The Audit
+
+March 2026 menunjukkan kelemahan utama baseline: continuation long-only bisa
+terjebak pada regime yang tidak mendukung breakout. SuperTrend diuji sebagai
+regime filter karena:
+
+- Rule-nya eksplisit dan mudah diaudit.
+- Bisa dihitung dari bar yang sudah close, sehingga no-lookahead bisa digate.
+- Mewakili trend state tanpa langsung menjadi model ML.
+- Cocok sebagai risk filter sebelum masuk ke probability sizing.
+
+Audit menghitung ST 5m/15m dengan ATR 5/10/20/50. Kandidat paling sederhana
+yang muncul adalah `ST5_50`: long breakout hanya diambil saat ST5_50 bullish.
+
+### 2.4 Why Long+Short Was Tested
+
+Long+short diuji karena breakout bawah secara teori bisa memberi tambahan
+frequency. Namun hasil awal menunjukkan short mentah tidak otomatis punya edge.
+Ketika short disejajarkan dengan ST5_50 bearish, full-history membaik, tetapi
+recent 30D memburuk. Karena itu long+short belum dipromosikan; ia tetap menjadi
+exploratory branch yang perlu investigasi lanjutan.
+
+### 2.5 Methodology Guardrails
+
+Semua angka dalam report ini harus dibaca dengan guardrail berikut:
+
+- Entry memakai signal close M1, lalu entry di open M1 berikutnya.
+- SuperTrend feature hanya boleh memakai timestamp fitur `<= signal_ts`.
+- Biaya TopstepX MNQ dan slippage sudah masuk.
+- Baseline dan varian ST adalah rule-based, bukan ML.
+- Laporan ini research-only; belum live-ready.
 
 ---
 

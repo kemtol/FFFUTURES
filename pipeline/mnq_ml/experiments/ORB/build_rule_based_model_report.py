@@ -323,6 +323,56 @@ def variant_rows(df: pd.DataFrame) -> str:
     return "\n".join(rows)
 
 
+def executive_variant_rows(df: pd.DataFrame) -> str:
+    decision_map = {
+        "long_only_no_st": "Control baseline",
+        "long_only_st5_50": "P0 candidate",
+        "long_short_no_st": "Rejected as primary",
+        "long_short_st5_50_aligned": "Exploratory only",
+    }
+    rows = []
+    for _, row in df.iterrows():
+        rows.append(
+            "| {label} | {trades:,} | {pnl} | {dd} | {retdd} | {mar_pnl} | {d30_pnl} | {decision} |".format(
+                label=row["label"],
+                trades=int(row["trades"]),
+                pnl=usd(float(row["pnl_usd"])),
+                dd=usd(float(row["max_dd_usd"])),
+                retdd=maybe_num(row["return_dd"]),
+                mar_pnl=usd(float(row["march_2026_pnl_usd"])),
+                d30_pnl=usd(float(row["last_30d_pnl_usd"])),
+                decision=decision_map.get(row["variant_id"], "Review"),
+            )
+        )
+    return "\n".join(rows)
+
+
+def build_executive_variant_snapshot() -> str:
+    variant_df = safe_read_csv(ST_VARIANT_CSV)
+    if variant_df is None:
+        return """SuperTrend variant comparison belum tersedia saat report ini dibuat. Baseline
+tetap menjadi satu-satunya measured strategy di executive summary ini.
+"""
+
+    return f"""Ringkasan varian utama:
+
+| Variant | Trades | PnL | DD | Ret/DD | Mar 2026 PnL | 30D PnL | Current Use |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+{executive_variant_rows(variant_df)}
+
+Keputusan sementara dari comparison ini:
+
+- Baseline `Long only, no ST` tetap menjadi **control strategy** karena paling
+  mudah diaudit dan 30D terakhir masih paling kuat.
+- `Long only + ST5_50 bullish` menjadi **P0 candidate** untuk regime filter:
+  drawdown full-history dan March 2026 membaik dengan hanya satu rule tambahan.
+- `Long+Short, no ST` tidak dipromosikan karena short side mentah menambah
+  frekuensi tetapi menurunkan kualitas risk-adjusted.
+- `Long+Short + ST5_50 aligned` tetap ditrack sebagai exploratory variant:
+  full-history dan March terlihat bagus, tetapi 30D terakhir negatif.
+"""
+
+
 def top_st_filter_rows(df: pd.DataFrame, limit: int = 8) -> str:
     liquid = df[
         (df["candidate"] != "BASELINE")
@@ -500,6 +550,7 @@ def build_report(events: pd.DataFrame, summary: dict, mc: dict) -> str:
         for window in window_order
     )
     supertrend_section = build_supertrend_section()
+    executive_variant_snapshot = build_executive_variant_snapshot()
 
     created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -510,9 +561,11 @@ Tanggal laporan: **{created_at[:10]}**
 
 Model / strategy ID: `rule_based_15m_long_tp2r_eod`
 
-Objective: **Topstep 50K research baseline** - mencari apakah breakout MNQ
-setelah 15 menit pertama New York open punya positive expectancy yang cukup
-untuk menjadi kandidat forward test.
+Objective: **Topstep 50K research baseline and regime-filter comparison** -
+mencari apakah breakout MNQ setelah 15 menit pertama New York open punya
+positive expectancy yang cukup untuk menjadi kandidat forward test, lalu
+menilai apakah SuperTrend sederhana dapat memperbaiki drawdown tanpa merusak
+recent performance.
 
 Audience: trader futures, evaluator internal strategi MNQ, dan pembanding untuk
 overlay machine learning.
@@ -521,8 +574,9 @@ overlay machine learning.
 
 ## 1. Ringkasan Eksekutif
 
-Laporan ini mengevaluasi strategi MNQ ORB v1 dari sudut pandang **baseline
-rule-based**, bukan machine learning.
+Laporan ini mengevaluasi strategi MNQ ORB v1 sebagai **rule-based research
+package**. Baseline long-only tetap menjadi control, tetapi report ini juga
+memuat comparison terhadap regime filter SuperTrend dan eksplorasi long+short.
 
 Aturan yang diuji sederhana: ambil posisi long setelah candle M1 pertama close
 di atas high opening range 15 menit, entry pada open M1 berikutnya, lalu exit
@@ -532,20 +586,24 @@ loss; OR low hanya menjadi referensi sizing.
 | Area | Hasil |
 | --- | ---: |
 | Periode sinyal | {signal["min_signal_ts"][:10]} - {signal["max_signal_ts"][:10]} |
-| Total trade | {int(perf["trades"]):,} |
-| Win rate | {pct(perf["win_rate"])} |
-| Net PnL | {usd(perf["total_pnl_usd"])} |
-| Max drawdown | {usd(perf["max_dd_usd"])} |
-| Profit factor | {perf["profit_factor"]:.2f} |
-| Daily Sharpe | {quality["daily_sharpe_annualized"]:.2f} |
-| Daily Sortino | {quality["daily_sortino_annualized"]:.2f} |
-| 30D terakhir | {int(windows["30D"]["trades"])} trade, {usd(windows["30D"]["pnl_usd"])} PnL, {usd(windows["30D"]["max_dd_usd"])} max DD |
+| Baseline total trade | {int(perf["trades"]):,} |
+| Baseline win rate | {pct(perf["win_rate"])} |
+| Baseline net PnL | {usd(perf["total_pnl_usd"])} |
+| Baseline max drawdown | {usd(perf["max_dd_usd"])} |
+| Baseline profit factor | {perf["profit_factor"]:.2f} |
+| Baseline daily Sharpe / Sortino | {quality["daily_sharpe_annualized"]:.2f} / {quality["daily_sortino_annualized"]:.2f} |
+| Baseline 30D terakhir | {int(windows["30D"]["trades"])} trade, {usd(windows["30D"]["pnl_usd"])} PnL, {usd(windows["30D"]["max_dd_usd"])} max DD |
 
-**Kesimpulan utama:** baseline ini layak dipertahankan sebagai control strategy
-karena window 30 hari terakhir menarik untuk objektif Topstep. Namun edge
-historis panjangnya masih tipis: PF 1.12 dan Sharpe 0.50. Strategi belum
-layak live tanpa simulasi MLL, consistency, catastrophic guard, dan forward
-test.
+{executive_variant_snapshot}
+
+**Kesimpulan utama:** strategi ini belum boleh dibaca sebagai satu final live
+strategy. Baseline membuktikan ada continuation edge, terutama pada 30D
+terakhir, tetapi long-run PF masih tipis dan max drawdown historis terlalu
+besar untuk langsung masuk Topstep live. SuperTrend `ST5_50` memberi perbaikan
+drawdown yang jelas, khususnya pada March 2026, namun menurunkan 30D PnL. Maka
+keputusan institusional saat ini adalah: baseline tetap control, `Long only +
+ST5_50` masuk P0 candidate, long+short ST aligned tetap exploratory, dan semua
+variant perlu Topstep MLL/consistency simulator sebelum forward execution.
 
 ---
 
@@ -554,6 +612,22 @@ test.
 Opening Range Breakout berangkat dari hipotesis bahwa rentang harga pada awal
 sesi New York menyimpan informasi tentang imbalance intraday. Untuk Nasdaq
 futures, tekanan order setelah cash open sering menjadi penentu arah sesi.
+Strategi ini mencari continuation setelah harga keluar dari opening range,
+bukan mean reversion intraday.
+
+### 2.1 Research Problem
+
+Target riset bukan hanya mencari total PnL tertinggi. Untuk konteks Topstep 50K,
+strategi harus menjawab beberapa pertanyaan praktis:
+
+1. Apakah ORB MNQ 15m punya positive expectancy setelah biaya dan slippage?
+2. Apakah edge cukup aktif untuk window evaluasi sekitar 30 hari?
+3. Apakah drawdown masih masuk akal terhadap MLL dan consistency rule?
+4. Apakah filter sederhana dapat mengurangi bulan buruk seperti March 2026
+   tanpa menghapus trade terbaik pada April-May 2026?
+5. Apakah sisi short menambah edge atau hanya menambah noise/frequency?
+
+### 2.2 Why Baseline First
 
 Versi ini sengaja dibuat sederhana:
 
@@ -567,6 +641,42 @@ Tujuannya adalah mendapatkan **baseline bersih**. Jika baseline saja tidak
 punya edge, ML overlay akan mudah menjadi curve fitting. Jika baseline punya
 edge, ML dapat diuji sebagai risk adjuster, bukan sebagai alasan untuk memaksa
 trade.
+
+Baseline long-only juga berfungsi sebagai control: setiap filter, ML model,
+atau long+short extension harus mengalahkan baseline pada risk-adjusted metrics,
+bukan hanya menaikkan satu angka PnL.
+
+### 2.3 Why SuperTrend Was Added To The Audit
+
+March 2026 menunjukkan kelemahan utama baseline: continuation long-only bisa
+terjebak pada regime yang tidak mendukung breakout. SuperTrend diuji sebagai
+regime filter karena:
+
+- Rule-nya eksplisit dan mudah diaudit.
+- Bisa dihitung dari bar yang sudah close, sehingga no-lookahead bisa digate.
+- Mewakili trend state tanpa langsung menjadi model ML.
+- Cocok sebagai risk filter sebelum masuk ke probability sizing.
+
+Audit menghitung ST 5m/15m dengan ATR 5/10/20/50. Kandidat paling sederhana
+yang muncul adalah `ST5_50`: long breakout hanya diambil saat ST5_50 bullish.
+
+### 2.4 Why Long+Short Was Tested
+
+Long+short diuji karena breakout bawah secara teori bisa memberi tambahan
+frequency. Namun hasil awal menunjukkan short mentah tidak otomatis punya edge.
+Ketika short disejajarkan dengan ST5_50 bearish, full-history membaik, tetapi
+recent 30D memburuk. Karena itu long+short belum dipromosikan; ia tetap menjadi
+exploratory branch yang perlu investigasi lanjutan.
+
+### 2.5 Methodology Guardrails
+
+Semua angka dalam report ini harus dibaca dengan guardrail berikut:
+
+- Entry memakai signal close M1, lalu entry di open M1 berikutnya.
+- SuperTrend feature hanya boleh memakai timestamp fitur `<= signal_ts`.
+- Biaya TopstepX MNQ dan slippage sudah masuk.
+- Baseline dan varian ST adalah rule-based, bukan ML.
+- Laporan ini research-only; belum live-ready.
 
 ---
 
