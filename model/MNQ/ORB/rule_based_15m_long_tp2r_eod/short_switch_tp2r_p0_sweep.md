@@ -41,6 +41,30 @@
 | Beats baseline 30D DD | False |
 | Improves March PnL | True |
 
+## Visual Comparison
+
+Visual ini menunjukkan enhancement chain: baseline control, short-switch TP2R lama, lalu kandidat P0 terbaik.
+
+### Equity Curve
+
+![P0 Equity Comparison](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_equity_curve.png)
+
+### Drawdown Curve
+
+![P0 Drawdown Comparison](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_drawdown_curve.png)
+
+### Monthly PnL 2026
+
+![P0 Monthly PnL 2026](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_monthly_pnl_2026.png)
+
+### Rolling Window PnL/DD
+
+![P0 Rolling Windows](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_rolling_windows.png)
+
+### Last 30D Equity
+
+![P0 Last 30D Equity](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_last30_equity.png)
+
 ## Top By Recent 30D PnL
 
 | Variant | Trades | PnL | DD | Ret/DD | Mar PnL | 30D Trades | 30D PnL | 30D DD | Short PnL | Switches |
@@ -110,6 +134,7 @@
 | Best yearly CSV | `model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_yearly.csv` |
 | Best monthly CSV | `model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_monthly.csv` |
 | Full report | `model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_full_report.md` |
+| P0 chart files | `10` files |
 | Manifest | `data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep_manifest.json` |
 
 ## Current Read

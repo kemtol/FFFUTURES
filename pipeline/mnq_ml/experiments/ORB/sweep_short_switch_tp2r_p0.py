@@ -28,6 +28,12 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+import matplotlib
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
+
 from build_short_reversal_switch_comparison import (
     OUTPUT_DIR,
     build_leg,
@@ -48,6 +54,13 @@ BEST_MONTHLY_CSV = "short_switch_tp2r_p0_best_monthly.csv"
 REPORT_MD = "short_switch_tp2r_p0_sweep.md"
 FULL_REPORT_MD = "short_switch_tp2r_p0_full_report.md"
 MANIFEST_JSON = "short_switch_tp2r_p0_sweep_manifest.json"
+CHART_STEMS = [
+    "short_switch_tp2r_p0_equity_curve",
+    "short_switch_tp2r_p0_drawdown_curve",
+    "short_switch_tp2r_p0_monthly_pnl_2026",
+    "short_switch_tp2r_p0_rolling_windows",
+    "short_switch_tp2r_p0_last30_equity",
+]
 
 WINDOW_DAYS = [5, 10, 20, 30, 50, 100, 200]
 SHORT_TP_R = 2.0
@@ -64,6 +77,11 @@ SHORT_RISKS = [250.0, 350.0, 500.0]
 SWITCH_LONG_RISKS = [500.0, 750.0]
 SWITCH_BUFFERS = ["0", "2ticks", "0.25r"]
 SHORT_ENTRY_UNTIL = ["none", "10:30", "11:00"]
+P0_CHART_COLORS = {
+    "long_only_no_st": "#334155",
+    "p0_none_sr500_lr500_buf0_tgnone": "#7c3aed",
+    "p0_st5_20_bearish_sr350_lr750_buf0_tg1030": "#0f766e",
+}
 
 
 @dataclass(frozen=True)
@@ -779,6 +797,210 @@ def pct(value: Any) -> str:
     return f"{float(value):.2%}"
 
 
+def raw_url(path: str) -> str:
+    return (
+        "https://raw.githubusercontent.com/kemtol/FFFUTURES/main/"
+        f"model/MNQ/ORB/rule_based_15m_long_tp2r_eod/{path}"
+    )
+
+
+def clean_svg(path: Path) -> None:
+    text = path.read_text()
+    path.write_text("\n".join(line.rstrip() for line in text.splitlines()) + "\n")
+
+
+def save_fig(fig, chart_dir: Path, stem: str) -> list[str]:
+    chart_dir.mkdir(parents=True, exist_ok=True)
+    svg = chart_dir / f"{stem}.svg"
+    png = chart_dir / f"{stem}.png"
+    fig.savefig(svg)
+    fig.savefig(png, dpi=150)
+    clean_svg(svg)
+    return [str(svg.relative_to(project_path("."))), str(png.relative_to(project_path(".")))]
+
+
+def style_axis(ax, title: str, ylabel: str) -> None:
+    ax.set_title(title, fontsize=12, weight="bold")
+    ax.set_ylabel(ylabel)
+    ax.grid(True, alpha=0.25)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+
+def normalize_chart_events(events: pd.DataFrame, variant_id: str, label: str) -> pd.DataFrame:
+    out = events.copy()
+    for col in ["signal_ts", "entry_ts", "exit_ts"]:
+        if col in out:
+            out[col] = pd.to_datetime(out[col], utc=True)
+    out["ny_date"] = pd.to_datetime(out["ny_date"])
+    out["variant_id"] = variant_id
+    out["variant_label"] = label
+    out["pnl_net_usd"] = out["pnl_net_usd"].astype(float)
+    return out.sort_values("signal_ts").reset_index(drop=True)
+
+
+def chart_drawdown(pnl: pd.Series) -> pd.Series:
+    equity = pnl.astype(float).cumsum().reset_index(drop=True)
+    peak = pd.concat([pd.Series([0.0]), equity], ignore_index=True).cummax().iloc[1:].reset_index(drop=True)
+    return equity - peak
+
+
+def plot_p0_equity(frames: list[pd.DataFrame], chart_dir: Path) -> list[str]:
+    fig, ax = plt.subplots(figsize=(11.5, 5.2))
+    for frame in frames:
+        variant_id = frame["variant_id"].iloc[0]
+        equity = frame["pnl_net_usd"].cumsum()
+        ax.plot(
+            frame["signal_ts"],
+            equity,
+            label=frame["variant_label"].iloc[0],
+            color=P0_CHART_COLORS.get(variant_id),
+            linewidth=1.7,
+        )
+    ax.axhline(0, color="#334155", linewidth=0.8, alpha=0.45)
+    style_axis(ax, "NASDAQ ORB Enhancement 3: P0 Equity Comparison", "Cumulative PnL ($)")
+    ax.legend(frameon=False, fontsize=8)
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    files = save_fig(fig, chart_dir, "short_switch_tp2r_p0_equity_curve")
+    plt.close(fig)
+    return files
+
+
+def plot_p0_drawdown(frames: list[pd.DataFrame], chart_dir: Path) -> list[str]:
+    fig, ax = plt.subplots(figsize=(11.5, 5.2))
+    for frame in frames:
+        variant_id = frame["variant_id"].iloc[0]
+        dd = chart_drawdown(frame["pnl_net_usd"])
+        ax.plot(
+            frame["signal_ts"],
+            dd,
+            label=frame["variant_label"].iloc[0],
+            color=P0_CHART_COLORS.get(variant_id),
+            linewidth=1.5,
+        )
+    ax.axhline(0, color="#334155", linewidth=0.8, alpha=0.45)
+    style_axis(ax, "NASDAQ ORB Enhancement 3: P0 Drawdown Comparison", "Drawdown ($)")
+    ax.legend(frameon=False, fontsize=8)
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    files = save_fig(fig, chart_dir, "short_switch_tp2r_p0_drawdown_curve")
+    plt.close(fig)
+    return files
+
+
+def plot_p0_monthly_2026(frames: list[pd.DataFrame], chart_dir: Path) -> list[str]:
+    months = pd.period_range("2026-01", "2026-05", freq="M").astype(str).tolist()
+    x = np.arange(len(months))
+    width = 0.24
+    fig, ax = plt.subplots(figsize=(11.5, 5.2))
+    for i, frame in enumerate(frames):
+        variant_id = frame["variant_id"].iloc[0]
+        monthly = (
+            frame.assign(month=frame["ny_date"].dt.to_period("M").astype(str))
+            .groupby("month")["pnl_net_usd"]
+            .sum()
+            .reindex(months, fill_value=0.0)
+        )
+        ax.bar(
+            x + (i - 1) * width,
+            monthly.values,
+            width=width,
+            label=frame["variant_label"].iloc[0],
+            color=P0_CHART_COLORS.get(variant_id),
+            alpha=0.88,
+        )
+    ax.axhline(0, color="#334155", linewidth=0.8)
+    ax.set_xticks(x)
+    ax.set_xticklabels(months)
+    style_axis(ax, "NASDAQ ORB Enhancement 3: Monthly PnL 2026", "Monthly PnL ($)")
+    ax.legend(frameon=False, fontsize=8)
+    fig.tight_layout()
+    files = save_fig(fig, chart_dir, "short_switch_tp2r_p0_monthly_pnl_2026")
+    plt.close(fig)
+    return files
+
+
+def plot_p0_rolling(summary: pd.DataFrame, chart_dir: Path, best_variant_id: str) -> list[str]:
+    windows = WINDOW_DAYS
+    plot_ids = ["long_only_no_st", "p0_none_sr500_lr500_buf0_tgnone", best_variant_id]
+    labels = {
+        "long_only_no_st": "Long only baseline",
+        "p0_none_sr500_lr500_buf0_tgnone": "Existing short-switch TP2R",
+        best_variant_id: "Best P0 enhancement",
+    }
+    fig, axes = plt.subplots(2, 1, figsize=(11.5, 7.2), sharex=True)
+    for variant_id in plot_ids:
+        row = summary[summary["variant_id"].eq(variant_id)]
+        if row.empty:
+            continue
+        row = row.iloc[0]
+        pnls = [row[f"last_{days}d_pnl_usd"] for days in windows]
+        dds = [row[f"last_{days}d_max_dd_usd"] for days in windows]
+        axes[0].plot(windows, pnls, marker="o", label=labels[variant_id], color=P0_CHART_COLORS.get(variant_id))
+        axes[1].plot(windows, dds, marker="o", label=labels[variant_id], color=P0_CHART_COLORS.get(variant_id))
+    axes[0].axhline(0, color="#334155", linewidth=0.8, alpha=0.45)
+    axes[1].axhline(0, color="#334155", linewidth=0.8, alpha=0.45)
+    style_axis(axes[0], "Rolling Window PnL", "PnL ($)")
+    style_axis(axes[1], "Rolling Window Max Drawdown", "Drawdown ($)")
+    axes[1].set_xlabel("Lookback days")
+    axes[0].legend(frameon=False, fontsize=8, ncol=3)
+    fig.tight_layout()
+    files = save_fig(fig, chart_dir, "short_switch_tp2r_p0_rolling_windows")
+    plt.close(fig)
+    return files
+
+
+def plot_p0_last30(frames: list[pd.DataFrame], anchor: pd.Timestamp, chart_dir: Path) -> list[str]:
+    fig, ax = plt.subplots(figsize=(11.5, 5.2))
+    for frame in frames:
+        window = frame[(frame["signal_ts"] > anchor - pd.Timedelta(days=30)) & (frame["signal_ts"] <= anchor)]
+        if window.empty:
+            continue
+        variant_id = frame["variant_id"].iloc[0]
+        equity = window["pnl_net_usd"].astype(float).cumsum()
+        ax.plot(
+            window["signal_ts"],
+            equity,
+            marker="o",
+            label=frame["variant_label"].iloc[0],
+            color=P0_CHART_COLORS.get(variant_id),
+            linewidth=1.5,
+        )
+    ax.axhline(0, color="#334155", linewidth=0.8, alpha=0.45)
+    style_axis(ax, "NASDAQ ORB Enhancement 3: Last 30D Equity", "30D cumulative PnL ($)")
+    ax.legend(frameon=False, fontsize=8)
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    files = save_fig(fig, chart_dir, "short_switch_tp2r_p0_last30_equity")
+    plt.close(fig)
+    return files
+
+
+def save_p0_charts(
+    *,
+    baseline: pd.DataFrame,
+    existing: pd.DataFrame,
+    best_events: pd.DataFrame,
+    summary: pd.DataFrame,
+    anchor: pd.Timestamp,
+    chart_dir: Path,
+    best_variant_id: str,
+) -> list[str]:
+    frames = [
+        normalize_chart_events(baseline, "long_only_no_st", "Long only baseline"),
+        normalize_chart_events(existing, "p0_none_sr500_lr500_buf0_tgnone", "Existing short-switch TP2R"),
+        normalize_chart_events(best_events, best_variant_id, "Best P0 enhancement"),
+    ]
+    outputs = []
+    outputs += plot_p0_equity(frames, chart_dir)
+    outputs += plot_p0_drawdown(frames, chart_dir)
+    outputs += plot_p0_monthly_2026(frames, chart_dir)
+    outputs += plot_p0_rolling(summary, chart_dir, best_variant_id)
+    outputs += plot_p0_last30(frames, anchor, chart_dir)
+    return outputs
+
+
 def render_table(df: pd.DataFrame, limit: int = 12) -> str:
     cols = [
         "variant_id",
@@ -953,6 +1175,30 @@ def write_full_report(
             switches=int(ytd["switch_count"]),
         ),
         "",
+        "## Visual Comparison",
+        "",
+        "Visual ini membandingkan baseline, short-switch TP2R lama, dan Best P0 enhancement.",
+        "",
+        "### Equity Curve",
+        "",
+        f"![P0 Equity Comparison]({raw_url('charts/short_switch_tp2r_p0_equity_curve.png')})",
+        "",
+        "### Drawdown Curve",
+        "",
+        f"![P0 Drawdown Comparison]({raw_url('charts/short_switch_tp2r_p0_drawdown_curve.png')})",
+        "",
+        "### Monthly PnL 2026",
+        "",
+        f"![P0 Monthly PnL 2026]({raw_url('charts/short_switch_tp2r_p0_monthly_pnl_2026.png')})",
+        "",
+        "### Rolling Window PnL/DD",
+        "",
+        f"![P0 Rolling Windows]({raw_url('charts/short_switch_tp2r_p0_rolling_windows.png')})",
+        "",
+        "### Last 30D Equity",
+        "",
+        f"![P0 Last 30D Equity]({raw_url('charts/short_switch_tp2r_p0_last30_equity.png')})",
+        "",
         "## Yearly",
         "",
         render_period_table(yearly, "year"),
@@ -982,6 +1228,7 @@ def write_full_report(
         f"| Events CSV | `{manifest['artifacts']['best_events_csv']}` |",
         f"| Legs CSV | `{manifest['artifacts']['best_legs_csv']}` |",
         f"| Sweep report | `{manifest['artifacts']['report']}` |",
+        f"| P0 chart files | `{len(manifest['artifacts'].get('charts', []))}` files |",
         "",
         "## Notes",
         "",
@@ -1089,6 +1336,30 @@ def write_report(path: Path, summary: pd.DataFrame, best: pd.Series, manifest: d
             f"| Beats baseline 30D DD | {bool(best['beats_baseline_30d_dd'])} |",
             f"| Improves March PnL | {bool(best['improves_march_pnl'])} |",
             "",
+            "## Visual Comparison",
+            "",
+            "Visual ini menunjukkan enhancement chain: baseline control, short-switch TP2R lama, lalu kandidat P0 terbaik.",
+            "",
+            "### Equity Curve",
+            "",
+            f"![P0 Equity Comparison]({raw_url('charts/short_switch_tp2r_p0_equity_curve.png')})",
+            "",
+            "### Drawdown Curve",
+            "",
+            f"![P0 Drawdown Comparison]({raw_url('charts/short_switch_tp2r_p0_drawdown_curve.png')})",
+            "",
+            "### Monthly PnL 2026",
+            "",
+            f"![P0 Monthly PnL 2026]({raw_url('charts/short_switch_tp2r_p0_monthly_pnl_2026.png')})",
+            "",
+            "### Rolling Window PnL/DD",
+            "",
+            f"![P0 Rolling Windows]({raw_url('charts/short_switch_tp2r_p0_rolling_windows.png')})",
+            "",
+            "### Last 30D Equity",
+            "",
+            f"![P0 Last 30D Equity]({raw_url('charts/short_switch_tp2r_p0_last30_equity.png')})",
+            "",
             "## Top By Recent 30D PnL",
             "",
             render_table(top_recent),
@@ -1119,6 +1390,7 @@ def write_report(path: Path, summary: pd.DataFrame, best: pd.Series, manifest: d
             f"| Best yearly CSV | `{manifest['artifacts']['best_yearly_csv']}` |",
             f"| Best monthly CSV | `{manifest['artifacts']['best_monthly_csv']}` |",
             f"| Full report | `{manifest['artifacts']['full_report']}` |",
+            f"| P0 chart files | `{len(manifest['artifacts'].get('charts', []))}` files |",
             f"| Manifest | `{manifest['artifacts']['manifest']}` |",
             "",
             "## Current Read",
@@ -1155,6 +1427,7 @@ def main() -> None:
     best_legs_csv = model_dir / BEST_LEGS_CSV
     best_yearly_csv = model_dir / BEST_YEARLY_CSV
     best_monthly_csv = model_dir / BEST_MONTHLY_CSV
+    chart_dir = model_dir / "charts"
     report_md = model_dir / REPORT_MD
     full_report_md = model_dir / FULL_REPORT_MD
     manifest_path = data_dir / MANIFEST_JSON
@@ -1246,6 +1519,8 @@ def main() -> None:
         str(best["short_entry_until"]),
     )
     best_events, best_legs, _ = simulate_variant(packages, cfg, st_lookup, best_spec, args.orb_minutes)
+    existing_spec = VariantSpec("none", 500.0, 500.0, "0", "none")
+    existing_events, _, _ = simulate_variant(packages, cfg, st_lookup, existing_spec, args.orb_minutes)
     best_yearly, best_monthly = build_best_period_reports(best_events)
 
     model_dir.mkdir(parents=True, exist_ok=True)
@@ -1256,6 +1531,15 @@ def main() -> None:
     best_legs.to_csv(best_legs_csv, index=False)
     best_yearly.to_csv(best_yearly_csv, index=False)
     best_monthly.to_csv(best_monthly_csv, index=False)
+    chart_outputs = save_p0_charts(
+        baseline=baseline,
+        existing=existing_events,
+        best_events=best_events,
+        summary=summary,
+        anchor=anchor,
+        chart_dir=chart_dir,
+        best_variant_id=str(best["variant_id"]),
+    )
 
     manifest = {
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -1292,6 +1576,7 @@ def main() -> None:
             "best_legs_csv": str(best_legs_csv.relative_to(project_path("."))),
             "best_yearly_csv": str(best_yearly_csv.relative_to(project_path("."))),
             "best_monthly_csv": str(best_monthly_csv.relative_to(project_path("."))),
+            "charts": chart_outputs,
             "report": str(report_md.relative_to(project_path("."))),
             "full_report": str(full_report_md.relative_to(project_path("."))),
             "manifest": str(manifest_path.relative_to(project_path("."))),
@@ -1307,6 +1592,7 @@ def main() -> None:
     print(f"Wrote {best_legs_csv}")
     print(f"Wrote {best_yearly_csv}")
     print(f"Wrote {best_monthly_csv}")
+    print(f"Wrote {len(chart_outputs)} P0 chart files")
     print(f"Wrote {report_md}")
     print(f"Wrote {full_report_md}")
     print(f"Wrote {manifest_path}")

@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-06-04T23:33:26+00:00",
+  "created_at": "2026-06-04T23:52:23+00:00",
   "outputs": {
     "charts": [
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/equity_curve.svg",
@@ -30,6 +30,16 @@
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_reversal_switch_drawdown_curve.png",
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_reversal_switch_last30_equity.svg",
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_reversal_switch_last30_equity.png",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_equity_curve.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_equity_curve.png",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_drawdown_curve.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_drawdown_curve.png",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_monthly_pnl_2026.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_monthly_pnl_2026.png",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_rolling_windows.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_rolling_windows.png",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_last30_equity.svg",
+      "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_last30_equity.png",
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_30d.svg",
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_30d.png",
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_final_pnl_cdf_30d.svg",

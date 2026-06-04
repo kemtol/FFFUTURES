@@ -22,6 +22,30 @@
 | 2019-05-06 to 2026-05-26 | 1,660 | $42,946 | $-12,792 | 3.36 | 58.07% | $26 | $34,267 | $8,678 | $5,266 | 272 |
 | YTD 2026 | 83 | $10,065 | $-3,059 | 3.29 | 67.47% | $121 | $8,389 | $1,677 | $4,932 | 11 |
 
+## Visual Comparison
+
+Visual ini membandingkan baseline, short-switch TP2R lama, dan Best P0 enhancement.
+
+### Equity Curve
+
+![P0 Equity Comparison](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_equity_curve.png)
+
+### Drawdown Curve
+
+![P0 Drawdown Comparison](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_drawdown_curve.png)
+
+### Monthly PnL 2026
+
+![P0 Monthly PnL 2026](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_monthly_pnl_2026.png)
+
+### Rolling Window PnL/DD
+
+![P0 Rolling Windows](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_rolling_windows.png)
+
+### Last 30D Equity
+
+![P0 Last 30D Equity](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_switch_tp2r_p0_last30_equity.png)
+
 ## Yearly
 
 | Year | Trades | PnL | DD | Ret/DD | Win Rate | Avg | Long PnL | Short PnL | Switch Long PnL | Switches |
@@ -174,6 +198,7 @@
 | Events CSV | `model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_events.csv` |
 | Legs CSV | `model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_legs.csv` |
 | Sweep report | `model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep.md` |
+| P0 chart files | `10` files |
 
 ## Notes
 

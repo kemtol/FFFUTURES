@@ -39,6 +39,13 @@ SHORT_SWITCH_P0_BEST_LEGS = MODEL_DIR / "short_switch_tp2r_p0_best_legs.csv"
 SHORT_SWITCH_P0_BEST_YEARLY = MODEL_DIR / "short_switch_tp2r_p0_best_yearly.csv"
 SHORT_SWITCH_P0_BEST_MONTHLY = MODEL_DIR / "short_switch_tp2r_p0_best_monthly.csv"
 SHORT_SWITCH_P0_MANIFEST = DATA_DIR / "short_switch_tp2r_p0_sweep_manifest.json"
+SHORT_SWITCH_P0_CHART_STEMS = [
+    "short_switch_tp2r_p0_equity_curve",
+    "short_switch_tp2r_p0_drawdown_curve",
+    "short_switch_tp2r_p0_monthly_pnl_2026",
+    "short_switch_tp2r_p0_rolling_windows",
+    "short_switch_tp2r_p0_last30_equity",
+]
 PACKAGE_GATE = DATA_DIR / "package_gate.json"
 L0_1M_MANIFEST = L0_DIR / "MNQ_1m_duckdb_manifest.json"
 L0_1M_YF_MANIFEST = L0_DIR / "MNQ_1m_yfinance_append_manifest.json"
@@ -557,19 +564,41 @@ def build_executive_variant_snapshot() -> str:
         return """SuperTrend variant comparison belum tersedia saat report ini dibuat. Baseline
 tetap menjadi satu-satunya measured strategy di executive summary ini.
 """
+    p0_df = safe_read_csv(SHORT_SWITCH_P0_CSV)
+    rows = executive_variant_rows(variant_df)
+    p0_row_text = ""
+    if p0_df is not None:
+        variants = p0_df[~p0_df["variant_id"].eq("long_only_no_st")].copy()
+        if not variants.empty:
+            best = variants.sort_values(
+                ["p0_recent_score", "last_30d_pnl_usd", "last_30d_max_dd_usd"],
+                ascending=[False, False, False],
+            ).iloc[0]
+            p0_row_text = "\n| {label} | {trades:,} | {pnl} | {dd} | {retdd} | {mar_pnl} | {d30_pnl} | Enhancement 3 / P1 candidate |".format(
+                label="Best P0 short-switch",
+                trades=int(best["trades"]),
+                pnl=usd(float(best["pnl_usd"])),
+                dd=usd(float(best["max_dd_usd"])),
+                retdd=maybe_num(best["return_dd"]),
+                mar_pnl=usd(float(best["march_2026_pnl_usd"])),
+                d30_pnl=usd(float(best["last_30d_pnl_usd"])),
+            )
 
     return f"""Ringkasan varian utama:
 
 | Variant | Trades | PnL | DD | Ret/DD | Mar 2026 PnL | 30D PnL | Current Use |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-{executive_variant_rows(variant_df)}
+{rows}{p0_row_text}
 
 Keputusan sementara dari comparison ini:
 
 - Baseline `Long only, no ST` tetap menjadi **control strategy** karena paling
-  mudah diaudit dan 30D terakhir masih paling kuat.
-- `Long only + ST5_50 bullish` menjadi **P0 candidate** untuk regime filter:
+  mudah diaudit dan menjadi pembanding wajib.
+- `Long only + ST5_50 bullish` menjadi **P0 regime-filter candidate**:
   drawdown full-history dan March 2026 membaik dengan hanya satu rule tambahan.
+- `Best P0 short-switch` adalah **Enhancement 3** yang saat ini paling kuat
+  pada Topstep-style recent window: 30D PnL dan March 2026 membaik terhadap
+  baseline, tetapi full-history DD sedikit lebih berat.
 - `Long+Short, no ST` tidak dipromosikan karena short side mentah menambah
   frekuensi tetapi menurunkan kualitas risk-adjusted.
 - `Long+Short + ST5_50 aligned` tetap ditrack sebagai exploratory variant:
@@ -613,6 +642,25 @@ def cross_variant_metric_rows() -> str:
             rows.append(
                 "| {label} | Watchlist | {trades:,} | {pf:.2f} | {pnl} | {dd} | {mar_pnl} | {d30_pnl} |".format(
                     label=row["label"],
+                    trades=int(row["trades"]),
+                    pf=float(row["profit_factor"]),
+                    pnl=usd(float(row["pnl_usd"])),
+                    dd=usd(float(row["max_dd_usd"])),
+                    mar_pnl=usd(float(row["march_2026_pnl_usd"])),
+                    d30_pnl=usd(float(row["last_30d_pnl_usd"])),
+                )
+            )
+
+    p0_df = safe_read_csv(SHORT_SWITCH_P0_CSV)
+    if p0_df is not None:
+        variants = p0_df[~p0_df["variant_id"].eq("long_only_no_st")].copy()
+        if not variants.empty:
+            row = variants.sort_values(
+                ["p0_recent_score", "last_30d_pnl_usd", "last_30d_max_dd_usd"],
+                ascending=[False, False, False],
+            ).iloc[0]
+            rows.append(
+                "| Best P0 short-switch | Enhancement 3 | {trades:,} | {pf:.2f} | {pnl} | {dd} | {mar_pnl} | {d30_pnl} |".format(
                     trades=int(row["trades"]),
                     pf=float(row["profit_factor"]),
                     pnl=usd(float(row["pnl_usd"])),
@@ -782,6 +830,31 @@ boleh mengambil later long breakout.
 | Short time guard grid | `{guard_values}` |
 | Lookahead violations | {lookahead_total:,} |
 | Max ST feature lag | {maybe_num(max_lag)} minutes |
+
+#### Visual Comparison Enhancement 3
+
+Gambar ini membandingkan tiga state utama: baseline control, short-switch TP2R
+lama, dan best P0 enhancement.
+
+##### Equity Curve
+
+![P0 Equity Comparison]({raw("charts/short_switch_tp2r_p0_equity_curve.png")})
+
+##### Drawdown Curve
+
+![P0 Drawdown Comparison]({raw("charts/short_switch_tp2r_p0_drawdown_curve.png")})
+
+##### Monthly PnL 2026
+
+![P0 Monthly PnL 2026]({raw("charts/short_switch_tp2r_p0_monthly_pnl_2026.png")})
+
+##### Rolling Window PnL/DD
+
+![P0 Rolling Windows]({raw("charts/short_switch_tp2r_p0_rolling_windows.png")})
+
+##### Last 30D Equity
+
+![P0 Last 30D Equity]({raw("charts/short_switch_tp2r_p0_last30_equity.png")})
 
 | Candidate | Short Filter | Short Risk | Switch Long Risk | Buffer | Trades | PnL | DD | Ret/DD | Mar PnL | 30D Trades | 30D PnL | 30D DD |
 | --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -1086,10 +1159,12 @@ loss; OR low hanya menjadi referensi sizing.
 strategy. Baseline membuktikan ada continuation edge, terutama pada 30D
 terakhir, tetapi long-run PF masih tipis dan max drawdown historis terlalu
 besar untuk langsung masuk Topstep live. SuperTrend `ST5_50` memberi perbaikan
-drawdown yang jelas, khususnya pada March 2026, namun menurunkan 30D PnL. Maka
-keputusan institusional saat ini adalah: baseline tetap control, `Long only +
-ST5_50` masuk P0 candidate, long+short ST aligned tetap exploratory, dan semua
-variant perlu Topstep MLL/consistency simulator sebelum forward execution.
+drawdown yang jelas, khususnya pada March 2026, namun menurunkan 30D PnL.
+Enhancement 3 melalui Best P0 short-switch memperbaiki March 2026 dan 30D
+terakhir terhadap baseline, tetapi full-history DD sedikit lebih berat. Maka
+keputusan institusional saat ini adalah: baseline tetap control, Best P0
+short-switch masuk P1 simulator candidate, ST5_50 menjadi simpler fallback, dan
+semua variant perlu Topstep MLL/consistency simulator sebelum forward execution.
 
 ---
 
@@ -1256,10 +1331,11 @@ baseline sebagai control dan beberapa branch sebagai kandidat riset.
 | Variant | Role | Direction Logic | Regime Filter | Exit Logic | Current Status |
 | --- | --- | --- | --- | --- | --- |
 | Long only, no ST | Control baseline | First M1 close above OR high | None | TP 2R or 15:00 NY | Keep as benchmark |
-| Long only + ST5_50 | P0 candidate | Same as baseline | Require ST5_50 bullish at signal close | TP 2R or 15:00 NY | Best simple regime filter |
+| Long only + ST5_50 | P0 regime-filter candidate | Same as baseline | Require ST5_50 bullish at signal close | TP 2R or 15:00 NY | Best simple regime filter |
 | Long+Short, no ST | Rejected as primary | First breakout either OR high or OR low | None | TP 2R or 15:00 NY | Adds frequency but weak risk-adjusted quality |
 | Long+Short + ST5_50 aligned | Exploratory | Long with bullish ST, short with bearish ST | ST5_50 aligned by side | TP 2R or 15:00 NY | Good March, weak recent 30D |
 | Short switch to long | Research branch | Short if OR low breaks first; switch to long if OR high reclaimed | None in current test | Short TP 1R/1.5R/2R, switch, or EOD | TP 2R best, not promoted |
+| Best P0 short-switch | Enhancement 3 / P1 candidate | Long-first baseline, plus filtered short-switch branch | Short side requires `ST5_20` bearish; short risk $350; switch-long risk $750; guard 10:30 | Short TP 2R, switch to long on OR high reclaim, or EOD | Best recent-window improvement so far; needs Topstep simulator |
 
 ### 4.3 Rule-Based Definition
 
@@ -1270,10 +1346,12 @@ probabilitas yang menentukan trade size, trade/no-trade, atau direction.
 ### 4.4 Current Promotion Hierarchy
 
 1. **Benchmark:** `Long only, no ST`.
-2. **P0 candidate:** `Long only + ST5_50 bullish`.
-3. **Watchlist:** `Short switch to long, short TP 2R`.
-4. **Exploratory only:** `Long+Short + ST5_50 aligned`.
-5. **Not promoted:** `Long+Short, no ST`.
+2. **Enhancement 3 / P1 candidate:** `Best P0 short-switch`
+   (`p0_st5_20_bearish_sr350_lr750_buf0_tg1030`).
+3. **P0 regime-filter candidate:** `Long only + ST5_50 bullish`.
+4. **Watchlist:** `Short switch to long, short TP 2R` sebelum P0 tuning.
+5. **Exploratory only:** `Long+Short + ST5_50 aligned`.
+6. **Not promoted:** `Long+Short, no ST`.
 
 ---
 
@@ -1383,11 +1461,13 @@ section 7.2 agar baseline, ST filter, dan short-switch tidak tercampur.
 
 Reading note:
 
-- Baseline still has the strongest recent 30D PnL.
+- Baseline remains the mandatory control, but Best P0 short-switch now has the
+  strongest recent-window improvement in this package.
 - `Long only + ST5_50` improves full-history drawdown and March 2026, but gives
   up some recent upside.
-- Short-switch TP2R improves full-history PnL, but not enough on March/30D to
-  replace the long-only control.
+- Short-switch TP2R before P0 tuning improved full-history PnL, but did not
+  beat baseline on March/30D. The P0 tuned variant fixes that recent-window
+  weakness, while still requiring Topstep-specific simulator validation.
 
 ---
 
@@ -1486,8 +1566,8 @@ daily PnL historis muncul dalam urutan yang berbeda.
 Kesimpulan Monte Carlo baseline: strategi punya upside untuk mencapai +$3,000
 dalam sebagian path 30D, tetapi risiko drawdown terhadap batas -$2,000 tetap
 perlu diuji lebih ketat dengan simulator Topstep yang memperhitungkan aturan
-akun. Setelah simulator itu ada, baseline, ST5_50, dan short-switch TP2R harus
-dibandingkan ulang dengan metodologi yang sama.
+akun. Setelah simulator itu ada, baseline, ST5_50, short-switch TP2R lama, dan
+Best P0 short-switch harus dibandingkan ulang dengan metodologi yang sama.
 
 ---
 
@@ -1512,9 +1592,10 @@ dipilih sebagai layer operasional terpisah.
 
 Baseline cukup bersih karena hanya memakai OR 15m, long only, TP 2R/time exit,
 dan risk $500. Risiko curve fit naik pada kombinasi multi-SuperTrend dan
-short-switch karena jumlah pilihan bertambah. Karena itu kandidat sederhana
-`ST5_50` diprioritaskan atas kombinasi multi-filter walaupun beberapa kombinasi
-punya return/DD historis lebih tinggi.
+short-switch karena jumlah pilihan bertambah. Best P0 short-switch adalah hasil
+grid 216 varian, sehingga harus naik ke P1 simulator/robustness check sebelum
+dipakai live. `ST5_50` tetap dipertahankan sebagai fallback sederhana karena
+hanya menambah satu filter.
 
 ### 14.4 Risiko Eksekusi Live
 
@@ -1534,8 +1615,9 @@ Live version harus memastikan:
 | Area | Rekomendasi |
 | --- | --- |
 | Baseline control | Pertahankan `Long only, no ST` sebagai benchmark wajib |
-| P0 regime filter | Bawa `Long only + ST5_50 bullish` ke Topstep simulator |
-| Short branch | Track `Short switch to long, short TP 2R`, tetapi jangan promosi dulu |
+| Enhancement 3 | Bawa `p0_st5_20_bearish_sr350_lr750_buf0_tg1030` ke P1 Topstep simulator |
+| P0 regime filter | Tetap track `Long only + ST5_50 bullish` sebagai simpler fallback |
+| Short branch | Short-switch TP2R lama tetap baseline pembanding untuk P0 tuned branch |
 | Live trading | Belum live-ready |
 | Forward test | Baru layak paper/forward-test setelah simulator MLL/consistency selesai |
 | ML overlay | Hanya boleh menjadi risk adjuster, bukan filter trade utama dulu |
@@ -1545,8 +1627,8 @@ Live version harus memastikan:
 Rekomendasi utama:
 
 1. Kunci baseline sebagai control, bukan final live strategy.
-2. Bandingkan baseline vs `Long only + ST5_50` vs `Short switch TP2R` memakai
-   Topstep-specific simulator yang sama.
+2. Bandingkan baseline vs `Long only + ST5_50` vs `Short switch TP2R` vs
+   `Best P0 short-switch` memakai Topstep-specific simulator yang sama.
 3. Jangan mengganti baseline dengan ML sebelum ML terbukti memperbaiki
    risk-adjusted return dan sizing decision terhadap control ini.
 4. Prioritas berikutnya adalah simulator: MLL, consistency, first +$3,000 path,
@@ -1560,17 +1642,18 @@ Rekomendasi utama:
 | --- | --- |
 | Strategy family | Rule-based ORB research package |
 | Baseline edge | Ada, tetapi PF masih tipis |
-| P0 candidate | `Long only + ST5_50 bullish` |
-| Watchlist | `Short switch to long, short TP 2R` |
-| 30D Topstep-style potential | Menarik pada baseline, belum cukup tanpa simulator |
+| Enhancement 3 / P1 candidate | `p0_st5_20_bearish_sr350_lr750_buf0_tg1030` |
+| P0 regime-filter candidate | `Long only + ST5_50 bullish` |
+| Watchlist | `Short switch to long, short TP 2R` sebelum P0 tuning |
+| 30D Topstep-style potential | P0 short-switch paling menarik sejauh ini, tetapi belum cukup tanpa simulator |
 | Long-run robustness | Perlu guard, regime review, dan Topstep path sim |
 | Live readiness | Belum |
 | Model package | Siap sebagai institutional-style research report |
 
 Keputusan sementara: **package ini dipertahankan sebagai NASDAQ Micro Futures
-ORB rule-based strategy family v1**. Baseline tetap control, ST5_50 menjadi P0
-candidate, short-switch TP2R menjadi watchlist. Belum ada approval untuk live
-execution.
+ORB rule-based strategy family v1**. Baseline tetap control, Best P0
+short-switch menjadi Enhancement 3 / P1 candidate, ST5_50 menjadi fallback
+regime-filter candidate, dan belum ada approval untuk live execution.
 
 ---
 
@@ -1598,6 +1681,11 @@ execution.
 | `charts/short_reversal_switch_equity_curve.png` | Equity curve varian short-switch-to-long |
 | `charts/short_reversal_switch_drawdown_curve.png` | Drawdown curve varian short-switch-to-long |
 | `charts/short_reversal_switch_last30_equity.png` | Last 30D equity varian short-switch-to-long |
+| `charts/short_switch_tp2r_p0_equity_curve.png` | Equity comparison baseline vs short-switch TP2R lama vs best P0 |
+| `charts/short_switch_tp2r_p0_drawdown_curve.png` | Drawdown comparison baseline vs short-switch TP2R lama vs best P0 |
+| `charts/short_switch_tp2r_p0_monthly_pnl_2026.png` | Monthly PnL 2026 comparison baseline vs short-switch TP2R lama vs best P0 |
+| `charts/short_switch_tp2r_p0_rolling_windows.png` | Rolling PnL/DD comparison baseline vs short-switch TP2R lama vs best P0 |
+| `charts/short_switch_tp2r_p0_last30_equity.png` | Last 30D equity comparison baseline vs short-switch TP2R lama vs best P0 |
 | `monte_carlo/monte_pnl_fan_30d.png` | Baseline-control Monte Carlo fan chart 30D |
 | `monte_carlo/monte_final_pnl_cdf_30d.png` | Baseline-control Monte Carlo final PnL CDF 30D |
 | `monte_carlo/monte_maxdd_hist_30d.png` | Baseline-control Monte Carlo MaxDD histogram 30D |
@@ -1719,6 +1807,16 @@ def main() -> None:
                 rel(CHART_DIR / "short_reversal_switch_drawdown_curve.png"),
                 rel(CHART_DIR / "short_reversal_switch_last30_equity.svg"),
                 rel(CHART_DIR / "short_reversal_switch_last30_equity.png"),
+                rel(CHART_DIR / "short_switch_tp2r_p0_equity_curve.svg"),
+                rel(CHART_DIR / "short_switch_tp2r_p0_equity_curve.png"),
+                rel(CHART_DIR / "short_switch_tp2r_p0_drawdown_curve.svg"),
+                rel(CHART_DIR / "short_switch_tp2r_p0_drawdown_curve.png"),
+                rel(CHART_DIR / "short_switch_tp2r_p0_monthly_pnl_2026.svg"),
+                rel(CHART_DIR / "short_switch_tp2r_p0_monthly_pnl_2026.png"),
+                rel(CHART_DIR / "short_switch_tp2r_p0_rolling_windows.svg"),
+                rel(CHART_DIR / "short_switch_tp2r_p0_rolling_windows.png"),
+                rel(CHART_DIR / "short_switch_tp2r_p0_last30_equity.svg"),
+                rel(CHART_DIR / "short_switch_tp2r_p0_last30_equity.png"),
                 rel(MONTE_DIR / "monte_pnl_fan_30d.svg"),
                 rel(MONTE_DIR / "monte_pnl_fan_30d.png"),
                 rel(MONTE_DIR / "monte_final_pnl_cdf_30d.svg"),
