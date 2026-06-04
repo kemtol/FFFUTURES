@@ -1,0 +1,151 @@
+{
+  "anchor_ts": "2026-05-28T01:53:00+00:00",
+  "artifacts": {
+    "best_events_csv": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_events.csv",
+    "best_legs_csv": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_legs.csv",
+    "best_monthly_csv": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_monthly.csv",
+    "best_yearly_csv": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_yearly.csv",
+    "full_report": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_full_report.md",
+    "manifest": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep_manifest.json",
+    "report": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep.md",
+    "summary_csv": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep.csv",
+    "summary_parquet": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep.parquet"
+  },
+  "best_variant": {
+    "avg_trade_usd": 25.871012048192757,
+    "beats_baseline_30d_dd": false,
+    "beats_baseline_30d_pnl": true,
+    "gross_loss_usd": -366534.19999999995,
+    "gross_profit_usd": 409480.08,
+    "improves_march_pnl": true,
+    "jan_may_2026_max_dd_usd": -3059.079999999998,
+    "jan_may_2026_pnl_usd": 10065.279999999999,
+    "jan_may_2026_trades": 83,
+    "jan_may_2026_win_rate": 0.6746987951807228,
+    "label": "P0 st5_20_bearish, short $350, switch long $750, buffer 0, guard 10:30",
+    "last_100d_dd_delta_vs_baseline": 1026.02,
+    "last_100d_max_dd_usd": -3059.08,
+    "last_100d_pnl_delta_vs_baseline": 3906.9800000000014,
+    "last_100d_pnl_usd": 7942.040000000001,
+    "last_100d_trades": 58,
+    "last_10d_dd_delta_vs_baseline": 222.24,
+    "last_10d_max_dd_usd": 0.0,
+    "last_10d_pnl_delta_vs_baseline": 396.98,
+    "last_10d_pnl_usd": 1292.04,
+    "last_10d_trades": 3,
+    "last_200d_dd_delta_vs_baseline": 0.0,
+    "last_200d_max_dd_usd": -4561.46,
+    "last_200d_pnl_delta_vs_baseline": 4102.539999999997,
+    "last_200d_pnl_usd": 9488.02,
+    "last_200d_trades": 108,
+    "last_20d_dd_delta_vs_baseline": 120.0,
+    "last_20d_max_dd_usd": -102.24000000000001,
+    "last_20d_pnl_delta_vs_baseline": 1128.2799999999997,
+    "last_20d_pnl_usd": 3475.8999999999996,
+    "last_20d_trades": 9,
+    "last_30d_dd_delta_vs_baseline": 0.0,
+    "last_30d_max_dd_usd": -551.48,
+    "last_30d_pnl_delta_vs_baseline": 1236.0599999999995,
+    "last_30d_pnl_usd": 4696.0599999999995,
+    "last_30d_trades": 16,
+    "last_50d_dd_delta_vs_baseline": -150.22000000000025,
+    "last_50d_max_dd_usd": -1011.7000000000003,
+    "last_50d_pnl_delta_vs_baseline": 921.1799999999985,
+    "last_50d_pnl_usd": 6306.439999999999,
+    "last_50d_trades": 29,
+    "last_5d_dd_delta_vs_baseline": 0.0,
+    "last_5d_max_dd_usd": 0.0,
+    "last_5d_pnl_delta_vs_baseline": 0.0,
+    "last_5d_pnl_usd": 100.76,
+    "last_5d_trades": 1,
+    "leg_short_pnl_usd": 8678.479999999994,
+    "leg_switch_long_pnl_usd": 5266.199999999997,
+    "legs": 1932,
+    "long_first_trades": 996,
+    "long_pnl_usd": 34267.39999999999,
+    "march_2026_max_dd_usd": -3059.08,
+    "march_2026_max_dd_usd_delta_vs_baseline": 1026.0199999999995,
+    "march_2026_pnl_usd": -974.7800000000004,
+    "march_2026_pnl_usd_delta_vs_baseline": 1658.279999999999,
+    "march_2026_trades": 18,
+    "march_2026_win_rate": 0.5555555555555556,
+    "max_dd_usd": -12792.159999999998,
+    "max_dd_usd_delta_vs_baseline": -667.7199999999993,
+    "p0_recent_score": 5544.629999999998,
+    "pnl_usd": 42945.879999999976,
+    "pnl_usd_delta_vs_baseline": 9854.799999999988,
+    "profit_factor": 1.1171674566793497,
+    "return_dd": 3.3572031619366847,
+    "short_entry_until": "10:30",
+    "short_filter": "st5_20_bearish",
+    "short_filter_evaluations": 2204,
+    "short_filter_lookahead_violations": 0,
+    "short_filter_max_lag_minutes": 4.0,
+    "short_filter_rejections": 1486,
+    "short_first_trades": 664,
+    "short_pnl_usd": 8678.479999999992,
+    "short_risk_usd": 350.0,
+    "short_time_guard_rejections": 811,
+    "switch_buffer_mode": "0",
+    "switch_count": 272,
+    "switch_long_pnl_usd": 5266.199999999998,
+    "switch_long_risk_usd": 750.0,
+    "trades": 1660,
+    "variant_id": "p0_st5_20_bearish_sr350_lr750_buf0_tg1030",
+    "win_rate": 0.5807228915662651
+  },
+  "created_at": "2026-06-04T23:32:34.011264+00:00",
+  "params": {
+    "long_first_risk_usd": 500.0,
+    "long_tp_r": 2.0,
+    "orb_minutes": 15,
+    "short_entry_until": [
+      "none",
+      "10:30",
+      "11:00"
+    ],
+    "short_filters": [
+      "none",
+      "st5_50_bearish",
+      "st5_20_bearish",
+      "st5_50_and_st15_20_bearish"
+    ],
+    "short_risks": [
+      250.0,
+      350.0,
+      500.0
+    ],
+    "short_tp_r": 2.0,
+    "supertrend_factor": 4.0,
+    "supertrend_requirements": {
+      "none": [],
+      "st5_20_bearish": [
+        "ST5_20"
+      ],
+      "st5_50_and_st15_20_bearish": [
+        "ST5_50",
+        "ST15_20"
+      ],
+      "st5_50_bearish": [
+        "ST5_50"
+      ]
+    },
+    "switch_buffers": [
+      "0",
+      "2ticks",
+      "0.25r"
+    ],
+    "switch_long_risks": [
+      500.0,
+      750.0
+    ]
+  },
+  "rows": {
+    "best_events": 1660,
+    "best_legs": 1932,
+    "best_monthly": 85,
+    "best_yearly": 8,
+    "day_packages": 1784,
+    "summary": 217
+  }
+}

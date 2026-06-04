@@ -63,6 +63,34 @@ Included model-package artifacts:
 | `short_reversal_switch_events.csv` | Sequence-level events for short switch variants |
 | `short_reversal_switch_legs.csv` | Leg-level attribution for short switch variants |
 
+## Data Control Summary
+
+The full control table is in `REPORT.md` section 3. This package is only valid
+if the upstream data gates remain valid.
+
+| Layer | Current Control |
+| --- | --- |
+| L0 bronze M1 | `MNQ_1m.duckdb`: 2,487,923 rows, duplicate timestamps 0, null OHLCV 0, bad OHLC 0 |
+| L0 continuity | `PASS_WITH_GAPS_REQUIRING_L1_QUARANTINE`; gaps are known and must be excluded by quality flags |
+| L1 context | `context.parquet`: audit PASS, duplicate timestamps 0, pre-OR leakage 0, eligible bad-quality rows 0 |
+| L1 daily confluence | audit PASS, 29 prior-day features, feature nulls 0, lookahead violations 0 |
+| L2 baseline events | `events.parquet`: 1,296 rows, required nulls 0, duplicate NY dates 0, `entry_ts > signal_ts` violations 0 |
+| SuperTrend attach | feature timestamp `<= signal_ts`, lookahead violations 0 |
+
+Bronze/L0 failure invalidates the report. A profitable chart is not trusted if
+these controls fail.
+
+Package-specific gate:
+
+```bash
+python3 pipeline/mnq_ml/experiments/ORB/audit_rule_based_package.py
+```
+
+Latest package gate status: `PASS` for 1,296 frozen events, with zero failures.
+The remaining warning is expected: L0 continuity is
+`PASS_WITH_GAPS_REQUIRING_L1_QUARANTINE`, so downstream quality flags must keep
+decisions off bad bars.
+
 ## Strategy Contract
 
 | Field | Value |

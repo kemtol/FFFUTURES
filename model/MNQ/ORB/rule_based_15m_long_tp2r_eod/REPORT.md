@@ -1,7 +1,7 @@
 # Strategi NASDAQ Micro Futures Opening Range Breakout Rule-Based Iterasi v1
 **Evaluasi Baseline 15m Long TP2R/EOD pada kontrak MNQ**
 
-Tanggal laporan: **2026-06-01**
+Tanggal laporan: **2026-06-04**
 
 Model / strategy ID: `rule_based_15m_long_tp2r_eod`
 
@@ -145,13 +145,92 @@ Semua angka dalam report ini harus dibaca dengan guardrail berikut:
 
 ---
 
-## 3. Konteks Strategy Family
+## 3. Data Lineage & Control Gates
+
+Ini bagian paling penting secara governance: **bronze/L0 data salah berarti
+semua angka PnL, drawdown, chart, dan kesimpulan report ini ikut salah**.
+Karena itu report ini harus dibaca dari bawah ke atas: L0 raw integrity,
+L1 feature/context integrity, L2 event integrity, lalu baru performance.
+
+### 3.1 Lineage
+
+```text
+Databento MNQ M1 + yfinance recent append
+  -> data/Level_0_Raw/MNQ_1m.duckdb                 # bronze/raw canonical M1
+  -> data/Level_1_Features/mnq/ORB/context.parquet  # M1 NY-session context + quality flags
+  -> data/Level_2_Datamart/mnq/ORB/sweeps           # ORB grid events
+  -> data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod
+  -> model/MNQ/ORB/rule_based_15m_long_tp2r_eod
+```
+
+Baseline control report ini memakai frozen L2 event package
+`rule_based_15m_long_tp2r_eod/events.parquet`. SuperTrend dan short-switch
+adalah audit/variant layer yang menempel ke baseline/sweep events, bukan data
+source baru.
+
+### 3.2 Gate Summary
+
+| Layer | Artifact | Control Result |
+| --- | --- | --- |
+| Bronze / L0 M1 OHLCV | `data/Level_0_Raw/MNQ_1m.duckdb` | 2,487,923 rows, 2019-05-05 22:03:00 to 2026-05-29 20:59:00; hard integrity PASS; duplicates 0; null OHLCV 0; bad OHLC 0; negative volume 0 |
+| L0 continuity | `data/Level_0_Raw/MNQ_1m_continuity_report.json` | PASS_WITH_GAPS_REQUIRING_L1_QUARANTINE; gaps >60s 5,491; max gap 284,460s; downstream rule: quarantine gap bars, do not train across gaps |
+| Recent yfinance append | `data/Level_0_Raw/MNQ_1m_yfinance_append_manifest.json` | 8,881 appended/replaced rows, 2026-05-20 04:09:00 to 2026-05-29 20:59:00; post-append duplicates 0 |
+| Derived L0 5m/15m | `MNQ_5m.duckdb`, `MNQ_15m.duckdb` | right-labeled, left-closed from M1; 5m rows 498,458, 15m rows 166,200; duplicate timestamps 5m/15m = 0/0 |
+| yfinance timeframe parity | `data/Level_0_Raw/MNQ_yfinance_timeframe_parity_report.json` | PASS; max mismatch rate 0.00%; latest incomplete bars excluded 3 |
+| L1 intraday context | `data/Level_1_Features/mnq/ORB/context.parquet` | PASS; 2,487,265 rows, 18 columns; 2,199 NY days; OR-complete days 1,815; duplicate timestamps 0; bad OHLC rows 0; required hard nulls 0 |
+| L1 ORB leakage guards | `data/Level_1_Features/mnq/ORB/l1_audit.json` | pre-OR rows with OR values 0; eligible rows before OR end 0; eligible bad-quality rows 0; complete OR days wrong bar count 0 |
+| Daily confluence features | `data/Level_1_Features/mnq/ORB/daily_confluence.parquet` | PASS; 2,199 rows, 29 features; feature nulls 0; lookahead violations 0; contract: external daily feature date < MNQ trade date |
+| L2 baseline events | `data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/events.parquet` | 1,296 rows, 38 columns; required nulls 0; duplicate NY dates 0; entry<=signal rows 0; exit<entry rows 0 |
+| Frozen package gate | `data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/package_gate.json` | PASS; events 1,296; failures 0; warnings 2 |
+| SuperTrend feature attach | `supertrend_regime_features.parquet` | lookahead violations 0; variant attach lookahead 0; max feature lag 14.0 minutes |
+
+### 3.3 Feature Dataset Inventory
+
+| Layer | Dataset | Content | Shape | Role |
+| --- | --- | --- | --- | --- |
+| Bronze/L0 raw | `MNQ_1m.duckdb` | OHLCV M1, source symbol, volume | 2,487,923 rows | Raw market bars; if this layer is wrong, all reports are invalid |
+| L1 intraday context | `context.parquet` | OHLCV, NY date/time, `minutes_from_open`, quality flags, OR context | 2,487,265 rows / 18 cols | Research context; sweep recomputes 10/15/20/30m OR only from quality bars |
+| L1 daily confluence | `daily_confluence.parquet` | SPY, QQQ, VIX, TNX, DXY prior-day features | 2,199 rows / 29 features | Not used by this rule-based report, but available for ML overlays with strict D-1 contract |
+| L2 sweep | `sweeps/sweep_events.parquet` | ORB parameter grid events | 159,294 rows | Parent grid for selecting current baseline candidate |
+| L2 baseline package | `rule_based_15m_long_tp2r_eod/events.parquet` | Executed trade events, sizing, cost-adjusted PnL | 1,296 rows / 38 cols | Current benchmark/control strategy |
+| L2 ST feature package | `supertrend_regime_features.parquet` | ST5/ST15 ATR 5/10/20/50 values, dirs, distances, lags | 1,296 rows / 90 feature cols added | Regime-filter audit only; attached with feature timestamp <= signal timestamp |
+
+### 3.4 Lookahead Contract
+
+| Component | Contract |
+| --- | --- |
+| ORB baseline | Signal is M1 candle close; execution is next M1 open, so `entry_ts > signal_ts` is mandatory. |
+| Opening range | OR high/low use only completed bars inside the first N minutes after 09:30 NY. |
+| Intraday quality | Trade entry/exit scans use `bar_data_quality_ok`; bars containing source gaps are excluded from decision scanning. |
+| SuperTrend attach | Feature timestamp must be `<= signal_ts`; current attached lookahead violations = 0. |
+| Daily confluence | External daily features use date `< ny_date`; current daily confluence lookahead violations = 0. |
+| Labels/PnL | Exit, PnL, R multiple, and realized outcome are labels/evaluation fields, not allowed as pre-trade features. |
+
+### 3.5 Current Data Risk Read
+
+- L0 hard integrity is clean: no duplicate timestamps, null OHLCV, bad OHLC, or
+  negative volume rows in the latest audit.
+- L0 continuity is **not perfectly gap-free**. The current status is
+  `PASS_WITH_GAPS_REQUIRING_L1_QUARANTINE`, so the correct interpretation is
+  not "data has no gaps", but "known gaps are flagged and downstream builders
+  must not train or trade through bad bars".
+- L1 context audit passes and explicitly checks that OR values do not appear on
+  pre-OR rows, no eligible rows exist before OR end, and eligible rows are not
+  bad-quality bars.
+- L2 baseline events pass event-level controls used by this report: no required
+  nulls, no duplicate NY dates, entry after signal, and exit after entry.
+- Any future ML model must promote these gates to hard blockers. A model trained
+  on failed L0/L1/L2 gates is invalid even if its backtest looks profitable.
+
+---
+
+## 4. Konteks Strategy Family
 
 Report ini tidak lagi hanya berisi satu baseline long-only. Scope saat ini
 adalah **family of rule-based ORB variants** untuk NASDAQ Micro Futures, dengan
 baseline sebagai control dan beberapa branch sebagai kandidat riset.
 
-### 3.1 Common Contract
+### 4.1 Common Contract
 
 | Field | Value |
 | --- | --- |
@@ -166,7 +245,7 @@ baseline sebagai control dan beberapa branch sebagai kandidat riset.
 | Baseline max trades | 1 sequence per NY session |
 | Research status | Not live-ready |
 
-### 3.2 Variant Map
+### 4.2 Variant Map
 
 | Variant | Role | Direction Logic | Regime Filter | Exit Logic | Current Status |
 | --- | --- | --- | --- | --- | --- |
@@ -176,13 +255,13 @@ baseline sebagai control dan beberapa branch sebagai kandidat riset.
 | Long+Short + ST5_50 aligned | Exploratory | Long with bullish ST, short with bearish ST | ST5_50 aligned by side | TP 2R or 15:00 NY | Good March, weak recent 30D |
 | Short switch to long | Research branch | Short if OR low breaks first; switch to long if OR high reclaimed | None in current test | Short TP 1R/1.5R/2R, switch, or EOD | TP 2R best, not promoted |
 
-### 3.3 Rule-Based Definition
+### 4.3 Rule-Based Definition
 
 Semua variant di report ini masih **rule-based**, bukan ML. Keputusan entry,
 exit, switch, dan filter ditentukan oleh aturan eksplisit. Belum ada model
 probabilitas yang menentukan trade size, trade/no-trade, atau direction.
 
-### 3.4 Current Promotion Hierarchy
+### 4.4 Current Promotion Hierarchy
 
 1. **Benchmark:** `Long only, no ST`.
 2. **P0 candidate:** `Long only + ST5_50 bullish`.
@@ -192,7 +271,7 @@ probabilitas yang menentukan trade size, trade/no-trade, atau direction.
 
 ---
 
-## 4. Sizing dan Risk Model
+## 5. Sizing dan Risk Model
 
 Semua varian di report ini memakai target risk dollar tetap sebagai sizing
 anchor. Target risk bukan normal stop-loss order; ia hanya menentukan jumlah
@@ -222,13 +301,13 @@ guard terpisah.
 
 ---
 
-## 5. Baseline Control - Equity, Drawdown, Monthly PnL
+## 6. Baseline Control - Equity, Drawdown, Monthly PnL
 
 Section ini hanya untuk baseline control `Long only, no ST`. Tujuannya adalah
 menyediakan benchmark bersih sebelum membaca audit SuperTrend dan short-switch
-di section 10-11.
+di section 11-12.
 
-### 5.1 Equity Curve
+### 6.1 Equity Curve
 
 ![Equity Curve](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/equity_curve.png)
 
@@ -236,7 +315,7 @@ Equity curve baseline menunjukkan PnL positif secara historis, tetapi jalurnya
 tidak linear. Ada fase panjang yang relatif datar dan beberapa periode drawdown
 besar.
 
-### 5.2 Drawdown
+### 6.2 Drawdown
 
 ![Drawdown Curve](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/drawdown_curve.png)
 
@@ -244,7 +323,7 @@ Drawdown maksimum historis sebesar -$12,124. Ini jauh lebih
 besar daripada batas MLL Topstep 50K, sehingga evaluasi live tidak boleh hanya
 mengandalkan total PnL historis.
 
-### 5.3 Monthly PnL
+### 6.3 Monthly PnL
 
 ![Monthly PnL](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/monthly_pnl.png)
 
@@ -252,7 +331,7 @@ Grafik bulanan baseline membantu melihat bahwa strategi tidak menghasilkan
 distribusi profit yang stabil setiap bulan. Ada bulan kuat, bulan kosong, dan
 bulan rugi.
 
-### 5.4 Distribusi PnL Per Trade
+### 6.4 Distribusi PnL Per Trade
 
 ![Trade PnL Distribution](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/trade_pnl_distribution.png)
 
@@ -262,13 +341,13 @@ momentum yang produktif.
 
 ---
 
-## 6. Baseline Control - Performance Card dan Variant Snapshot
+## 7. Baseline Control - Performance Card dan Variant Snapshot
 
-Section 6.1 adalah metric card baseline `Long only, no ST`. Ini bukan metric
+Section 7.1 adalah metric card baseline `Long only, no ST`. Ini bukan metric
 untuk seluruh strategy family. Cross-variant context langsung ditaruh di
-section 6.2 agar baseline, ST filter, dan short-switch tidak tercampur.
+section 7.2 agar baseline, ST filter, dan short-switch tidak tercampur.
 
-### 6.1 Baseline Control Metrics
+### 7.1 Baseline Control Metrics
 
 | Metric | Value |
 | --- | ---: |
@@ -290,7 +369,7 @@ section 6.2 agar baseline, ST filter, dan short-switch tidak tercampur.
 | Max consecutive wins | 10 |
 | Max consecutive losses | 6 |
 
-### 6.2 Cross-Variant Metric Snapshot
+### 7.2 Cross-Variant Metric Snapshot
 
 | Variant | Role | Trades | PF | Full PnL | Max DD | Mar 2026 PnL | 30D PnL |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -310,7 +389,7 @@ Reading note:
 
 ---
 
-## 7. Cost Model
+## 8. Cost Model
 
 | Cost | Value |
 | --- | ---: |
@@ -327,7 +406,7 @@ slippage 1 tick per side.
 
 ---
 
-## 8. Baseline Control - Daily Quality
+## 9. Baseline Control - Daily Quality
 
 Daily quality di section ini hanya untuk baseline-control. Sharpe and Sortino
 are computed from daily dollar PnL over NASDAQ Micro Futures NY session days,
@@ -353,7 +432,7 @@ short-switch masih perlu Topstep-specific simulator yang sama sebelum promosi.
 
 ---
 
-## 9. Baseline Control - Rolling Window Terakhir
+## 10. Baseline Control - Rolling Window Terakhir
 
 ![Rolling Windows](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/rolling_windows.png)
 
@@ -372,19 +451,19 @@ Interpretasi baseline:
 - 30D terakhir adalah bagian paling menarik: 18 trade dan $3,460 PnL.
 - 5D dan 10D masih terlalu pendek untuk menjadi bukti edge.
 - 100D dan 200D tetap positif, tetapi DD historisnya mulai berat untuk Topstep.
-- Rolling comparison untuk varian ST dan short-switch ada di section 10-11,
+- Rolling comparison untuk varian ST dan short-switch ada di section 11-12,
   bukan di chart baseline ini.
 
 ---
 
-## 10. SuperTrend Regime Filter Audit
+## 11. SuperTrend Regime Filter Audit
 
 SuperTrend audit ditambahkan untuk menjawab apakah drawdown March 2026 bisa
 dikurangi dengan regime filter sederhana, tanpa langsung mengganti baseline.
 Semua fitur dihitung dari bar yang sudah close dan di-join ke trade event
 dengan rule `feature_ts <= signal_ts`.
 
-### 10.1 Data Integrity
+### 11.1 Data Integrity
 
 | Check | Value |
 | --- | ---: |
@@ -396,7 +475,7 @@ dengan rule `feature_ts <= signal_ts`.
 | Max feature lag | 14 menit |
 
 
-### 10.2 Perbandingan Variant Utama
+### 11.2 Perbandingan Variant Utama
 
 #### Equity Curve
 
@@ -440,7 +519,7 @@ Interpretasi:
   stabilitas recent window.
 
 
-### 10.3 Kandidat Kombinasi SuperTrend
+### 11.3 Kandidat Kombinasi SuperTrend
 
 Tabel ini menampilkan kandidat terbaik berdasarkan full-history return/DD,
 dengan minimum `full_trades >= 100` dan `jan_may_2026_trades >= 30`.
@@ -460,7 +539,7 @@ Catatan: kombinasi multi-filter dapat memperbaiki March drawdown secara besar,
 tetapi trade count turun drastis. Untuk menghindari curve fitting, kandidat
 yang lebih sederhana tetap diprioritaskan sebelum kombinasi kompleks.
 
-### 10.4 Keputusan Sementara SuperTrend
+### 11.4 Keputusan Sementara SuperTrend
 
 Untuk saat ini baseline **tidak diganti**. Baseline tetap `Long only, no ST`
 sebagai control. Kandidat yang dibawa ke iterasi berikutnya:
@@ -472,7 +551,7 @@ sebagai control. Kandidat yang dibawa ke iterasi berikutnya:
 ---
 
 
-## 11. Short Breakout Switch-To-Long Audit
+## 12. Short Breakout Switch-To-Long Audit
 
 Section ini menguji definisi short yang asimetris terhadap long. Karena NASDAQ
 secara natural lebih long-biased, short tidak diperlakukan sebagai mirror
@@ -480,7 +559,7 @@ strategy. Jika OR low break lebih dulu, strategy boleh masuk short; tetapi jika
 harga close kembali di atas OR high, short ditutup dan posisi dibalik menjadi
 long pada open M1 berikutnya.
 
-### 11.1 Methodology
+### 12.1 Methodology
 
 | Field | Value |
 | --- | --- |
@@ -491,7 +570,7 @@ long pada open M1 berikutnya.
 | Long after switch | Baseline long TP 2R or 15:00 NY EOD |
 | Anchor | 2026-05-28T01:53:00+00:00 |
 
-### 11.2 Visual Audit
+### 12.2 Visual Audit
 
 #### Equity Curve
 
@@ -505,7 +584,7 @@ long pada open M1 berikutnya.
 
 ![Short Switch Last 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/short_reversal_switch_last30_equity.png)
 
-### 11.3 Summary
+### 12.3 Summary
 
 | Variant | Trades | WR | PnL | DD | Ret/DD | Short-first | Switches | Short PnL | Jan-May PnL | Mar PnL | 30D PnL | 30D DD |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -515,7 +594,7 @@ long pada open M1 berikutnya.
 | Short switch to long, short TP 1R | 1,767 | 57.89% | $32,242 | -$13,722 | 2.35 | 862 | 340 | -$607 | $4,270 | -$2,480 | $973 | -$886 |
 | Short switch to long, short TP 2R | 1,767 | 53.99% | $37,731 | -$12,715 | 2.97 | 862 | 382 | $3,671 | $7,085 | -$2,074 | $1,515 | -$886 |
 
-### 11.4 Current Read
+### 12.4 Current Read
 
 Di antara varian short-switch, short TP 2R adalah yang paling kuat: total PnL
 dan return/DD terbaik, serta short leg full-history positif. Namun ia masih
@@ -523,10 +602,77 @@ belum mengalahkan baseline pada window 30D terakhir dan max drawdown-nya masih
 sedikit lebih berat dari baseline. Jadi short-switch TP 2R layak masuk watchlist
 sebagai research branch, tetapi belum menggantikan long-only baseline.
 
+### 12.5 P0 Short-Switch TP2R Optimization Sweep
+
+P0 sweep ini memperbaiki branch `Short switch to long, short TP 2R` dengan
+knob yang masih rule-based: short-side SuperTrend filter, asymmetric short risk,
+switch-long risk, dan switch trigger buffer. Long-first breakout tetap memakai
+baseline risk $500. Jika short breakout ditolak filter, hari tersebut masih
+boleh mengambil later long breakout.
+
+| Field | Value |
+| --- | --- |
+| Variants evaluated | 216 plus baseline |
+| Short filters | `none`, `st5_50_bearish`, `st5_20_bearish`, `st5_50_and_st15_20_bearish` |
+| Short risk grid | $250, $350, $500 |
+| Switch long risk grid | $500, $750 |
+| Switch buffers | `0`, `2ticks`, `0.25r` |
+| Short time guard grid | `none, 10:30, 11:00` |
+| Lookahead violations | 0 |
+| Max ST feature lag | 14.00 minutes |
+
+| Candidate | Short Filter | Short Risk | Switch Long Risk | Buffer | Trades | PnL | DD | Ret/DD | Mar PnL | 30D Trades | 30D PnL | 30D DD |
+| --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Long only baseline | baseline | - | - | baseline | 1,296 | $33,091 | -$12,124 | 2.73 | -$2,633 | 18 | $3,460 | -$551 |
+| Existing short-switch TP2R equivalent | none | $500 | $500 | 0 | 1,767 | $37,731 | -$12,715 | 2.97 | -$2,074 | 21 | $1,515 | -$886 |
+| Best P0 score | st5_20_bearish | $350 | $750 | 0 | 1,660 | $42,946 | -$12,792 | 3.36 | -$975 | 16 | $4,696 | -$551 |
+| Best raw 30D PnL | st5_50_bearish | $350 | $750 | 0 | 1,711 | $38,950 | -$14,135 | 2.76 | -$975 | 15 | $4,724 | -$551 |
+| Best full Ret/DD | st5_20_bearish | $500 | $500 | 0 | 1,706 | $50,558 | -$10,410 | 4.86 | -$1,366 | 20 | $2,649 | -$886 |
+
+Top P0-score candidates:
+
+| Candidate | Short Filter | Short Risk | Switch Long Risk | Buffer | Trades | PnL | DD | Ret/DD | Mar PnL | 30D Trades | 30D PnL | 30D DD |
+| --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| p0_st5_20_bearish_sr350_lr750_buf0_tg1030 | st5_20_bearish | $350 | $750 | 0 | 1,660 | $42,946 | -$12,792 | 3.36 | -$975 | 16 | $4,696 | -$551 |
+| p0_st5_20_bearish_sr350_lr750_buf0_tg1100 | st5_20_bearish | $350 | $750 | 0 | 1,692 | $42,884 | -$13,139 | 3.26 | -$975 | 16 | $4,696 | -$551 |
+| p0_st5_50_bearish_sr350_lr750_buf0_tg1100 | st5_50_bearish | $350 | $750 | 0 | 1,694 | $41,679 | -$13,055 | 3.19 | -$975 | 15 | $4,724 | -$551 |
+| p0_st5_20_bearish_sr350_lr750_buf0_tgnone | st5_20_bearish | $350 | $750 | 0 | 1,713 | $40,368 | -$14,158 | 2.85 | -$975 | 16 | $4,696 | -$551 |
+| p0_st5_50_bearish_sr350_lr750_buf0_tg1030 | st5_50_bearish | $350 | $750 | 0 | 1,666 | $40,951 | -$12,889 | 3.18 | -$975 | 16 | $4,622 | -$551 |
+| p0_st5_20_bearish_sr350_lr750_buf2ticks_tg1030 | st5_20_bearish | $350 | $750 | 2ticks | 1,660 | $39,762 | -$14,025 | 2.84 | -$975 | 16 | $4,696 | -$551 |
+| p0_st5_20_bearish_sr350_lr750_buf2ticks_tg1100 | st5_20_bearish | $350 | $750 | 2ticks | 1,692 | $39,674 | -$14,372 | 2.76 | -$975 | 16 | $4,696 | -$551 |
+| p0_st5_50_bearish_sr350_lr750_buf0_tgnone | st5_50_bearish | $350 | $750 | 0 | 1,711 | $38,950 | -$14,135 | 2.76 | -$975 | 15 | $4,724 | -$551 |
+| p0_st5_50_bearish_sr350_lr750_buf2ticks_tg1100 | st5_50_bearish | $350 | $750 | 2ticks | 1,694 | $38,474 | -$14,370 | 2.68 | -$975 | 15 | $4,724 | -$551 |
+| p0_st5_20_bearish_sr500_lr750_buf0_tg1030 | st5_20_bearish | $500 | $750 | 0 | 1,706 | $51,410 | -$13,134 | 3.91 | -$1,272 | 20 | $3,789 | -$886 |
+
+Current read:
+
+- Best P0-score candidate: `p0_st5_20_bearish_sr350_lr750_buf0_tg1030`.
+- 30D PnL membaik dari $3,460
+  menjadi $4,696, dengan 30D DD tetap
+  -$551.
+- March 2026 membaik dari -$2,633
+  menjadi -$975.
+- Full-history PnL naik, tetapi full-history DD memburuk dari
+  -$12,124 menjadi -$12,792.
+  Jadi P0 result **membaik untuk Topstep-style recent window**, tetapi belum
+  boleh dipromosikan sebelum P1 Topstep simulator dan time-guard sweep.
+
+Artifact P0:
+
+- `short_switch_tp2r_p0_sweep.md`
+- `short_switch_tp2r_p0_full_report.md`
+- `short_switch_tp2r_p0_sweep.csv`
+- `short_switch_tp2r_p0_best_events.csv`
+- `short_switch_tp2r_p0_best_legs.csv`
+- `short_switch_tp2r_p0_best_yearly.csv`
+- `short_switch_tp2r_p0_best_monthly.csv`
+- `data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep_manifest.json`
+
+
 ---
 
 
-## 12. Baseline Control - Monte Carlo dan Stress Test
+## 13. Baseline Control - Monte Carlo dan Stress Test
 
 Monte Carlo di section ini hanya memakai daily PnL baseline-control. Ini bukan
 prediksi masa depan, dan belum boleh dibaca sebagai Monte Carlo untuk ST5_50
@@ -539,19 +685,19 @@ daily PnL historis muncul dalam urutan yang berbeda.
 | 100D | $1,893 | -$6,990 | 35.46% | -$4,646 | 95.96% | 64.36% |
 | 200D | $3,730 | -$8,746 | 31.10% | -$6,568 | 99.86% | 78.14% |
 
-### 12.1 Fan Chart 30D
+### 13.1 Fan Chart 30D
 
 ![Monte Carlo PnL Fan 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_30d.png)
 
-### 12.2 Distribusi Final PnL 30D
+### 13.2 Distribusi Final PnL 30D
 
 ![Monte Carlo Final PnL CDF 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_final_pnl_cdf_30d.png)
 
-### 12.3 Max Drawdown 30D
+### 13.3 Max Drawdown 30D
 
 ![Monte Carlo MaxDD 30D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_maxdd_hist_30d.png)
 
-### 12.4 Fan Chart 100D
+### 13.4 Fan Chart 100D
 
 ![Monte Carlo PnL Fan 100D](https://raw.githubusercontent.com/kemtol/FFFUTURES/main/model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_100d.png)
 
@@ -563,9 +709,9 @@ dibandingkan ulang dengan metodologi yang sama.
 
 ---
 
-## 13. Penilaian Risiko
+## 14. Penilaian Risiko
 
-### 13.1 Risiko Drawdown
+### 14.1 Risiko Drawdown
 
 Baseline max drawdown historis -$12,124 jauh lebih besar
 daripada MLL Topstep 50K. ST5_50 menurunkan drawdown full-history, tetapi belum
@@ -573,14 +719,14 @@ menghapus risiko MLL karena window 30D dan intraday path tetap harus
 disimulasikan. Ini tidak otomatis membatalkan strategi, tetapi semua varian
 membutuhkan guard dan monitoring harian.
 
-### 13.2 Risiko No Normal SL
+### 14.2 Risiko No Normal SL
 
 Strategi ini tidak memakai SL normal. Exit loss terjadi lewat time exit.
 Konsekuensinya, flash drop atau trend day yang berlawanan bisa menghasilkan
 kerugian lebih besar dari target risk teoritis. Catastrophic guard harus
 dipilih sebagai layer operasional terpisah.
 
-### 13.3 Risiko Curve Fit
+### 14.3 Risiko Curve Fit
 
 Baseline cukup bersih karena hanya memakai OR 15m, long only, TP 2R/time exit,
 dan risk $500. Risiko curve fit naik pada kombinasi multi-SuperTrend dan
@@ -588,7 +734,7 @@ short-switch karena jumlah pilihan bertambah. Karena itu kandidat sederhana
 `ST5_50` diprioritaskan atas kombinasi multi-filter walaupun beberapa kombinasi
 punya return/DD historis lebih tinggi.
 
-### 13.4 Risiko Eksekusi Live
+### 14.4 Risiko Eksekusi Live
 
 Live version harus memastikan:
 
@@ -601,7 +747,7 @@ Live version harus memastikan:
 
 ---
 
-## 14. Rekomendasi Sementara
+## 15. Rekomendasi Sementara
 
 | Area | Rekomendasi |
 | --- | --- |
@@ -626,7 +772,7 @@ Rekomendasi utama:
 
 ---
 
-## 15. Keputusan Sementara
+## 16. Keputusan Sementara
 
 | Area | Status |
 | --- | --- |
@@ -646,9 +792,9 @@ execution.
 
 ---
 
-## 16. Artifact Register
+## 17. Artifact Register
 
-### Model Package
+### 17.1 Model Package
 
 | File | Keterangan |
 | --- | --- |
@@ -682,22 +828,44 @@ execution.
 | `short_reversal_switch_comparison.csv` | Summary varian short TP 1R/1.5R/2R |
 | `short_reversal_switch_events.csv` | Sequence-level event varian short-switch |
 | `short_reversal_switch_legs.csv` | Leg-level attribution varian short-switch |
+| `short_switch_tp2r_p0_sweep.md` | P0 sweep short-switch TP2R dengan ST filter, asymmetric risk, dan switch buffer |
+| `short_switch_tp2r_p0_full_report.md` | Full report kandidat P0 terbaik: yearly, YTD, month-to-month |
+| `short_switch_tp2r_p0_sweep.csv` | Summary machine-readable P0 short-switch TP2R |
+| `short_switch_tp2r_p0_best_events.csv` | Sequence-level event kandidat P0 terbaik |
+| `short_switch_tp2r_p0_best_legs.csv` | Leg-level attribution kandidat P0 terbaik |
+| `short_switch_tp2r_p0_best_yearly.csv` | Yearly metrics kandidat P0 terbaik |
+| `short_switch_tp2r_p0_best_monthly.csv` | Monthly metrics kandidat P0 terbaik |
 
-### Canonical Data
+### 17.2 Canonical Data
 
 ```text
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/events.parquet
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/summary.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/package_gate.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_features.parquet
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_manifest.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison_manifest.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_reversal_switch_comparison_manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep_manifest.json
+data/Level_0_Raw/MNQ_1m.duckdb
+data/Level_0_Raw/MNQ_1m_duckdb_manifest.json
+data/Level_0_Raw/MNQ_1m_yfinance_append_manifest.json
+data/Level_0_Raw/MNQ_1m_continuity_report.json
+data/Level_0_Raw/MNQ_yfinance_timeframe_parity_report.json
+data/Level_1_Features/mnq/ORB/context.parquet
+data/Level_1_Features/mnq/ORB/context_manifest.json
+data/Level_1_Features/mnq/ORB/l1_audit.json
+data/Level_1_Features/mnq/ORB/daily_confluence.parquet
+data/Level_1_Features/mnq/ORB/daily_confluence_manifest.json
+data/Level_1_Features/mnq/ORB/daily_confluence_audit.json
+data/Level_2_Datamart/mnq/ORB/sweeps/sweep_events.parquet
+data/Level_2_Datamart/mnq/ORB/sweeps/sweep_manifest.json
 ```
 
 ---
 
-## 17. Lampiran A - 10 Trade Terakhir
+## 18. Lampiran A - 10 Trade Terakhir
 
 | NY Date | Signal UTC | Exit | Contracts | Net PnL |
 | --- | --- | --- | ---: | ---: |

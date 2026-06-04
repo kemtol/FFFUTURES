@@ -18,6 +18,9 @@ DATA_DIR = ROOT / "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod"
 MODEL_DIR = ROOT / "model/MNQ/ORB/rule_based_15m_long_tp2r_eod"
 CHART_DIR = MODEL_DIR / "charts"
 MONTE_DIR = MODEL_DIR / "monte_carlo"
+L0_DIR = ROOT / "data/Level_0_Raw"
+L1_DIR = ROOT / "data/Level_1_Features/mnq/ORB"
+SWEEP_DIR = ROOT / "data/Level_2_Datamart/mnq/ORB/sweeps"
 RAW_BASE = (
     "https://raw.githubusercontent.com/kemtol/FFFUTURES/main/"
     "model/MNQ/ORB/rule_based_15m_long_tp2r_eod"
@@ -28,6 +31,27 @@ ST_REGIME_MANIFEST = DATA_DIR / "supertrend_regime_manifest.json"
 ST_VARIANT_MANIFEST = DATA_DIR / "supertrend_variant_comparison_manifest.json"
 SHORT_SWITCH_CSV = MODEL_DIR / "short_reversal_switch_comparison.csv"
 SHORT_SWITCH_MANIFEST = DATA_DIR / "short_reversal_switch_comparison_manifest.json"
+SHORT_SWITCH_P0_CSV = MODEL_DIR / "short_switch_tp2r_p0_sweep.csv"
+SHORT_SWITCH_P0_REPORT = MODEL_DIR / "short_switch_tp2r_p0_sweep.md"
+SHORT_SWITCH_P0_FULL_REPORT = MODEL_DIR / "short_switch_tp2r_p0_full_report.md"
+SHORT_SWITCH_P0_BEST_EVENTS = MODEL_DIR / "short_switch_tp2r_p0_best_events.csv"
+SHORT_SWITCH_P0_BEST_LEGS = MODEL_DIR / "short_switch_tp2r_p0_best_legs.csv"
+SHORT_SWITCH_P0_BEST_YEARLY = MODEL_DIR / "short_switch_tp2r_p0_best_yearly.csv"
+SHORT_SWITCH_P0_BEST_MONTHLY = MODEL_DIR / "short_switch_tp2r_p0_best_monthly.csv"
+SHORT_SWITCH_P0_MANIFEST = DATA_DIR / "short_switch_tp2r_p0_sweep_manifest.json"
+PACKAGE_GATE = DATA_DIR / "package_gate.json"
+L0_1M_MANIFEST = L0_DIR / "MNQ_1m_duckdb_manifest.json"
+L0_1M_YF_MANIFEST = L0_DIR / "MNQ_1m_yfinance_append_manifest.json"
+L0_CONTINUITY_REPORT = L0_DIR / "MNQ_1m_continuity_report.json"
+L0_5M_MANIFEST = L0_DIR / "MNQ_5m_duckdb_manifest.json"
+L0_15M_MANIFEST = L0_DIR / "MNQ_15m_duckdb_manifest.json"
+L0_PARITY_REPORT = L0_DIR / "MNQ_yfinance_timeframe_parity_report.json"
+L0_DAILY_MANIFEST = L0_DIR / "yfinance_daily_manifest.json"
+L1_CONTEXT_MANIFEST = L1_DIR / "context_manifest.json"
+L1_AUDIT = L1_DIR / "l1_audit.json"
+L1_DAILY_CONFLUENCE_MANIFEST = L1_DIR / "daily_confluence_manifest.json"
+L1_DAILY_CONFLUENCE_AUDIT = L1_DIR / "daily_confluence_audit.json"
+SWEEP_MANIFEST = SWEEP_DIR / "sweep_manifest.json"
 
 
 def rel(path: Path) -> str:
@@ -299,6 +323,184 @@ def maybe_num(value) -> str:
     return f"{parsed:.2f}"
 
 
+def pass_fail(value: bool | None) -> str:
+    if value is None:
+        return "UNKNOWN"
+    return "PASS" if value else "FAIL"
+
+
+def zero_pass(value) -> str:
+    parsed = optional_float(value)
+    if parsed is None:
+        return "UNKNOWN"
+    return "PASS" if parsed == 0 else "FAIL"
+
+
+def data_lineage_control_rows(events: pd.DataFrame) -> str:
+    l0_continuity = safe_read_json(L0_CONTINUITY_REPORT) or {}
+    l0_yf = safe_read_json(L0_1M_YF_MANIFEST) or {}
+    l0_5m = safe_read_json(L0_5M_MANIFEST) or {}
+    l0_15m = safe_read_json(L0_15M_MANIFEST) or {}
+    l0_parity = safe_read_json(L0_PARITY_REPORT) or {}
+    l1_audit = safe_read_json(L1_AUDIT) or {}
+    l1_context_manifest = safe_read_json(L1_CONTEXT_MANIFEST) or {}
+    l1_daily = safe_read_json(L1_DAILY_CONFLUENCE_MANIFEST) or {}
+    l1_daily_audit = safe_read_json(L1_DAILY_CONFLUENCE_AUDIT) or {}
+    st_manifest = safe_read_json(ST_REGIME_MANIFEST) or {}
+    st_variant_manifest = safe_read_json(ST_VARIANT_MANIFEST) or {}
+    package_gate = safe_read_json(PACKAGE_GATE) or {}
+
+    event_required = [
+        "ny_date",
+        "signal_ts",
+        "entry_ts",
+        "exit_ts",
+        "side",
+        "orb_high",
+        "orb_low",
+        "entry_price",
+        "exit_price",
+        "contracts_used",
+        "pnl_net_usd",
+    ]
+    available_required = [c for c in event_required if c in events.columns]
+    event_nulls = int(events[available_required].isna().sum().sum()) if available_required else -1
+    event_duplicates = int(events["ny_date"].duplicated().sum()) if "ny_date" in events.columns else -1
+    entry_timing_bad = 0
+    exit_timing_bad = 0
+    if {"signal_ts", "entry_ts", "exit_ts"}.issubset(events.columns):
+        signal_ts = pd.to_datetime(events["signal_ts"], utc=True)
+        entry_ts = pd.to_datetime(events["entry_ts"], utc=True)
+        exit_ts = pd.to_datetime(events["exit_ts"], utc=True)
+        entry_timing_bad = int((entry_ts <= signal_ts).sum())
+        exit_timing_bad = int((exit_ts < entry_ts).sum())
+
+    l0_base = l0_continuity.get("base", {})
+    gap_summary = l0_continuity.get("gap_summary", {})
+    l0_integrity_status = pass_fail(l0_continuity.get("hard_integrity_pass"))
+    l1_status = l1_audit.get("status", "UNKNOWN")
+    daily_status = l1_daily_audit.get("status") or l1_daily.get("status", "UNKNOWN")
+    parity_status = l0_parity.get("status", "UNKNOWN")
+    st_lookahead = int((st_manifest.get("lookahead") or {}).get("total_violations", 0))
+    st_variant_lookahead = int(st_variant_manifest.get("lookahead_violations", 0))
+    daily_lookahead = int(l1_daily.get("lookahead_violations", 0))
+
+    rows = [
+        "| Bronze / L0 M1 OHLCV | `data/Level_0_Raw/MNQ_1m.duckdb` | {rows:,} rows, {min_ts} to {max_ts}; hard integrity {status}; duplicates {dupes}; null OHLCV {nulls}; bad OHLC {bad_ohlc}; negative volume {neg_vol} |".format(
+            rows=int(l0_base.get("rows", 0)),
+            min_ts=l0_base.get("min_ts", "n/a"),
+            max_ts=l0_base.get("max_ts", "n/a"),
+            status=l0_integrity_status,
+            dupes=int(l0_continuity.get("duplicate_timestamps", 0)),
+            nulls=int(l0_base.get("null_ohlcv", 0)),
+            bad_ohlc=int(l0_base.get("bad_high_rows", 0)) + int(l0_base.get("bad_low_rows", 0)),
+            neg_vol=int(l0_base.get("negative_volume_rows", 0)),
+        ),
+        "| L0 continuity | `data/Level_0_Raw/MNQ_1m_continuity_report.json` | {status}; gaps >60s {gaps:,}; max gap {max_gap:,}s; downstream rule: quarantine gap bars, do not train across gaps |".format(
+            status=l0_continuity.get("continuity_status", "UNKNOWN"),
+            gaps=int(gap_summary.get("gap_count_gt_60s", 0)),
+            max_gap=int(gap_summary.get("max_gap_seconds", 0)),
+        ),
+        "| Recent yfinance append | `data/Level_0_Raw/MNQ_1m_yfinance_append_manifest.json` | {rows:,} appended/replaced rows, {first_ts} to {last_ts}; post-append duplicates {dupes} |".format(
+            rows=int((l0_yf.get("append") or {}).get("rows_inserted", 0)),
+            first_ts=(l0_yf.get("append") or {}).get("first_ts", "n/a"),
+            last_ts=(l0_yf.get("append") or {}).get("last_ts", "n/a"),
+            dupes=int((l0_yf.get("after") or {}).get("duplicate_timestamps", 0)),
+        ),
+        "| Derived L0 5m/15m | `MNQ_5m.duckdb`, `MNQ_15m.duckdb` | right-labeled, left-closed from M1; 5m rows {rows_5m:,}, 15m rows {rows_15m:,}; duplicate timestamps 5m/15m = {dup_5m}/{dup_15m} |".format(
+            rows_5m=int(l0_5m.get("rows", 0)),
+            rows_15m=int(l0_15m.get("rows", 0)),
+            dup_5m=int(l0_5m.get("duplicate_timestamps", 0)),
+            dup_15m=int(l0_15m.get("duplicate_timestamps", 0)),
+        ),
+        "| yfinance timeframe parity | `data/Level_0_Raw/MNQ_yfinance_timeframe_parity_report.json` | {status}; max mismatch rate {rate:.2%}; latest incomplete bars excluded {excluded} |".format(
+            status=parity_status,
+            rate=float(l0_parity.get("max_mismatch_rate", 0.0)),
+            excluded=int(l0_parity.get("excluded_latest_bars", 0)),
+        ),
+        "| L1 intraday context | `data/Level_1_Features/mnq/ORB/context.parquet` | {status}; {rows:,} rows, {cols} columns; {days:,} NY days; OR-complete days {orb_days:,}; duplicate timestamps {dupes}; bad OHLC rows {bad_ohlc}; required hard nulls {hard_nulls} |".format(
+            status=l1_status,
+            rows=int(l1_audit.get("rows", l1_context_manifest.get("rows", 0))),
+            cols=int(l1_audit.get("columns", 0)),
+            days=int(l1_audit.get("ny_days", l1_context_manifest.get("ny_days", 0))),
+            orb_days=int(l1_audit.get("orb_complete_days", l1_context_manifest.get("orb_complete_days", 0))),
+            dupes=int(l1_audit.get("duplicate_timestamps", 0)),
+            bad_ohlc=int(l1_audit.get("bad_ohlc_rows", 0)),
+            hard_nulls=sum(int(v) for v in (l1_audit.get("hard_nulls") or {}).values()),
+        ),
+        "| L1 ORB leakage guards | `data/Level_1_Features/mnq/ORB/l1_audit.json` | pre-OR rows with OR values {pre_or}; eligible rows before OR end {eligible_before}; eligible bad-quality rows {eligible_bad}; complete OR days wrong bar count {wrong_count} |".format(
+            pre_or=int(l1_audit.get("pre_or_rows_with_or_values", 0)),
+            eligible_before=int(l1_audit.get("eligible_rows_before_or_end", 0)),
+            eligible_bad=int(l1_audit.get("eligible_rows_bad_quality", 0)),
+            wrong_count=int(l1_audit.get("complete_orb_days_wrong_bar_count", 0)),
+        ),
+        "| Daily confluence features | `data/Level_1_Features/mnq/ORB/daily_confluence.parquet` | {status}; {rows:,} rows, {features} features; feature nulls {feature_nulls}; lookahead violations {lookahead}; contract: external daily feature date < MNQ trade date |".format(
+            status=daily_status,
+            rows=int(l1_daily.get("rows", 0)),
+            features=int(l1_daily.get("feature_count", 0)),
+            feature_nulls=sum(int(v) for v in (l1_daily.get("feature_nulls") or {}).values()),
+            lookahead=daily_lookahead,
+        ),
+        "| L2 baseline events | `data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/events.parquet` | {rows:,} rows, {cols} columns; required nulls {nulls}; duplicate NY dates {dupes}; entry<=signal rows {bad_entry}; exit<entry rows {bad_exit} |".format(
+            rows=len(events),
+            cols=len(events.columns),
+            nulls=event_nulls,
+            dupes=event_duplicates,
+            bad_entry=entry_timing_bad,
+            bad_exit=exit_timing_bad,
+        ),
+        "| Frozen package gate | `data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/package_gate.json` | {status}; events {rows:,}; failures {failures}; warnings {warnings} |".format(
+            status=package_gate.get("status", "UNKNOWN"),
+            rows=int(package_gate.get("events_rows", 0)),
+            failures=len(package_gate.get("failures") or {}),
+            warnings=len(package_gate.get("warnings") or {}),
+        ),
+        "| SuperTrend feature attach | `supertrend_regime_features.parquet` | lookahead violations {lookahead}; variant attach lookahead {variant_lookahead}; max feature lag {max_lag} minutes |".format(
+            lookahead=st_lookahead,
+            variant_lookahead=st_variant_lookahead,
+            max_lag=(st_manifest.get("lookahead") or {}).get("max_lag_minutes", "n/a"),
+        ),
+    ]
+    return "\n".join(rows)
+
+
+def data_feature_dataset_rows(events: pd.DataFrame) -> str:
+    l1_audit = safe_read_json(L1_AUDIT) or {}
+    l1_daily = safe_read_json(L1_DAILY_CONFLUENCE_MANIFEST) or {}
+    st_manifest = safe_read_json(ST_REGIME_MANIFEST) or {}
+    sweep_manifest = safe_read_json(SWEEP_MANIFEST) or {}
+    l0_continuity = safe_read_json(L0_CONTINUITY_REPORT) or {}
+    l0_base = l0_continuity.get("base", {})
+
+    st_cols = int((st_manifest.get("features") or {}).get("feature_columns_added", 0))
+    return "\n".join(
+        [
+            "| Bronze/L0 raw | `MNQ_1m.duckdb` | OHLCV M1, source symbol, volume | {rows:,} rows | Raw market bars; if this layer is wrong, all reports are invalid |".format(
+                rows=int(l0_base.get("rows", 0))
+            ),
+            "| L1 intraday context | `context.parquet` | OHLCV, NY date/time, `minutes_from_open`, quality flags, OR context | {rows:,} rows / {cols} cols | Research context; sweep recomputes 10/15/20/30m OR only from quality bars |".format(
+                rows=int(l1_audit.get("rows", 0)),
+                cols=int(l1_audit.get("columns", 0)),
+            ),
+            "| L1 daily confluence | `daily_confluence.parquet` | SPY, QQQ, VIX, TNX, DXY prior-day features | {rows:,} rows / {features} features | Not used by this rule-based report, but available for ML overlays with strict D-1 contract |".format(
+                rows=int(l1_daily.get("rows", 0)),
+                features=int(l1_daily.get("feature_count", 0)),
+            ),
+            "| L2 sweep | `sweeps/sweep_events.parquet` | ORB parameter grid events | {rows:,} rows | Parent grid for selecting current baseline candidate |".format(
+                rows=int(sweep_manifest.get("event_rows", 0))
+            ),
+            "| L2 baseline package | `rule_based_15m_long_tp2r_eod/events.parquet` | Executed trade events, sizing, cost-adjusted PnL | {rows:,} rows / {cols} cols | Current benchmark/control strategy |".format(
+                rows=len(events),
+                cols=len(events.columns),
+            ),
+            "| L2 ST feature package | `supertrend_regime_features.parquet` | ST5/ST15 ATR 5/10/20/50 values, dirs, distances, lags | {rows:,} rows / {cols} feature cols added | Regime-filter audit only; attached with feature timestamp <= signal timestamp |".format(
+                rows=int((st_manifest.get("events") or {}).get("rows", len(events))),
+                cols=st_cols,
+            ),
+        ]
+    )
+
+
 def variant_rows(df: pd.DataFrame) -> str:
     rows = []
     for _, row in df.iterrows():
@@ -481,11 +683,147 @@ def short_switch_rows(df: pd.DataFrame) -> str:
     return "\n".join(rows)
 
 
+def p0_short_switch_row(row: pd.Series, label: str | None = None) -> str:
+    return (
+        "| {label} | {filter_id} | {short_risk} | {switch_risk} | {buffer} | {trades:,} | {pnl} | {dd} | {retdd} | {mar_pnl} | {d30_trades:,} | {d30_pnl} | {d30_dd} |".format(
+            label=label or row["variant_id"],
+            filter_id=row["short_filter"],
+            short_risk=usd(float(row["short_risk_usd"])) if float(row["short_risk_usd"]) else "-",
+            switch_risk=usd(float(row["switch_long_risk_usd"])) if float(row["switch_long_risk_usd"]) else "-",
+            buffer=row["switch_buffer_mode"],
+            trades=int(row["trades"]),
+            pnl=usd(float(row["pnl_usd"])),
+            dd=usd(float(row["max_dd_usd"])),
+            retdd=maybe_num(row["return_dd"]),
+            mar_pnl=usd(float(row["march_2026_pnl_usd"])),
+            d30_trades=int(row["last_30d_trades"]),
+            d30_pnl=usd(float(row["last_30d_pnl_usd"])),
+            d30_dd=usd(float(row["last_30d_max_dd_usd"])),
+        )
+    )
+
+
+def p0_short_switch_top_rows(df: pd.DataFrame, limit: int = 10) -> str:
+    variants = df[~df["variant_id"].eq("long_only_no_st")].copy()
+    if variants.empty:
+        return ""
+    variants = variants.sort_values(
+        ["p0_recent_score", "last_30d_pnl_usd", "last_30d_max_dd_usd"],
+        ascending=[False, False, False],
+    )
+    return "\n".join(p0_short_switch_row(row) for _, row in variants.head(limit).iterrows())
+
+
+def build_p0_short_switch_section() -> str:
+    p0_df = safe_read_csv(SHORT_SWITCH_P0_CSV)
+    manifest = safe_read_json(SHORT_SWITCH_P0_MANIFEST)
+    if p0_df is None:
+        return """### 12.5 P0 Short-Switch TP2R Optimization Sweep
+
+P0 short-switch sweep belum tersedia saat report ini dibuat. Jalankan:
+
+```bash
+python3 pipeline/mnq_ml/experiments/ORB/sweep_short_switch_tp2r_p0.py --force --short-entry-until none
+```
+"""
+
+    baseline = p0_df[p0_df["variant_id"].eq("long_only_no_st")]
+    existing = p0_df[p0_df["variant_id"].eq("p0_none_sr500_lr500_buf0_tgnone")]
+    variants = p0_df[~p0_df["variant_id"].eq("long_only_no_st")].copy()
+    if variants.empty or baseline.empty:
+        return "### 12.5 P0 Short-Switch TP2R Optimization Sweep\n\nP0 summary kosong.\n"
+    best = variants.sort_values(
+        ["p0_recent_score", "last_30d_pnl_usd", "last_30d_max_dd_usd"],
+        ascending=[False, False, False],
+    ).iloc[0]
+    raw_30d = variants.sort_values(
+        ["last_30d_pnl_usd", "last_30d_max_dd_usd", "march_2026_pnl_usd"],
+        ascending=[False, False, False],
+    ).iloc[0]
+    best_retdd = variants.sort_values(
+        ["return_dd", "last_30d_pnl_usd"],
+        ascending=[False, False],
+    ).iloc[0]
+    baseline_row = baseline.iloc[0]
+    existing_row = existing.iloc[0] if not existing.empty else None
+
+    variant_count = int((manifest or {}).get("rows", {}).get("summary", len(p0_df)) - 1)
+    params = (manifest or {}).get("params", {})
+    guard_values = ", ".join(params.get("short_entry_until", [])) or "n/a"
+    lookahead_total = int(p0_df["short_filter_lookahead_violations"].fillna(0).sum())
+    max_lag = p0_df["short_filter_max_lag_minutes"].max()
+
+    comparison_rows = [p0_short_switch_row(baseline_row, "Long only baseline")]
+    if existing_row is not None:
+        comparison_rows.append(p0_short_switch_row(existing_row, "Existing short-switch TP2R equivalent"))
+    comparison_rows.extend(
+        [
+            p0_short_switch_row(best, "Best P0 score"),
+            p0_short_switch_row(raw_30d, "Best raw 30D PnL"),
+            p0_short_switch_row(best_retdd, "Best full Ret/DD"),
+        ]
+    )
+
+    return f"""### 12.5 P0 Short-Switch TP2R Optimization Sweep
+
+P0 sweep ini memperbaiki branch `Short switch to long, short TP 2R` dengan
+knob yang masih rule-based: short-side SuperTrend filter, asymmetric short risk,
+switch-long risk, dan switch trigger buffer. Long-first breakout tetap memakai
+baseline risk $500. Jika short breakout ditolak filter, hari tersebut masih
+boleh mengambil later long breakout.
+
+| Field | Value |
+| --- | --- |
+| Variants evaluated | {variant_count:,} plus baseline |
+| Short filters | `none`, `st5_50_bearish`, `st5_20_bearish`, `st5_50_and_st15_20_bearish` |
+| Short risk grid | $250, $350, $500 |
+| Switch long risk grid | $500, $750 |
+| Switch buffers | `0`, `2ticks`, `0.25r` |
+| Short time guard grid | `{guard_values}` |
+| Lookahead violations | {lookahead_total:,} |
+| Max ST feature lag | {maybe_num(max_lag)} minutes |
+
+| Candidate | Short Filter | Short Risk | Switch Long Risk | Buffer | Trades | PnL | DD | Ret/DD | Mar PnL | 30D Trades | 30D PnL | 30D DD |
+| --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+{chr(10).join(comparison_rows)}
+
+Top P0-score candidates:
+
+| Candidate | Short Filter | Short Risk | Switch Long Risk | Buffer | Trades | PnL | DD | Ret/DD | Mar PnL | 30D Trades | 30D PnL | 30D DD |
+| --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+{p0_short_switch_top_rows(p0_df, limit=10)}
+
+Current read:
+
+- Best P0-score candidate: `{best["variant_id"]}`.
+- 30D PnL membaik dari {usd(float(baseline_row["last_30d_pnl_usd"]))}
+  menjadi {usd(float(best["last_30d_pnl_usd"]))}, dengan 30D DD tetap
+  {usd(float(best["last_30d_max_dd_usd"]))}.
+- March 2026 membaik dari {usd(float(baseline_row["march_2026_pnl_usd"]))}
+  menjadi {usd(float(best["march_2026_pnl_usd"]))}.
+- Full-history PnL naik, tetapi full-history DD memburuk dari
+  {usd(float(baseline_row["max_dd_usd"]))} menjadi {usd(float(best["max_dd_usd"]))}.
+  Jadi P0 result **membaik untuk Topstep-style recent window**, tetapi belum
+  boleh dipromosikan sebelum P1 Topstep simulator dan time-guard sweep.
+
+Artifact P0:
+
+- `short_switch_tp2r_p0_sweep.md`
+- `short_switch_tp2r_p0_full_report.md`
+- `short_switch_tp2r_p0_sweep.csv`
+- `short_switch_tp2r_p0_best_events.csv`
+- `short_switch_tp2r_p0_best_legs.csv`
+- `short_switch_tp2r_p0_best_yearly.csv`
+- `short_switch_tp2r_p0_best_monthly.csv`
+- `data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep_manifest.json`
+"""
+
+
 def build_short_switch_section() -> str:
     summary_df = safe_read_csv(SHORT_SWITCH_CSV)
     manifest = safe_read_json(SHORT_SWITCH_MANIFEST)
     if summary_df is None:
-        return """## 11. Short Breakout Switch-To-Long Audit
+        return """## 12. Short Breakout Switch-To-Long Audit
 
 Short switch audit belum tersedia saat report ini dibuat. Jalankan:
 
@@ -497,7 +835,7 @@ python3 pipeline/mnq_ml/experiments/ORB/build_short_reversal_switch_comparison.p
 """
 
     anchor = manifest["anchor_ts"] if manifest else "n/a"
-    return f"""## 11. Short Breakout Switch-To-Long Audit
+    return f"""## 12. Short Breakout Switch-To-Long Audit
 
 Section ini menguji definisi short yang asimetris terhadap long. Karena NASDAQ
 secara natural lebih long-biased, short tidak diperlakukan sebagai mirror
@@ -505,7 +843,7 @@ strategy. Jika OR low break lebih dulu, strategy boleh masuk short; tetapi jika
 harga close kembali di atas OR high, short ditutup dan posisi dibalik menjadi
 long pada open M1 berikutnya.
 
-### 11.1 Methodology
+### 12.1 Methodology
 
 | Field | Value |
 | --- | --- |
@@ -516,7 +854,7 @@ long pada open M1 berikutnya.
 | Long after switch | Baseline long TP 2R or 15:00 NY EOD |
 | Anchor | {anchor} |
 
-### 11.2 Visual Audit
+### 12.2 Visual Audit
 
 #### Equity Curve
 
@@ -530,19 +868,21 @@ long pada open M1 berikutnya.
 
 ![Short Switch Last 30D]({raw("charts/short_reversal_switch_last30_equity.png")})
 
-### 11.3 Summary
+### 12.3 Summary
 
 | Variant | Trades | WR | PnL | DD | Ret/DD | Short-first | Switches | Short PnL | Jan-May PnL | Mar PnL | 30D PnL | 30D DD |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 {short_switch_rows(summary_df)}
 
-### 11.4 Current Read
+### 12.4 Current Read
 
 Di antara varian short-switch, short TP 2R adalah yang paling kuat: total PnL
 dan return/DD terbaik, serta short leg full-history positif. Namun ia masih
 belum mengalahkan baseline pada window 30D terakhir dan max drawdown-nya masih
 sedikit lebih berat dari baseline. Jadi short-switch TP 2R layak masuk watchlist
 sebagai research branch, tetapi belum menggantikan long-only baseline.
+
+{build_p0_short_switch_section()}
 
 ---
 """
@@ -555,7 +895,7 @@ def build_supertrend_section() -> str:
     variant_manifest = safe_read_json(ST_VARIANT_MANIFEST)
 
     if variant_df is None and filter_df is None:
-        return """## 10. SuperTrend Regime Filter Audit
+        return """## 11. SuperTrend Regime Filter Audit
 
 SuperTrend audit belum tersedia saat report ini dibuat. Jalankan:
 
@@ -583,7 +923,7 @@ python3 pipeline/mnq_ml/experiments/ORB/build_supertrend_variant_comparison.py -
     variant_table = ""
     if variant_df is not None:
         variant_table = f"""
-### 10.2 Perbandingan Variant Utama
+### 11.2 Perbandingan Variant Utama
 
 #### Equity Curve
 
@@ -627,7 +967,7 @@ Interpretasi:
     filter_table = ""
     if filter_df is not None:
         filter_table = f"""
-### 10.3 Kandidat Kombinasi SuperTrend
+### 11.3 Kandidat Kombinasi SuperTrend
 
 Tabel ini menampilkan kandidat terbaik berdasarkan full-history return/DD,
 dengan minimum `full_trades >= 100` dan `jan_may_2026_trades >= 30`.
@@ -641,14 +981,14 @@ tetapi trade count turun drastis. Untuk menghindari curve fitting, kandidat
 yang lebih sederhana tetap diprioritaskan sebelum kombinasi kompleks.
 """
 
-    return f"""## 10. SuperTrend Regime Filter Audit
+    return f"""## 11. SuperTrend Regime Filter Audit
 
 SuperTrend audit ditambahkan untuk menjawab apakah drawdown March 2026 bisa
 dikurangi dengan regime filter sederhana, tanpa langsung mengganti baseline.
 Semua fitur dihitung dari bar yang sudah close dan di-join ke trade event
 dengan rule `feature_ts <= signal_ts`.
 
-### 10.1 Data Integrity
+### 11.1 Data Integrity
 
 | Check | Value |
 | --- | ---: |
@@ -661,7 +1001,7 @@ dengan rule `feature_ts <= signal_ts`.
 
 {variant_table}
 {filter_table}
-### 10.4 Keputusan Sementara SuperTrend
+### 11.4 Keputusan Sementara SuperTrend
 
 Untuk saat ini baseline **tidak diganti**. Baseline tetap `Long only, no ST`
 sebagai control. Kandidat yang dibawa ke iterasi berikutnya:
@@ -826,13 +1166,77 @@ Semua angka dalam report ini harus dibaca dengan guardrail berikut:
 
 ---
 
-## 3. Konteks Strategy Family
+## 3. Data Lineage & Control Gates
+
+Ini bagian paling penting secara governance: **bronze/L0 data salah berarti
+semua angka PnL, drawdown, chart, dan kesimpulan report ini ikut salah**.
+Karena itu report ini harus dibaca dari bawah ke atas: L0 raw integrity,
+L1 feature/context integrity, L2 event integrity, lalu baru performance.
+
+### 3.1 Lineage
+
+```text
+Databento MNQ M1 + yfinance recent append
+  -> data/Level_0_Raw/MNQ_1m.duckdb                 # bronze/raw canonical M1
+  -> data/Level_1_Features/mnq/ORB/context.parquet  # M1 NY-session context + quality flags
+  -> data/Level_2_Datamart/mnq/ORB/sweeps           # ORB grid events
+  -> data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod
+  -> model/MNQ/ORB/rule_based_15m_long_tp2r_eod
+```
+
+Baseline control report ini memakai frozen L2 event package
+`rule_based_15m_long_tp2r_eod/events.parquet`. SuperTrend dan short-switch
+adalah audit/variant layer yang menempel ke baseline/sweep events, bukan data
+source baru.
+
+### 3.2 Gate Summary
+
+| Layer | Artifact | Control Result |
+| --- | --- | --- |
+{data_lineage_control_rows(events)}
+
+### 3.3 Feature Dataset Inventory
+
+| Layer | Dataset | Content | Shape | Role |
+| --- | --- | --- | --- | --- |
+{data_feature_dataset_rows(events)}
+
+### 3.4 Lookahead Contract
+
+| Component | Contract |
+| --- | --- |
+| ORB baseline | Signal is M1 candle close; execution is next M1 open, so `entry_ts > signal_ts` is mandatory. |
+| Opening range | OR high/low use only completed bars inside the first N minutes after 09:30 NY. |
+| Intraday quality | Trade entry/exit scans use `bar_data_quality_ok`; bars containing source gaps are excluded from decision scanning. |
+| SuperTrend attach | Feature timestamp must be `<= signal_ts`; current attached lookahead violations = 0. |
+| Daily confluence | External daily features use date `< ny_date`; current daily confluence lookahead violations = 0. |
+| Labels/PnL | Exit, PnL, R multiple, and realized outcome are labels/evaluation fields, not allowed as pre-trade features. |
+
+### 3.5 Current Data Risk Read
+
+- L0 hard integrity is clean: no duplicate timestamps, null OHLCV, bad OHLC, or
+  negative volume rows in the latest audit.
+- L0 continuity is **not perfectly gap-free**. The current status is
+  `PASS_WITH_GAPS_REQUIRING_L1_QUARANTINE`, so the correct interpretation is
+  not "data has no gaps", but "known gaps are flagged and downstream builders
+  must not train or trade through bad bars".
+- L1 context audit passes and explicitly checks that OR values do not appear on
+  pre-OR rows, no eligible rows exist before OR end, and eligible rows are not
+  bad-quality bars.
+- L2 baseline events pass event-level controls used by this report: no required
+  nulls, no duplicate NY dates, entry after signal, and exit after entry.
+- Any future ML model must promote these gates to hard blockers. A model trained
+  on failed L0/L1/L2 gates is invalid even if its backtest looks profitable.
+
+---
+
+## 4. Konteks Strategy Family
 
 Report ini tidak lagi hanya berisi satu baseline long-only. Scope saat ini
 adalah **family of rule-based ORB variants** untuk NASDAQ Micro Futures, dengan
 baseline sebagai control dan beberapa branch sebagai kandidat riset.
 
-### 3.1 Common Contract
+### 4.1 Common Contract
 
 | Field | Value |
 | --- | --- |
@@ -847,7 +1251,7 @@ baseline sebagai control dan beberapa branch sebagai kandidat riset.
 | Baseline max trades | 1 sequence per NY session |
 | Research status | Not live-ready |
 
-### 3.2 Variant Map
+### 4.2 Variant Map
 
 | Variant | Role | Direction Logic | Regime Filter | Exit Logic | Current Status |
 | --- | --- | --- | --- | --- | --- |
@@ -857,13 +1261,13 @@ baseline sebagai control dan beberapa branch sebagai kandidat riset.
 | Long+Short + ST5_50 aligned | Exploratory | Long with bullish ST, short with bearish ST | ST5_50 aligned by side | TP 2R or 15:00 NY | Good March, weak recent 30D |
 | Short switch to long | Research branch | Short if OR low breaks first; switch to long if OR high reclaimed | None in current test | Short TP 1R/1.5R/2R, switch, or EOD | TP 2R best, not promoted |
 
-### 3.3 Rule-Based Definition
+### 4.3 Rule-Based Definition
 
 Semua variant di report ini masih **rule-based**, bukan ML. Keputusan entry,
 exit, switch, dan filter ditentukan oleh aturan eksplisit. Belum ada model
 probabilitas yang menentukan trade size, trade/no-trade, atau direction.
 
-### 3.4 Current Promotion Hierarchy
+### 4.4 Current Promotion Hierarchy
 
 1. **Benchmark:** `Long only, no ST`.
 2. **P0 candidate:** `Long only + ST5_50 bullish`.
@@ -873,7 +1277,7 @@ probabilitas yang menentukan trade size, trade/no-trade, atau direction.
 
 ---
 
-## 4. Sizing dan Risk Model
+## 5. Sizing dan Risk Model
 
 Semua varian di report ini memakai target risk dollar tetap sebagai sizing
 anchor. Target risk bukan normal stop-loss order; ia hanya menentukan jumlah
@@ -903,13 +1307,13 @@ guard terpisah.
 
 ---
 
-## 5. Baseline Control - Equity, Drawdown, Monthly PnL
+## 6. Baseline Control - Equity, Drawdown, Monthly PnL
 
 Section ini hanya untuk baseline control `Long only, no ST`. Tujuannya adalah
 menyediakan benchmark bersih sebelum membaca audit SuperTrend dan short-switch
-di section 10-11.
+di section 11-12.
 
-### 5.1 Equity Curve
+### 6.1 Equity Curve
 
 ![Equity Curve]({raw("charts/equity_curve.png")})
 
@@ -917,7 +1321,7 @@ Equity curve baseline menunjukkan PnL positif secara historis, tetapi jalurnya
 tidak linear. Ada fase panjang yang relatif datar dan beberapa periode drawdown
 besar.
 
-### 5.2 Drawdown
+### 6.2 Drawdown
 
 ![Drawdown Curve]({raw("charts/drawdown_curve.png")})
 
@@ -925,7 +1329,7 @@ Drawdown maksimum historis sebesar {usd(perf["max_dd_usd"])}. Ini jauh lebih
 besar daripada batas MLL Topstep 50K, sehingga evaluasi live tidak boleh hanya
 mengandalkan total PnL historis.
 
-### 5.3 Monthly PnL
+### 6.3 Monthly PnL
 
 ![Monthly PnL]({raw("charts/monthly_pnl.png")})
 
@@ -933,7 +1337,7 @@ Grafik bulanan baseline membantu melihat bahwa strategi tidak menghasilkan
 distribusi profit yang stabil setiap bulan. Ada bulan kuat, bulan kosong, dan
 bulan rugi.
 
-### 5.4 Distribusi PnL Per Trade
+### 6.4 Distribusi PnL Per Trade
 
 ![Trade PnL Distribution]({raw("charts/trade_pnl_distribution.png")})
 
@@ -943,13 +1347,13 @@ momentum yang produktif.
 
 ---
 
-## 6. Baseline Control - Performance Card dan Variant Snapshot
+## 7. Baseline Control - Performance Card dan Variant Snapshot
 
-Section 6.1 adalah metric card baseline `Long only, no ST`. Ini bukan metric
+Section 7.1 adalah metric card baseline `Long only, no ST`. Ini bukan metric
 untuk seluruh strategy family. Cross-variant context langsung ditaruh di
-section 6.2 agar baseline, ST filter, dan short-switch tidak tercampur.
+section 7.2 agar baseline, ST filter, dan short-switch tidak tercampur.
 
-### 6.1 Baseline Control Metrics
+### 7.1 Baseline Control Metrics
 
 | Metric | Value |
 | --- | ---: |
@@ -971,7 +1375,7 @@ section 6.2 agar baseline, ST filter, dan short-switch tidak tercampur.
 | Max consecutive wins | {int(perf["max_consecutive_wins"])} |
 | Max consecutive losses | {int(perf["max_consecutive_losses"])} |
 
-### 6.2 Cross-Variant Metric Snapshot
+### 7.2 Cross-Variant Metric Snapshot
 
 | Variant | Role | Trades | PF | Full PnL | Max DD | Mar 2026 PnL | 30D PnL |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -987,7 +1391,7 @@ Reading note:
 
 ---
 
-## 7. Cost Model
+## 8. Cost Model
 
 | Cost | Value |
 | --- | ---: |
@@ -1004,7 +1408,7 @@ slippage 1 tick per side.
 
 ---
 
-## 8. Baseline Control - Daily Quality
+## 9. Baseline Control - Daily Quality
 
 Daily quality di section ini hanya untuk baseline-control. Sharpe and Sortino
 are computed from daily dollar PnL over NASDAQ Micro Futures NY session days,
@@ -1030,7 +1434,7 @@ short-switch masih perlu Topstep-specific simulator yang sama sebelum promosi.
 
 ---
 
-## 9. Baseline Control - Rolling Window Terakhir
+## 10. Baseline Control - Rolling Window Terakhir
 
 ![Rolling Windows]({raw("charts/rolling_windows.png")})
 
@@ -1043,7 +1447,7 @@ Interpretasi baseline:
 - 30D terakhir adalah bagian paling menarik: 18 trade dan {usd(windows["30D"]["pnl_usd"])} PnL.
 - 5D dan 10D masih terlalu pendek untuk menjadi bukti edge.
 - 100D dan 200D tetap positif, tetapi DD historisnya mulai berat untuk Topstep.
-- Rolling comparison untuk varian ST dan short-switch ada di section 10-11,
+- Rolling comparison untuk varian ST dan short-switch ada di section 11-12,
   bukan di chart baseline ini.
 
 ---
@@ -1052,7 +1456,7 @@ Interpretasi baseline:
 
 {short_switch_section}
 
-## 12. Baseline Control - Monte Carlo dan Stress Test
+## 13. Baseline Control - Monte Carlo dan Stress Test
 
 Monte Carlo di section ini hanya memakai daily PnL baseline-control. Ini bukan
 prediksi masa depan, dan belum boleh dibaca sebagai Monte Carlo untuk ST5_50
@@ -1063,19 +1467,19 @@ daily PnL historis muncul dalam urutan yang berbeda.
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 {monte_rows(mc)}
 
-### 12.1 Fan Chart 30D
+### 13.1 Fan Chart 30D
 
 ![Monte Carlo PnL Fan 30D]({raw("monte_carlo/monte_pnl_fan_30d.png")})
 
-### 12.2 Distribusi Final PnL 30D
+### 13.2 Distribusi Final PnL 30D
 
 ![Monte Carlo Final PnL CDF 30D]({raw("monte_carlo/monte_final_pnl_cdf_30d.png")})
 
-### 12.3 Max Drawdown 30D
+### 13.3 Max Drawdown 30D
 
 ![Monte Carlo MaxDD 30D]({raw("monte_carlo/monte_maxdd_hist_30d.png")})
 
-### 12.4 Fan Chart 100D
+### 13.4 Fan Chart 100D
 
 ![Monte Carlo PnL Fan 100D]({raw("monte_carlo/monte_pnl_fan_100d.png")})
 
@@ -1087,9 +1491,9 @@ dibandingkan ulang dengan metodologi yang sama.
 
 ---
 
-## 13. Penilaian Risiko
+## 14. Penilaian Risiko
 
-### 13.1 Risiko Drawdown
+### 14.1 Risiko Drawdown
 
 Baseline max drawdown historis {usd(perf["max_dd_usd"])} jauh lebih besar
 daripada MLL Topstep 50K. ST5_50 menurunkan drawdown full-history, tetapi belum
@@ -1097,14 +1501,14 @@ menghapus risiko MLL karena window 30D dan intraday path tetap harus
 disimulasikan. Ini tidak otomatis membatalkan strategi, tetapi semua varian
 membutuhkan guard dan monitoring harian.
 
-### 13.2 Risiko No Normal SL
+### 14.2 Risiko No Normal SL
 
 Strategi ini tidak memakai SL normal. Exit loss terjadi lewat time exit.
 Konsekuensinya, flash drop atau trend day yang berlawanan bisa menghasilkan
 kerugian lebih besar dari target risk teoritis. Catastrophic guard harus
 dipilih sebagai layer operasional terpisah.
 
-### 13.3 Risiko Curve Fit
+### 14.3 Risiko Curve Fit
 
 Baseline cukup bersih karena hanya memakai OR 15m, long only, TP 2R/time exit,
 dan risk $500. Risiko curve fit naik pada kombinasi multi-SuperTrend dan
@@ -1112,7 +1516,7 @@ short-switch karena jumlah pilihan bertambah. Karena itu kandidat sederhana
 `ST5_50` diprioritaskan atas kombinasi multi-filter walaupun beberapa kombinasi
 punya return/DD historis lebih tinggi.
 
-### 13.4 Risiko Eksekusi Live
+### 14.4 Risiko Eksekusi Live
 
 Live version harus memastikan:
 
@@ -1125,7 +1529,7 @@ Live version harus memastikan:
 
 ---
 
-## 14. Rekomendasi Sementara
+## 15. Rekomendasi Sementara
 
 | Area | Rekomendasi |
 | --- | --- |
@@ -1150,7 +1554,7 @@ Rekomendasi utama:
 
 ---
 
-## 15. Keputusan Sementara
+## 16. Keputusan Sementara
 
 | Area | Status |
 | --- | --- |
@@ -1170,9 +1574,9 @@ execution.
 
 ---
 
-## 16. Artifact Register
+## 17. Artifact Register
 
-### Model Package
+### 17.1 Model Package
 
 | File | Keterangan |
 | --- | --- |
@@ -1206,22 +1610,44 @@ execution.
 | `short_reversal_switch_comparison.csv` | Summary varian short TP 1R/1.5R/2R |
 | `short_reversal_switch_events.csv` | Sequence-level event varian short-switch |
 | `short_reversal_switch_legs.csv` | Leg-level attribution varian short-switch |
+| `short_switch_tp2r_p0_sweep.md` | P0 sweep short-switch TP2R dengan ST filter, asymmetric risk, dan switch buffer |
+| `short_switch_tp2r_p0_full_report.md` | Full report kandidat P0 terbaik: yearly, YTD, month-to-month |
+| `short_switch_tp2r_p0_sweep.csv` | Summary machine-readable P0 short-switch TP2R |
+| `short_switch_tp2r_p0_best_events.csv` | Sequence-level event kandidat P0 terbaik |
+| `short_switch_tp2r_p0_best_legs.csv` | Leg-level attribution kandidat P0 terbaik |
+| `short_switch_tp2r_p0_best_yearly.csv` | Yearly metrics kandidat P0 terbaik |
+| `short_switch_tp2r_p0_best_monthly.csv` | Monthly metrics kandidat P0 terbaik |
 
-### Canonical Data
+### 17.2 Canonical Data
 
 ```text
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/events.parquet
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/summary.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/package_gate.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_features.parquet
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_manifest.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_variant_comparison_manifest.json
 data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_reversal_switch_comparison_manifest.json
+data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep_manifest.json
+data/Level_0_Raw/MNQ_1m.duckdb
+data/Level_0_Raw/MNQ_1m_duckdb_manifest.json
+data/Level_0_Raw/MNQ_1m_yfinance_append_manifest.json
+data/Level_0_Raw/MNQ_1m_continuity_report.json
+data/Level_0_Raw/MNQ_yfinance_timeframe_parity_report.json
+data/Level_1_Features/mnq/ORB/context.parquet
+data/Level_1_Features/mnq/ORB/context_manifest.json
+data/Level_1_Features/mnq/ORB/l1_audit.json
+data/Level_1_Features/mnq/ORB/daily_confluence.parquet
+data/Level_1_Features/mnq/ORB/daily_confluence_manifest.json
+data/Level_1_Features/mnq/ORB/daily_confluence_audit.json
+data/Level_2_Datamart/mnq/ORB/sweeps/sweep_events.parquet
+data/Level_2_Datamart/mnq/ORB/sweeps/sweep_manifest.json
 ```
 
 ---
 
-## 17. Lampiran A - 10 Trade Terakhir
+## 18. Lampiran A - 10 Trade Terakhir
 
 | NY Date | Signal UTC | Exit | Contracts | Net PnL |
 | --- | --- | --- | ---: | ---: |
@@ -1318,6 +1744,29 @@ def main() -> None:
             "short_reversal_switch_manifest": rel(
                 DATA_DIR / "short_reversal_switch_comparison_manifest.json"
             ),
+            "short_switch_tp2r_p0_report": rel(SHORT_SWITCH_P0_REPORT),
+            "short_switch_tp2r_p0_summary": rel(SHORT_SWITCH_P0_CSV),
+            "short_switch_tp2r_p0_best_events": rel(SHORT_SWITCH_P0_BEST_EVENTS),
+            "short_switch_tp2r_p0_best_legs": rel(SHORT_SWITCH_P0_BEST_LEGS),
+            "short_switch_tp2r_p0_manifest": rel(SHORT_SWITCH_P0_MANIFEST),
+            "short_switch_tp2r_p0_full_report": rel(SHORT_SWITCH_P0_FULL_REPORT),
+            "short_switch_tp2r_p0_best_yearly": rel(SHORT_SWITCH_P0_BEST_YEARLY),
+            "short_switch_tp2r_p0_best_monthly": rel(SHORT_SWITCH_P0_BEST_MONTHLY),
+            "data_control_artifacts": [
+                rel(L0_1M_MANIFEST),
+                rel(L0_1M_YF_MANIFEST),
+                rel(L0_CONTINUITY_REPORT),
+                rel(L0_5M_MANIFEST),
+                rel(L0_15M_MANIFEST),
+                rel(L0_PARITY_REPORT),
+                rel(L0_DAILY_MANIFEST),
+                rel(L1_CONTEXT_MANIFEST),
+                rel(L1_AUDIT),
+                rel(L1_DAILY_CONFLUENCE_MANIFEST),
+                rel(L1_DAILY_CONFLUENCE_AUDIT),
+                rel(SWEEP_MANIFEST),
+                rel(PACKAGE_GATE),
+            ],
         },
     }
     (MODEL_DIR / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")

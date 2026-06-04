@@ -1,7 +1,7 @@
 {
   "avg_pnl_per_contract_usd": 15.282574568288855,
   "bad_timing_rows": 0,
-  "created_at": "2026-05-31T11:04:52.087732+00:00",
+  "created_at": "2026-06-01T22:22:52.269384+00:00",
   "l1_audit": {
     "gaps_gt_expected": 5491,
     "orb_complete_days": 1815,

@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-06-01T14:57:27+00:00",
+  "created_at": "2026-06-04T23:33:26+00:00",
   "outputs": {
     "charts": [
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/charts/equity_curve.svg",
@@ -39,6 +39,21 @@
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_100d.svg",
       "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo/monte_pnl_fan_100d.png"
     ],
+    "data_control_artifacts": [
+      "data/Level_0_Raw/MNQ_1m_duckdb_manifest.json",
+      "data/Level_0_Raw/MNQ_1m_yfinance_append_manifest.json",
+      "data/Level_0_Raw/MNQ_1m_continuity_report.json",
+      "data/Level_0_Raw/MNQ_5m_duckdb_manifest.json",
+      "data/Level_0_Raw/MNQ_15m_duckdb_manifest.json",
+      "data/Level_0_Raw/MNQ_yfinance_timeframe_parity_report.json",
+      "data/Level_0_Raw/yfinance_daily_manifest.json",
+      "data/Level_1_Features/mnq/ORB/context_manifest.json",
+      "data/Level_1_Features/mnq/ORB/l1_audit.json",
+      "data/Level_1_Features/mnq/ORB/daily_confluence_manifest.json",
+      "data/Level_1_Features/mnq/ORB/daily_confluence_audit.json",
+      "data/Level_2_Datamart/mnq/ORB/sweeps/sweep_manifest.json",
+      "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/package_gate.json"
+    ],
     "metrics": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/metrics.json",
     "monte_carlo_metrics": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/monte_carlo_metrics.json",
     "report": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/REPORT.md",
@@ -47,6 +62,14 @@
     "short_reversal_switch_manifest": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_reversal_switch_comparison_manifest.json",
     "short_reversal_switch_report": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_reversal_switch_comparison.md",
     "short_reversal_switch_summary": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_reversal_switch_comparison.csv",
+    "short_switch_tp2r_p0_best_events": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_events.csv",
+    "short_switch_tp2r_p0_best_legs": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_legs.csv",
+    "short_switch_tp2r_p0_best_monthly": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_monthly.csv",
+    "short_switch_tp2r_p0_best_yearly": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_best_yearly.csv",
+    "short_switch_tp2r_p0_full_report": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_full_report.md",
+    "short_switch_tp2r_p0_manifest": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep_manifest.json",
+    "short_switch_tp2r_p0_report": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep.md",
+    "short_switch_tp2r_p0_summary": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/short_switch_tp2r_p0_sweep.csv",
     "supertrend_filter_candidates": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/supertrend_filter_candidates.csv",
     "supertrend_regime_audit": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_audit.md",
     "supertrend_regime_manifest": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod/supertrend_regime_manifest.json",

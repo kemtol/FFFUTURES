@@ -1,0 +1,23 @@
+{
+  "created_at": "2026-06-01T22:25:51+00:00",
+  "events_columns": 38,
+  "events_rows": 1296,
+  "failures": {},
+  "model_dir": "model/MNQ/ORB/rule_based_15m_long_tp2r_eod",
+  "package": "data/Level_2_Datamart/mnq/ORB/rule_based_15m_long_tp2r_eod",
+  "status": "PASS",
+  "upstream": {
+    "daily_confluence_status": "PASS",
+    "l0_continuity_status": "PASS_WITH_GAPS_REQUIRING_L1_QUARANTINE",
+    "l0_gap_count_gt_60s": 5491,
+    "l0_hard_integrity_pass": true,
+    "l0_timeframe_parity_status": "PASS",
+    "l1_audit_status": "PASS",
+    "supertrend_lookahead_violations": 0,
+    "supertrend_variant_lookahead_violations": 0
+  },
+  "warnings": {
+    "l0_continuity_note": "Known gaps are acceptable only if L1 quality flags keep decisions off bad bars.",
+    "l0_continuity_status": "PASS_WITH_GAPS_REQUIRING_L1_QUARANTINE"
+  }
+}
