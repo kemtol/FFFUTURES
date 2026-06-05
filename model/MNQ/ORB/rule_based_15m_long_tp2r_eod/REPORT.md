@@ -65,6 +65,32 @@ Keputusan sementara dari comparison ini:
   full-history dan March terlihat bagus, tetapi 30D terakhir negatif.
 
 
+### 1.1 Iteration Checkpoints
+
+P0 **membaik** dibanding dua checkpoint utama sebelumnya pada objective
+recent-window: March 2026 loss lebih kecil dan 30D PnL lebih tinggi. Yang belum
+membaik adalah full-history max DD terhadap baseline, sehingga statusnya naik
+ke **P1 simulator candidate**, bukan live-ready.
+
+| Checkpoint | Change | Trades | Full PnL | Max DD | Ret/DD | Mar 2026 PnL | 30D PnL | Decision |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Iterasi 1 - Control | Long-only ORB 15m; entry M1+1; risk $500; TP 2R/EOD | 1,296 | $33,091 | -$12,124 | 2.73 | -$2,633 | $3,460 | Benchmark wajib |
+| Iterasi 2 - Short-switch TP2R | Tambah short first-breakout dan switch long saat OR high reclaimed; risk $500/$500 | 1,767 | $37,731 | -$12,715 | 2.97 | -$2,074 | $1,515 | Full PnL naik, tetapi 30D memburuk |
+| Iterasi 3 - Best P0 tuned | Short hanya jika ST5_20 bearish; short $350; switch-long $750; guard 10:30 | 1,660 | $42,946 | -$12,792 | 3.36 | -$975 | $4,696 | P1 simulator candidate |
+
+Reading:
+
+- Iterasi 1 membuktikan baseline long-only punya edge dan wajib dipertahankan
+  sebagai control.
+- Iterasi 2 membuktikan short-switch mentah menaikkan full PnL, tetapi
+  kualitas recent-window memburuk.
+- Iterasi 3 memperbaiki Iterasi 2 dengan filter ST5_20, asymmetric risk, dan
+  time guard. Ini yang sekarang disebut **Best P0 short-switch**.
+
+Branch note: `Long only + ST5_50 bullish` bukan iterasi utama short-switch, tetapi fallback regime-filter sederhana. Metriknya: 964 trades, PnL $28,199, DD -$8,027, March $102, 30D $1,918.
+
+
+
 **Kesimpulan utama:** strategi ini belum boleh dibaca sebagai satu final live
 strategy. Baseline membuktikan ada continuation edge, terutama pada 30D
 terakhir, tetapi long-run PF masih tipis dan max drawdown historis terlalu

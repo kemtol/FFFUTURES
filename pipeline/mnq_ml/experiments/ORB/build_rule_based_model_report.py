@@ -606,6 +606,98 @@ Keputusan sementara dari comparison ini:
 """
 
 
+def checkpoint_row(row: pd.Series, checkpoint: str, change: str, decision: str) -> str:
+    return (
+        "| {checkpoint} | {change} | {trades:,} | {pnl} | {dd} | {retdd} | {mar} | {d30} | {decision} |"
+    ).format(
+        checkpoint=checkpoint,
+        change=change,
+        trades=int(row["trades"]),
+        pnl=usd(float(row["pnl_usd"])),
+        dd=usd(float(row["max_dd_usd"])),
+        retdd=maybe_num(row["return_dd"]),
+        mar=usd(float(row["march_2026_pnl_usd"])),
+        d30=usd(float(row["last_30d_pnl_usd"])),
+        decision=decision,
+    )
+
+
+def build_iteration_checkpoint_section() -> str:
+    p0_df = safe_read_csv(SHORT_SWITCH_P0_CSV)
+    if p0_df is None:
+        return """### 1.1 Iteration Checkpoints
+
+Iteration checkpoint belum tersedia karena P0 sweep summary belum ada.
+"""
+
+    baseline = p0_df[p0_df["variant_id"].eq("long_only_no_st")]
+    old_switch = p0_df[p0_df["variant_id"].eq("p0_none_sr500_lr500_buf0_tgnone")]
+    variants = p0_df[~p0_df["variant_id"].eq("long_only_no_st")].copy()
+    if baseline.empty or old_switch.empty or variants.empty:
+        return "### 1.1 Iteration Checkpoints\n\nP0 checkpoint table belum lengkap.\n"
+
+    best = variants.sort_values(
+        ["p0_recent_score", "last_30d_pnl_usd", "last_30d_max_dd_usd"],
+        ascending=[False, False, False],
+    ).iloc[0]
+    rows = [
+        checkpoint_row(
+            baseline.iloc[0],
+            "Iterasi 1 - Control",
+            "Long-only ORB 15m; entry M1+1; risk $500; TP 2R/EOD",
+            "Benchmark wajib",
+        ),
+        checkpoint_row(
+            old_switch.iloc[0],
+            "Iterasi 2 - Short-switch TP2R",
+            "Tambah short first-breakout dan switch long saat OR high reclaimed; risk $500/$500",
+            "Full PnL naik, tetapi 30D memburuk",
+        ),
+        checkpoint_row(
+            best,
+            "Iterasi 3 - Best P0 tuned",
+            "Short hanya jika ST5_20 bearish; short $350; switch-long $750; guard 10:30",
+            "P1 simulator candidate",
+        ),
+    ]
+
+    st_note = ""
+    st_df = safe_read_csv(ST_VARIANT_CSV)
+    if st_df is not None:
+        st = st_df[st_df["variant_id"].eq("long_only_st5_50")]
+        if not st.empty:
+            row = st.iloc[0]
+            st_note = (
+                "\nBranch note: `Long only + ST5_50 bullish` bukan iterasi utama "
+                "short-switch, tetapi fallback regime-filter sederhana. Metriknya: "
+                f"{int(row['trades']):,} trades, PnL {usd(float(row['pnl_usd']))}, "
+                f"DD {usd(float(row['max_dd_usd']))}, March {usd(float(row['march_2026_pnl_usd']))}, "
+                f"30D {usd(float(row['last_30d_pnl_usd']))}.\n"
+            )
+
+    return f"""### 1.1 Iteration Checkpoints
+
+P0 **membaik** dibanding dua checkpoint utama sebelumnya pada objective
+recent-window: March 2026 loss lebih kecil dan 30D PnL lebih tinggi. Yang belum
+membaik adalah full-history max DD terhadap baseline, sehingga statusnya naik
+ke **P1 simulator candidate**, bukan live-ready.
+
+| Checkpoint | Change | Trades | Full PnL | Max DD | Ret/DD | Mar 2026 PnL | 30D PnL | Decision |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+{chr(10).join(rows)}
+
+Reading:
+
+- Iterasi 1 membuktikan baseline long-only punya edge dan wajib dipertahankan
+  sebagai control.
+- Iterasi 2 membuktikan short-switch mentah menaikkan full PnL, tetapi
+  kualitas recent-window memburuk.
+- Iterasi 3 memperbaiki Iterasi 2 dengan filter ST5_20, asymmetric risk, dan
+  time guard. Ini yang sekarang disebut **Best P0 short-switch**.
+{st_note}
+"""
+
+
 def cross_variant_metric_rows() -> str:
     rows = []
     st_df = safe_read_csv(ST_VARIANT_CSV)
@@ -1108,6 +1200,7 @@ def build_report(events: pd.DataFrame, summary: dict, mc: dict) -> str:
     supertrend_section = build_supertrend_section()
     short_switch_section = build_short_switch_section()
     executive_variant_snapshot = build_executive_variant_snapshot()
+    iteration_checkpoint_section = build_iteration_checkpoint_section()
 
     created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -1154,6 +1247,8 @@ loss; OR low hanya menjadi referensi sizing.
 | Baseline 30D terakhir | {int(windows["30D"]["trades"])} trade, {usd(windows["30D"]["pnl_usd"])} PnL, {usd(windows["30D"]["max_dd_usd"])} max DD |
 
 {executive_variant_snapshot}
+
+{iteration_checkpoint_section}
 
 **Kesimpulan utama:** strategi ini belum boleh dibaca sebagai satu final live
 strategy. Baseline membuktikan ada continuation edge, terutama pada 30D
