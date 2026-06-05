@@ -1621,7 +1621,7 @@ Live version harus memastikan:
 | Live trading | Belum live-ready |
 | Forward test | Baru layak paper/forward-test setelah simulator MLL/consistency selesai |
 | ML overlay | Hanya boleh menjadi risk adjuster, bukan filter trade utama dulu |
-| Sizing default | Tetap $500 sampai MLL/consistency simulator selesai |
+| Sizing policy | Baseline long-first tetap $500; Best P0 memakai short $350 dan switch-long $750, frozen sampai simulator selesai |
 | Guard | Wajib desain catastrophic guard sebelum live |
 
 Rekomendasi utama:
@@ -1647,6 +1647,7 @@ Rekomendasi utama:
 | Watchlist | `Short switch to long, short TP 2R` sebelum P0 tuning |
 | 30D Topstep-style potential | P0 short-switch paling menarik sejauh ini, tetapi belum cukup tanpa simulator |
 | Long-run robustness | Perlu guard, regime review, dan Topstep path sim |
+| Next decision gate | P1 Topstep simulator: MLL, consistency, daily loss, first +$3,000 path, catastrophic guard |
 | Live readiness | Belum |
 | Model package | Siap sebagai institutional-style research report |
 
